@@ -1,0 +1,37 @@
+{
+  "bobinas": [],
+  "inspecciones": [],
+  "produccion_personal": [
+    {
+      "id": 1785778540793,
+      "fecha": "2026-08-03",
+      "turno": "Dia",
+      "tipo_maquina": "Armado",
+      "maquina": "M11",
+      "operador": "Brian",
+      "auxiliar_1": "Ricardo",
+      "auxiliar_2": "Giovanni",
+      "auxiliar_3": "",
+      "meta": 45000,
+      "bolsas_producidas": 3304,
+      "bolsas_tarima": 3200,
+      "hora_actualizacion": "08:51",
+      "editado_por": "Paulina"
+    },
+    {
+      "id": 1785778474133,
+      "fecha": "2026-08-03",
+      "turno": "Dia",
+      "tipo_maquina": "Armado",
+      "maquina": "M11",
+      "operador": "Brian",
+      "auxiliar_1": "Ricardo",
+      "auxiliar_2": "Giovanni",
+      "auxiliar_3": "",
+      "bolsas_producidas": 0,
+      "bolsas_tarima": 0,
+      "editado_por": "Paulina"
+    }
+  ],
+  "tarimas": []
+}
