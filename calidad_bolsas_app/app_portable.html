@@ -3353,11 +3353,15 @@
       function enterSection(sec) {
         state.section = sec;
         document.getElementById('step-section').style.display = 'none';
+        document.getElementById('step-area').style.display = 'none';
+        document.getElementById('step-prod-menu').style.display = 'none';
+        const friasMenu = document.getElementById('step-frias-menu');
+        if (friasMenu) friasMenu.style.display = 'none';
+
         if (sec === 'calidad') {
           document.getElementById('step-area').style.display = 'block';
         } else if (sec === 'frias') {
-          document.getElementById('step-frias-menu').style.display = 'block';
-          document.getElementById('step-area').style.display = 'block';
+          if (friasMenu) friasMenu.style.display = 'block';
         } else if (sec === 'produccion') {
           document.getElementById('step-prod-menu').style.display = 'block';
         } else if (sec === 'estadisticas') {
@@ -3856,8 +3860,19 @@
         state.section = null;
         state.selectedArea = null;
         state.role = null;
+
+        const landingScreen = document.getElementById('landing-screen');
+        const appScreen = document.getElementById('app-screen');
+        if (landingScreen) landingScreen.style.display = 'block';
+        if (appScreen) appScreen.style.display = 'none';
+
+        hideAllViews();
+
         document.getElementById('step-area').style.display = 'none';
         document.getElementById('step-prod-menu').style.display = 'none';
+        const friasMenu = document.getElementById('step-frias-menu');
+        if (friasMenu) friasMenu.style.display = 'none';
+
         document.getElementById('step-role').style.display = 'none';
         document.getElementById('step-section').style.display = 'block';
       }
@@ -7756,25 +7771,56 @@
       function selectFriasSubSection(sub) {
         state.section = 'frias';
         state.area = 'Frías';
-        document.getElementById('step-frias-menu').style.display = 'none';
+
+        // Ocultar landing y mostrar app-screen principal
+        const landingScreen = document.getElementById('landing-screen');
+        const appScreen = document.getElementById('app-screen');
+        
+        const stepLogin = document.getElementById('step-login');
+        const stepSection = document.getElementById('step-section');
+        const stepFriasMenu = document.getElementById('step-frias-menu');
+        const stepProdMenu = document.getElementById('step-prod-menu');
+        const stepArea = document.getElementById('step-area');
+        const stepRole = document.getElementById('step-role');
+
+        if (stepLogin) stepLogin.style.display = 'none';
+        if (stepSection) stepSection.style.display = 'none';
+        if (stepFriasMenu) stepFriasMenu.style.display = 'none';
+        if (stepProdMenu) stepProdMenu.style.display = 'none';
+        if (stepArea) stepArea.style.display = 'none';
+        if (stepRole) stepRole.style.display = 'none';
+        if (landingScreen) landingScreen.style.display = 'none';
+
+        if (appScreen) appScreen.style.display = 'block';
         
         hideAllViews();
         
         if (sub === 'inspeccion') {
           state.role = 'frias_inspeccion';
-          document.getElementById('view-frias-inspeccion').style.display = 'block';
+          const v = document.getElementById('view-frias-inspeccion');
+          if (v) v.style.display = 'block';
+          const badge = document.getElementById('app-badge');
+          if (badge) badge.textContent = 'Frías - Calidad';
           const now = new Date();
           const timeStr = now.toTimeString().substring(0, 5);
-          document.getElementById('frias-insp-hora').value = timeStr;
+          const inputHora = document.getElementById('frias-insp-hora');
+          if (inputHora) inputHora.value = timeStr;
         } else if (sub === 'carga') {
           state.role = 'frias_carga';
-          document.getElementById('view-frias-carga').style.display = 'block';
+          const v = document.getElementById('view-frias-carga');
+          if (v) v.style.display = 'block';
+          const badge = document.getElementById('app-badge');
+          if (badge) badge.textContent = 'Frías - Pruebas Carga';
           const now = new Date();
           const timeStr = now.toTimeString().substring(0, 5);
-          document.getElementById('frias-carga-hora-ini').value = timeStr;
+          const inputHoraIni = document.getElementById('frias-carga-hora-ini');
+          if (inputHoraIni) inputHoraIni.value = timeStr;
         } else if (sub === 'tarimas') {
           state.role = 'frias_tarimas';
-          document.getElementById('view-frias-tarimas').style.display = 'block';
+          const v = document.getElementById('view-frias-tarimas');
+          if (v) v.style.display = 'block';
+          const badge = document.getElementById('app-badge');
+          if (badge) badge.textContent = 'Frías - Tarimas';
           changeFriasTarimaTab('registro');
         }
       }
