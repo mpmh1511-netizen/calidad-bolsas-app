@@ -18,7 +18,7 @@
     <!-- Premium Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Libraries for Excel (.xlsx) and PDF Export -->
+        <!-- Libraries for Excel (.xlsx) and PDF Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -411,7 +411,39 @@
             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">Filtro por máquina, inconformidades y exportación Excel/PDF</p>
             <button class="btn-primary" style="margin-top: auto; width: 100%; justify-content: center; background-color: #16a34a; border-color: #15803d;">Ingresar</button>
           </div>
+                  <div class="role-card" onclick="enterSection('frias')" style="padding: 2.5rem 1.5rem; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid #0284c7;">
+            <h3 class="role-card-title" style="font-size: 1.3rem; margin-bottom: 1.5rem; color: #0284c7;">Frías</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">Inspección de calidad, pruebas de carga y liberación de tarimas</p>
+            <button class="btn-primary" style="margin-top: auto; width: 100%; justify-content: center; background-color: #0284c7; border-color: #0369a1;">Ingresar</button>
+          </div>
         </div>
+      </div>
+
+      <!-- Paso 1 (Frías): Menú de opciones de Frías -->
+      <div id="step-frias-menu" style="display: none; width: 100%;">
+        <h3 style="margin-bottom: 2rem; font-size: 1.3rem; color: var(--text-muted);">Módulo Frías: Selecciona una Opción</h3>
+        <div class="role-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;">
+          <div class="role-card" onclick="selectFriasSubSection('inspeccion')" style="padding: 2.5rem 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <h3 class="role-card-title" style="font-size: 1.25rem; margin-bottom: 1.5rem;">Inspección de calidad</h3>
+            <p class="role-card-desc" style="font-size: 0.8rem; text-align: center; margin-bottom: 1.5rem;">Control de integridad, PVA, Hot Melt y parámetros de proceso</p>
+            <button class="btn-primary" style="margin-top: auto; width: 100%; justify-content: center;">Ingresar</button>
+          </div>
+
+          <div class="role-card" onclick="selectFriasSubSection('carga')" style="padding: 2.5rem 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <h3 class="role-card-title" style="font-size: 1.25rem; margin-bottom: 1.5rem;">Pruebas de carga</h3>
+            <p class="role-card-desc" style="font-size: 0.8rem; text-align: center; margin-bottom: 1.5rem;">Pruebas estáticas (30 min) y dinámicas (15 min)</p>
+            <button class="btn-primary" style="margin-top: auto; width: 100%; justify-content: center; background-color: var(--color-primary-light);">Ingresar</button>
+          </div>
+
+          <div class="role-card" onclick="selectFriasSubSection('tarimas')" style="padding: 2.5rem 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <h3 class="role-card-title" style="font-size: 1.25rem; margin-bottom: 1.5rem;">Liberación de tarimas</h3>
+            <p class="role-card-desc" style="font-size: 0.8rem; text-align: center; margin-bottom: 1.5rem;">Registro de liberación, código único y búsqueda por fecha/banda</p>
+            <button class="btn-primary" style="margin-top: auto; width: 100%; justify-content: center; background-color: #0284c7; border-color: #0369a1;">Ingresar</button>
+          </div>
+        </div>
+        <button class="btn-secondary" onclick="backToSection()" style="margin-top: 2.5rem; padding: 8px 16px; font-size: 0.85rem;">
+          ◀ Volver al menú principal
+        </button>
       </div>
 
       <!-- Paso 1 (Producción): Menú de opciones de Producción -->
@@ -634,7 +666,7 @@
               <h3 style="margin: 0; font-size: 1.15rem; color: #dc2626; display: flex; align-items: center; gap: 8px;">
                 ⚠️ Registro de Inconformidades y Defectos Detectados en Máquinas
               </h3>
-              <span style="font-size: 0.8rem; color: var(--text-muted);">Listado detallado de defectos e inconformidades reportadas (Sin imágenes para reporte ligero)</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Listado detallado de defectos con fotografía de evidencia fotográfica incluida</span>
             </div>
             <div class="table-container" style="overflow-x: auto;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
@@ -649,6 +681,7 @@
                     <th style="padding: 10px;">Defecto / Inconformidad</th>
                     <th style="padding: 10px;">Severidad</th>
                     <th style="padding: 10px;">Acción Correctiva</th>
+                    <th style="padding: 10px;">Evidencia Fotográfica</th>
                   </tr>
                 </thead>
                 <tbody id="table-inconformidades-body">
@@ -2047,6 +2080,383 @@
           </div>
         </div>
 
+        
+        <!-- VISTAS DE FRÍAS -->
+        <!-- 1. INSPECCIÓN DE CALIDAD FRÍAS -->
+        <div id="view-frias-inspeccion" style="display: none;" class="card">
+          <div class="card-title">
+            <h2 style="color: #0284c7;">Inspección de Calidad - Frías</h2>
+            <button class="btn-secondary" onclick="backToSection()" style="padding: 6px 12px; font-size: 0.8rem;">◀ Volver</button>
+          </div>
+          <form id="frias-inspeccion-form" onsubmit="submitFriasInspeccion(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Número de Banda *</label>
+                <select id="frias-insp-banda" class="form-control" required>
+                  <option value="Banda 1">Banda 1</option>
+                  <option value="Banda 2">Banda 2</option>
+                  <option value="Banda 3">Banda 3</option>
+                  <option value="Banda 4">Banda 4</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Hora de Inspección *</label>
+                <input type="time" id="frias-insp-hora" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label>Operador de la Máquina *</label>
+                <input type="text" id="frias-insp-operador" class="form-control" placeholder="Nombre completo" required list="operadores-datalist" />
+              </div>
+              <div class="form-group">
+                <label>Marca / Cliente *</label>
+                <input type="text" id="frias-insp-marca" class="form-control" placeholder="Ej. Starbucks / Dipapel" required />
+              </div>
+            </div>
+
+            <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+              Parámetros de Control de Calidad
+            </h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Integridad de la Bolsa</label>
+                <div class="toggle-group">
+                  <span id="label-frias-integridad">Sí</span>
+                  <label class="switch">
+                    <input type="checkbox" id="check-frias-integridad" checked onchange="document.getElementById('label-frias-integridad').textContent = this.checked ? 'Sí' : 'No'; checkFriasInspAutoResult();" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>PVA Suficiente</label>
+                <div class="toggle-group">
+                  <span id="label-frias-pva">Sí</span>
+                  <label class="switch">
+                    <input type="checkbox" id="check-frias-pva" checked onchange="document.getElementById('label-frias-pva').textContent = this.checked ? 'Sí' : 'No'; checkFriasInspAutoResult();" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Hot Melt Suficiente</label>
+                <div class="toggle-group">
+                  <span id="label-frias-hotmelt">Sí</span>
+                  <label class="switch">
+                    <input type="checkbox" id="check-frias-hotmelt" checked onchange="document.getElementById('label-frias-hotmelt').textContent = this.checked ? 'Sí' : 'No'; checkFriasInspAutoResult();" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Posición del Asa Correcta</label>
+                <div class="toggle-group">
+                  <span id="label-frias-pos-asa">Sí</span>
+                  <label class="switch">
+                    <input type="checkbox" id="check-frias-pos-asa" checked onchange="document.getElementById('label-frias-pos-asa').textContent = this.checked ? 'Sí' : 'No'; checkFriasInspAutoResult();" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Pegado Correcto</label>
+                <div class="toggle-group">
+                  <span id="label-frias-pegado">Sí</span>
+                  <label class="switch">
+                    <input type="checkbox" id="check-frias-pegado" checked onchange="document.getElementById('label-frias-pegado').textContent = this.checked ? 'Sí' : 'No'; checkFriasInspAutoResult();" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Posición del Parche bien</label>
+                <div class="toggle-group">
+                  <span id="label-frias-pos-parche">Sí</span>
+                  <label class="switch">
+                    <input type="checkbox" id="check-frias-pos-parche" checked onchange="document.getElementById('label-frias-pos-parche').textContent = this.checked ? 'Sí' : 'No'; checkFriasInspAutoResult();" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Temperatura Hot Melt (°C) *</label>
+                <input type="number" id="frias-temp-hotmelt" class="form-control" placeholder="Ej. 165" required />
+              </div>
+            </div>
+
+            <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; color: var(--text-main);">Dictamen Final</h3>
+            <div class="result-selector" style="margin-bottom: 1.5rem;">
+              <div id="frias-insp-res-aprobado" class="result-card aprobado active" onclick="selectFriasInspResult('Aprobado')">
+                ✅ Aprobado
+              </div>
+              <div id="frias-insp-res-rechazado" class="result-card rechazado" onclick="selectFriasInspResult('Rechazado')">
+                ❌ Rechazado
+              </div>
+            </div>
+
+            <div id="frias-insp-defect-panel" class="defect-panel" style="display: none;">
+              <h4 style="color: var(--color-danger); margin-bottom: 1rem;">Detalles del Defecto Registrado</h4>
+              <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label>Descripción del Defecto *</label>
+                  <textarea id="frias-insp-defecto" class="form-control" rows="2" placeholder="Especifica la anomalía encontrada..."></textarea>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label>Acción Correctiva *</label>
+                  <textarea id="frias-insp-accion" class="form-control" rows="2" placeholder="Acción tomada para solucionar la falla..."></textarea>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label>Fotografía de Evidencia</label>
+                  <div class="photo-uploader" onclick="document.getElementById('frias-insp-foto-input').click()">
+                    <span style="font-size: 1.5rem;">📷</span>
+                    <span id="frias-insp-foto-label" style="font-size: 0.85rem; color: var(--text-muted);">Toca para tomar foto o adjuntar evidencia</span>
+                  </div>
+                  <input type="file" id="frias-insp-foto-input" accept="image/*" capture="environment" style="display: none;" onchange="previewFriasPhoto(this, 'frias-insp-foto-preview', 'frias-insp-foto-label')" />
+                  <img id="frias-insp-foto-preview" style="display: none; margin-top: 10px; max-height: 150px; border-radius: 8px; border: 1px solid #cbd5e1;" />
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="margin-top: 1.5rem; width: 100%; justify-content: center; padding: 12px; font-size: 1rem;">
+              💾 Guardar Inspección de Calidad (Frías)
+            </button>
+          </form>
+        </div>
+
+        <!-- 2. PRUEBAS DE CARGA FRÍAS -->
+        <div id="view-frias-carga" style="display: none;" class="card">
+          <div class="card-title">
+            <h2 style="color: #0284c7;">Prueba de Carga - Frías</h2>
+            <button class="btn-secondary" onclick="backToSection()" style="padding: 6px 12px; font-size: 0.8rem;">◀ Volver</button>
+          </div>
+          <form id="frias-carga-form" onsubmit="submitFriasCarga(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Número de Banda *</label>
+                <select id="frias-carga-banda" class="form-control" required>
+                  <option value="Banda 1">Banda 1</option>
+                  <option value="Banda 2">Banda 2</option>
+                  <option value="Banda 3">Banda 3</option>
+                  <option value="Banda 4">Banda 4</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Marca / Cliente *</label>
+                <input type="text" id="frias-carga-marca" class="form-control" placeholder="Ej. Starbucks / Dipapel" required />
+              </div>
+              <div class="form-group">
+                <label>Tipo de Prueba de Carga *</label>
+                <select id="frias-carga-tipo" class="form-control" onchange="calcFriasCargaDuracion()" required>
+                  <option value="Estática (30 min min)">Estática (mínimo 30 minutos)</option>
+                  <option value="Dinámica (15 min min)">Dinámica (mínimo 15 minutos)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Peso Colocado (kg) *</label>
+                <input type="number" step="0.1" id="frias-carga-peso" class="form-control" placeholder="Ej. 10.5" required />
+              </div>
+              <div class="form-group">
+                <label>Hora Inicial *</label>
+                <input type="time" id="frias-carga-hora-ini" class="form-control" required onchange="calcFriasCargaDuracion()" />
+              </div>
+              <div class="form-group">
+                <label>Hora Final *</label>
+                <input type="time" id="frias-carga-hora-fin" class="form-control" required onchange="calcFriasCargaDuracion()" />
+              </div>
+              <div class="form-group" style="grid-column: 1 / -1;">
+                <label>Duración Calculada</label>
+                <input type="text" id="frias-carga-duracion" class="form-control" readonly placeholder="Calculado automáticamente..." style="background: #f1f5f9; font-weight: 700; color: #0f172a;" />
+              </div>
+            </div>
+
+            <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; color: var(--text-main);">Dictamen de Prueba de Carga</h3>
+            <div class="result-selector" style="margin-bottom: 1.5rem;">
+              <div id="frias-carga-res-aprobado" class="result-card aprobado active" onclick="selectFriasCargaResult('Aprobado')">
+                ✅ Aprobado
+              </div>
+              <div id="frias-carga-res-rechazado" class="result-card rechazado" onclick="selectFriasCargaResult('Rechazado')">
+                ❌ Rechazado / No Cumple
+              </div>
+            </div>
+
+            <div id="frias-carga-defect-panel" class="defect-panel" style="display: none;">
+              <h4 style="color: var(--color-danger); margin-bottom: 1rem;">Detalles del Defecto Registrado</h4>
+              <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label>Descripción del Defecto *</label>
+                  <textarea id="frias-carga-defecto" class="form-control" rows="2" placeholder="Especifica la causa del desprendimiento o falla..."></textarea>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label>Acción Correctiva *</label>
+                  <textarea id="frias-carga-accion" class="form-control" rows="2" placeholder="Acción tomada para solucionar la falla..."></textarea>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label>Fotografía de Evidencia</label>
+                  <div class="photo-uploader" onclick="document.getElementById('frias-carga-foto-input').click()">
+                    <span style="font-size: 1.5rem;">📷</span>
+                    <span id="frias-carga-foto-label" style="font-size: 0.85rem; color: var(--text-muted);">Toca para tomar foto o adjuntar evidencia</span>
+                  </div>
+                  <input type="file" id="frias-carga-foto-input" accept="image/*" capture="environment" style="display: none;" onchange="previewFriasPhoto(this, 'frias-carga-foto-preview', 'frias-carga-foto-label')" />
+                  <img id="frias-carga-foto-preview" style="display: none; margin-top: 10px; max-height: 150px; border-radius: 8px; border: 1px solid #cbd5e1;" />
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="margin-top: 1.5rem; width: 100%; justify-content: center; padding: 12px; font-size: 1rem; background-color: var(--color-primary-light);">
+              💾 Guardar Prueba de Carga (Frías)
+            </button>
+          </form>
+        </div>
+
+        <!-- 3. LIBERACIÓN DE TARIMAS FRÍAS -->
+        <div id="view-frias-tarimas" style="display: none;">
+          <div style="display: flex; gap: 15px; margin-bottom: 2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 8px;">
+            <span id="tab-frias-tarima-registro" class="tab-link active" onclick="changeFriasTarimaTab('registro')" style="cursor: pointer; font-weight: 700; border-bottom: 2px solid #0284c7; padding-bottom: 8px; color: #0284c7;">
+              📦 Registrar Liberación de Tarima
+            </span>
+            <span id="tab-frias-tarima-consulta" class="tab-link" onclick="changeFriasTarimaTab('consulta')" style="cursor: pointer; font-weight: 600; padding-bottom: 8px; color: var(--text-muted);">
+              🔍 Consultar Tarima Liberada (Frías)
+            </span>
+            <button class="btn-secondary" onclick="backToSection()" style="margin-left: auto; padding: 4px 12px; font-size: 0.8rem;">◀ Volver</button>
+          </div>
+
+          <!-- Pestaña Registro -->
+          <div id="frias-tarima-subview-registro" class="card" style="padding: 2rem;">
+            <div class="card-title">
+              <h2 style="color: #0284c7;">Liberación de Tarimas - Frías</h2>
+            </div>
+
+            <div id="frias-tarima-success-box" style="display: none; background: var(--color-success-bg); border: 1px solid var(--color-success); padding: 1.25rem; border-radius: var(--border-radius-md); margin-bottom: 2rem; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="display: block; font-size: 0.8rem; color: var(--color-success); font-weight: 600;">¡Liberación Exitosa! Código Generado:</span>
+                <span id="frias-tarima-generated-code" style="font-size: 1.5rem; font-weight: 800; color: #15803d; font-family: monospace;">-</span>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" onclick="copyFriasTarimaCode()" style="background: var(--color-success);">Copiar Código 📋</button>
+                <button class="btn-secondary" onclick="document.getElementById('frias-tarima-success-box').style.display = 'none';">Aceptar</button>
+              </div>
+            </div>
+
+            <form id="frias-tarima-form" onsubmit="submitFriasTarima(event)">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Número de Banda *</label>
+                  <select id="frias-tarima-banda" class="form-control" required>
+                    <option value="Banda 1">Banda 1</option>
+                    <option value="Banda 2">Banda 2</option>
+                    <option value="Banda 3">Banda 3</option>
+                    <option value="Banda 4">Banda 4</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Operador *</label>
+                  <input type="text" id="frias-tarima-operador" class="form-control" placeholder="Nombre del operador" required list="operadores-datalist" />
+                </div>
+                <div class="form-group">
+                  <label>Bobina *</label>
+                  <input type="text" id="frias-tarima-bobina" class="form-control" placeholder="Identificador o código de bobina" required />
+                </div>
+              </div>
+
+              <h3 style="margin: 1.5rem 0 1rem; font-size: 1.15rem; color: #0284c7;">Parámetros de Revisión</h3>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>¿Etiquetado correcto?</label>
+                  <div class="toggle-group">
+                    <span id="label-frias-etiquetado-ok">Sí</span>
+                    <label class="switch">
+                      <input type="checkbox" id="check-frias-etiquetado-ok" checked onchange="document.getElementById('label-frias-etiquetado-ok').textContent = this.checked ? 'Sí' : 'No'" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>¿Bolsas cumplen con las condiciones?</label>
+                  <div class="toggle-group">
+                    <span id="label-frias-condiciones-ok">Sí</span>
+                    <label class="switch">
+                      <input type="checkbox" id="check-frias-condiciones-ok" checked onchange="document.getElementById('label-frias-condiciones-ok').textContent = this.checked ? 'Sí' : 'No'" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>¿Cinta correctamente pegada?</label>
+                  <div class="toggle-group">
+                    <span id="label-frias-cinta-ok">Sí</span>
+                    <label class="switch">
+                      <input type="checkbox" id="check-frias-cinta-ok" checked onchange="document.getElementById('label-frias-cinta-ok').textContent = this.checked ? 'Sí' : 'No'" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <h3 style="margin: 1.5rem 0 1rem; font-size: 1.15rem; color: #0284c7;">Estado de Liberación *</h3>
+              <div class="result-selector" style="margin-bottom: 1.5rem;">
+                <div id="frias-tarima-res-liberada" class="result-card aprobado active" onclick="selectFriasTarimaEstado('Liberada')">
+                  🟢 Liberada
+                </div>
+                <div id="frias-tarima-res-condicionada" class="result-card" style="border-color: #d97706; color: #d97706;" onclick="selectFriasTarimaEstado('Condicionada')">
+                  🟡 Condicionada
+                </div>
+                <div id="frias-tarima-res-rechazada" class="result-card rechazado" onclick="selectFriasTarimaEstado('Rechazada')">
+                  🔴 Rechazada
+                </div>
+              </div>
+
+              <div id="frias-tarima-motivo-container" class="form-group" style="display: none; margin-bottom: 1.5rem;">
+                <label style="color: var(--color-danger);">Motivo de Condicionamiento / Rechazo *</label>
+                <textarea id="frias-tarima-motivo" class="form-control" rows="3" placeholder="Explica detalladamente las razones del motivo..."></textarea>
+              </div>
+
+              <h3 style="margin: 1.5rem 0 1rem; font-size: 1.15rem; color: #0284c7;">Evidencia del Acomodo (Fotografía Requerida) *</h3>
+              <div class="form-group" style="margin-bottom: 1.5rem;">
+                <div class="photo-uploader" onclick="document.getElementById('frias-tarima-foto-input').click()" style="border: 2px dashed #0284c7; background: rgba(2, 132, 199, 0.02);">
+                  <span style="font-size: 2rem;">📸</span>
+                  <span id="frias-tarima-foto-label" style="font-size: 0.9rem; font-weight: 700; color: #0284c7;">Toca para tomar fotografía de la tarima cargada</span>
+                </div>
+                <input type="file" id="frias-tarima-foto-input" accept="image/*" capture="environment" style="display: none;" onchange="previewFriasPhoto(this, 'frias-tarima-foto-preview', 'frias-tarima-foto-label')" />
+                <img id="frias-tarima-foto-preview" style="display: none; margin-top: 10px; max-height: 200px; border-radius: 8px; border: 1px solid #cbd5e1;" />
+              </div>
+
+              <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 1rem; background-color: #0284c7; border-color: #0369a1;">
+                💾 Registrar Liberación y Generar Código (Frías)
+              </button>
+            </form>
+          </div>
+
+          <!-- Pestaña Consulta -->
+          <div id="frias-tarima-subview-consulta" class="card" style="display: none; padding: 2rem;">
+            <div class="card-title">
+              <h2 style="color: #0284c7;">Búsqueda y Consulta de Tarimas Liberadas (Frías)</h2>
+            </div>
+            
+            <div class="form-grid" style="margin-bottom: 1.5rem;">
+              <div class="form-group">
+                <label>Filtrar por Fecha (Día_Mes o Selector)</label>
+                <input type="text" id="frias-consulta-fecha" class="form-control" placeholder="Ej: 06_09 o AAAA-MM-DD" oninput="renderFriasTarimasConsulta()" />
+              </div>
+              <div class="form-group">
+                <label>Filtrar por Número de Banda</label>
+                <select id="frias-consulta-banda" class="form-control" onchange="renderFriasTarimasConsulta()">
+                  <option value="">-- Todas las Bandas --</option>
+                  <option value="Banda 1">Banda 1</option>
+                  <option value="Banda 2">Banda 2</option>
+                  <option value="Banda 3">Banda 3</option>
+                  <option value="Banda 4">Banda 4</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="frias-tarimas-consulta-container" style="display: flex; flex-direction: column; gap: 1rem;">
+              <!-- Se llena dinámicamente -->
+            </div>
+          </div>
+        </div>
+
+
         <!-- VISTA REPORTES/ESTADÍSTICAS -->
         <div id="view-estadisticas" style="display: none;">
           <!-- Selector de Periodo -->
@@ -2881,6 +3291,12 @@
           selectRole('inventario');
           return;
         }
+        if (areaName === 'Flexo' || areaName === 'Nanjang') {
+          // Entrar directamente como Inspector sin tarjeta redundante de estadísticas
+          selectRole('inspector');
+          return;
+        }
+        
         document.getElementById('step-role-title').textContent = `Paso 2: Selecciona la Opción para el Área de ${areaName}`;
         
         const container = document.getElementById('role-cards-container');
@@ -2898,7 +3314,7 @@
         `;
         container.appendChild(card1);
 
-        // Card 2: Pruebas de Carga (Only for Con Asa)
+        // Card 2: Pruebas de Carga (Solo Con Asa)
         if (areaName === 'Con Asa') {
           const card2 = document.createElement('div');
           card2.className = 'role-card';
@@ -2911,18 +3327,6 @@
           `;
           container.appendChild(card2);
         }
-
-        // Card 3: Estadísticas
-        const card3 = document.createElement('div');
-        card3.className = 'role-card';
-        card3.style.padding = '2.5rem 2rem';
-        card3.onclick = () => selectRole('estadisticas');
-        card3.innerHTML = `
-          <h3 class="role-card-title">Estadísticas</h3>
-          <p class="role-card-desc" style="text-align: center;">Ver los reportes del día, KPIs de planta y el resumen de defectos con fotos.</p>
-          <button class="btn-secondary" style="margin-top: 1rem; width: 100%; justify-content: center;">Ver Reportes</button>
-        `;
-        container.appendChild(card3);
 
         document.getElementById('step-area').style.display = 'none';
         document.getElementById('step-role').style.display = 'block';
@@ -2951,6 +3355,9 @@
         document.getElementById('step-section').style.display = 'none';
         if (sec === 'calidad') {
           document.getElementById('step-area').style.display = 'block';
+        } else if (sec === 'frias') {
+          document.getElementById('step-frias-menu').style.display = 'block';
+          document.getElementById('step-area').style.display = 'block';
         } else if (sec === 'produccion') {
           document.getElementById('step-prod-menu').style.display = 'block';
         } else if (sec === 'estadisticas') {
@@ -2967,7 +3374,10 @@
           'view-inspector',
           'view-tarimas',
           'view-inventario',
-          'view-estadisticas'
+          'view-estadisticas',
+          'view-frias-inspeccion',
+          'view-frias-carga',
+          'view-frias-tarimas'
         ];
         viewIds.forEach(id => {
           const el = document.getElementById(id);
@@ -3025,10 +3435,11 @@
           return true;
         });
 
-        // KPIs
-        const total = filteredInspections.length;
-        const conformes = filteredInspections.filter(i => i.resultado === 'Aprobado' || i.carga_resultado === 'Pasa').length;
-        const noConformes = filteredInspections.filter(i => i.resultado === 'Rechazado' || i.carga_resultado === 'Falla').length;
+        // KPIs (excluyendo pruebas de carga de las estadísticas generales de calidad)
+        const qualityOnly = filteredInspections.filter(i => i.es_prueba_carga !== 1);
+        const total = qualityOnly.length;
+        const conformes = qualityOnly.filter(i => i.resultado === 'Aprobado').length;
+        const noConformes = qualityOnly.filter(i => i.resultado === 'Rechazado').length;
         const pctConformidad = total > 0 ? ((conformes / total) * 100).toFixed(1) : '0';
 
         const kpiTotal = document.getElementById('stat-kpi-total');
@@ -3067,7 +3478,17 @@
           }
         });
 
-        const machines = Object.keys(machineMap);
+        const machines = Object.keys(machineMap).sort((a, b) => {
+          const getSortKey = (str) => {
+            if (!str) return 999;
+            const s = String(str).trim();
+            if (s.toLowerCase().includes('flexo')) return 0;
+            const match = s.match(/(\d+)/);
+            if (match) return parseInt(match[1], 10);
+            return 998;
+          };
+          return getSortKey(a) - getSortKey(b);
+        });
 
         if (machines.length === 0) {
           wrapper.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 2rem; font-style: italic;">No hay inspecciones de calidad para mostrar la gráfica con los filtros seleccionados.</div>`;
@@ -3142,6 +3563,10 @@
             ? '<span style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">RECHAZADO / GRAVE</span>'
             : '<span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">OBSERVACIÓN</span>';
 
+          const fotoCell = i.foto_url
+            ? `<a href="${i.foto_url}" target="_blank" rel="noopener noreferrer" title="Toca para ver foto completa"><img src="${i.foto_url}" style="width: 55px; height: 55px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" /></a>`
+            : `<span style="color: #94a3b8; font-size: 0.75rem;">Sin foto</span>`;
+
           html += `
             <tr style="border-bottom: 1px solid #e2e8f0;">
               <td style="padding: 10px; font-weight: 600;">${i.fecha_registro}</td>
@@ -3153,6 +3578,7 @@
               <td style="padding: 10px; color: #dc2626; font-weight: 600;">${defectoTexto}</td>
               <td style="padding: 10px;">${severidadBadge}</td>
               <td style="padding: 10px; color: #15803d; font-weight: 600;">${i.accion_correctiva || 'Ajuste de máquina requerido'}</td>
+              <td style="padding: 10px; text-align: center;">${fotoCell}</td>
             </tr>
           `;
         });
@@ -3346,10 +3772,27 @@
 
         if (!modal || !tbody) return;
 
-        if (title) title.textContent = `📊 Inspecciones Realizadas en Máquina ${machineName}`;
-
+        const areaFilter = document.getElementById('stat-indep-area-select')?.value || '';
+        const fechaVal = document.getElementById('stat-indep-fecha-input')?.value || new Date().toISOString().split('T')[0];
         const allInsps = (state && state.inspecciones) ? state.inspecciones : [];
-        const machineInsps = allInsps.filter(i => i.maquina === machineName);
+
+        // Aplicar los MISMOS filtros del periodo seleccionado para que solo salgan las inspecciones de ese periodo
+        const machineInsps = allInsps.filter(insp => {
+          if (insp.maquina !== machineName) return false;
+          if (areaFilter && insp.area !== areaFilter) return false;
+
+          const inspDate = (insp.fecha_registro || '').split(' ')[0];
+          if (statIndepPeriodo === 'dia') return inspDate === fechaVal;
+          if (statIndepPeriodo === 'semana') return getWeekNumber(inspDate) === getWeekNumber(fechaVal);
+          if (statIndepPeriodo === 'mes') return inspDate.substring(0, 7) === fechaVal.substring(0, 7);
+          if (statIndepPeriodo === 'ano') return inspDate.substring(0, 4) === fechaVal.substring(0, 4);
+
+          return true;
+        });
+
+        const periodLabel = statIndepPeriodo === 'dia' ? `del Día ${fechaVal}` : statIndepPeriodo === 'semana' ? 'de la Semana' : statIndepPeriodo === 'mes' ? `de ${fechaVal.substring(0, 7)}` : `del Año ${fechaVal.substring(0, 4)}`;
+
+        if (title) title.textContent = `📊 Inspecciones en Máquina ${machineName} (${periodLabel})`;
 
         const approvedCount = machineInsps.filter(i => i.resultado === 'Aprobado' || i.carga_resultado === 'Pasa').length;
         const rejectedCount = machineInsps.filter(i => i.resultado === 'Rechazado' || i.carga_resultado === 'Falla').length;
@@ -3458,7 +3901,10 @@
           badge.textContent = `Estadísticas - ${state.selectedArea}`;
           badge.style.background = 'rgba(79, 70, 229, 0.05)';
           badge.style.color = '#4f46e5';
-          document.getElementById('view-estadisticas').style.display = 'block';
+          document.getElementById('view-estadisticas',
+          'view-frias-inspeccion',
+          'view-frias-carga',
+          'view-frias-tarimas').style.display = 'block';
           
           state.inspecciones = JSON.parse(localStorage.getItem('calidad_inspecciones')) || [];
           renderTimeline();
@@ -7301,6 +7747,463 @@
         }
       }
 
+    
+      // --- LÓGICA MÓDULO FRÍAS ---
+      let friasInspResult = 'Aprobado';
+      let friasCargaResult = 'Aprobado';
+      let friasTarimaEstado = 'Liberada';
+
+      function selectFriasSubSection(sub) {
+        state.section = 'frias';
+        state.area = 'Frías';
+        document.getElementById('step-frias-menu').style.display = 'none';
+        
+        hideAllViews();
+        
+        if (sub === 'inspeccion') {
+          state.role = 'frias_inspeccion';
+          document.getElementById('view-frias-inspeccion').style.display = 'block';
+          const now = new Date();
+          const timeStr = now.toTimeString().substring(0, 5);
+          document.getElementById('frias-insp-hora').value = timeStr;
+        } else if (sub === 'carga') {
+          state.role = 'frias_carga';
+          document.getElementById('view-frias-carga').style.display = 'block';
+          const now = new Date();
+          const timeStr = now.toTimeString().substring(0, 5);
+          document.getElementById('frias-carga-hora-ini').value = timeStr;
+        } else if (sub === 'tarimas') {
+          state.role = 'frias_tarimas';
+          document.getElementById('view-frias-tarimas').style.display = 'block';
+          changeFriasTarimaTab('registro');
+        }
+      }
+
+      function previewFriasPhoto(input, imgId, labelId) {
+        if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const img = document.getElementById(imgId);
+            const lbl = document.getElementById(labelId);
+            if (img) {
+              img.src = e.target.result;
+              img.style.display = 'block';
+            }
+            if (lbl) {
+              lbl.textContent = '📸 Foto cargada correctamente (Toca para cambiar)';
+            }
+          };
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+
+      // 1. Lógica Inspección de Calidad Frías
+      function checkFriasInspAutoResult() {
+        const i1 = document.getElementById('check-frias-integridad')?.checked;
+        const i2 = document.getElementById('check-frias-pva')?.checked;
+        const i3 = document.getElementById('check-frias-hotmelt')?.checked;
+        const i4 = document.getElementById('check-frias-pos-asa')?.checked;
+        const i5 = document.getElementById('check-frias-pegado')?.checked;
+        const i6 = document.getElementById('check-frias-pos-parche')?.checked;
+
+        if (!i1 || !i2 || !i3 || !i4 || !i5 || !i6) {
+          selectFriasInspResult('Rechazado');
+        } else {
+          selectFriasInspResult('Aprobado');
+        }
+      }
+
+      function selectFriasInspResult(res) {
+        friasInspResult = res;
+        const cardAp = document.getElementById('frias-insp-res-aprobado');
+        const cardRe = document.getElementById('frias-insp-res-rechazado');
+        const panel = document.getElementById('frias-insp-defect-panel');
+
+        if (res === 'Aprobado') {
+          cardAp?.classList.add('active');
+          cardRe?.classList.remove('active');
+          if (panel) panel.style.display = 'none';
+        } else {
+          cardRe?.classList.add('active');
+          cardAp?.classList.remove('active');
+          if (panel) panel.style.display = 'block';
+        }
+      }
+
+      async function submitFriasInspeccion(e) {
+        e.preventDefault();
+        const banda = document.getElementById('frias-insp-banda').value;
+        const hora = document.getElementById('frias-insp-hora').value;
+        const operador = document.getElementById('frias-insp-operador').value;
+        const marca = document.getElementById('frias-insp-marca').value;
+
+        const integridad = document.getElementById('check-frias-integridad').checked ? 1 : 0;
+        const pva = document.getElementById('check-frias-pva').checked ? 1 : 0;
+        const hotmelt = document.getElementById('check-frias-hotmelt').checked ? 1 : 0;
+        const posAsa = document.getElementById('check-frias-pos-asa').checked ? 1 : 0;
+        const pegado = document.getElementById('check-frias-pegado').checked ? 1 : 0;
+        const posParche = document.getElementById('check-frias-pos-parche').checked ? 1 : 0;
+        const tempHotmelt = document.getElementById('frias-temp-hotmelt').value;
+
+        let fotoUrl = '';
+        const imgPreview = document.getElementById('frias-insp-foto-preview');
+        if (imgPreview && imgPreview.src && imgPreview.src.startsWith('data:image')) {
+          fotoUrl = imgPreview.src;
+        }
+
+        const newInsp = {
+          id: String(Date.now()),
+          area: 'Frías',
+          maquina: banda,
+          banda: banda,
+          hora_inspeccion: hora,
+          operador: operador,
+          marca_cliente: marca,
+          integridad_bolsa: integridad,
+          pva_suficiente: pva,
+          hotmelt_suficiente: hotmelt,
+          posicion_asa_correcta: posAsa,
+          pegado_correcto: pegado,
+          posicion_parche_correcta: posParche,
+          temperatura_hotmelt: tempHotmelt,
+          resultado: friasInspResult,
+          descripcion_defecto: friasInspResult === 'Rechazado' ? document.getElementById('frias-insp-defecto').value : '',
+          accion_correctiva: friasInspResult === 'Rechazado' ? document.getElementById('frias-insp-accion').value : '',
+          foto_url: fotoUrl,
+          es_prueba_carga: 0,
+          fecha_registro: new Date().toLocaleString('es-MX')
+        };
+
+        await saveInspectionRecord(newInsp);
+        showToast('✅ Inspección de Calidad (Frías) guardada con éxito.');
+        document.getElementById('frias-inspeccion-form').reset();
+        selectFriasInspResult('Aprobado');
+        if (imgPreview) imgPreview.style.display = 'none';
+      }
+
+      // 2. Lógica Pruebas de Carga Frías
+      function calcFriasCargaDuracion() {
+        const iniVal = document.getElementById('frias-carga-hora-ini')?.value;
+        const finVal = document.getElementById('frias-carga-hora-fin')?.value;
+        const outEl = document.getElementById('frias-carga-duracion');
+        if (!outEl) return;
+
+        if (!iniVal || !finVal) {
+          outEl.value = '';
+          return;
+        }
+
+        const [h1, m1] = iniVal.split(':').map(Number);
+        const [h2, m2] = finVal.split(':').map(Number);
+
+        let t1 = h1 * 60 + m1;
+        let t2 = h2 * 60 + m2;
+        if (t2 < t1) t2 += 24 * 60;
+
+        const diffMin = t2 - t1;
+        outEl.value = `${diffMin} minutos`;
+
+        const tipo = document.getElementById('frias-carga-tipo')?.value || '';
+        const minReq = tipo.includes('Estática') ? 30 : 15;
+
+        if (diffMin >= minReq) {
+          selectFriasCargaResult('Aprobado');
+        } else {
+          selectFriasCargaResult('Rechazado');
+        }
+      }
+
+      function selectFriasCargaResult(res) {
+        friasCargaResult = res;
+        const cardAp = document.getElementById('frias-carga-res-aprobado');
+        const cardRe = document.getElementById('frias-carga-res-rechazado');
+        const panel = document.getElementById('frias-carga-defect-panel');
+
+        if (res === 'Aprobado') {
+          cardAp?.classList.add('active');
+          cardRe?.classList.remove('active');
+          if (panel) panel.style.display = 'none';
+        } else {
+          cardRe?.classList.add('active');
+          cardAp?.classList.remove('active');
+          if (panel) panel.style.display = 'block';
+        }
+      }
+
+      async function submitFriasCarga(e) {
+        e.preventDefault();
+        const banda = document.getElementById('frias-carga-banda').value;
+        const marca = document.getElementById('frias-carga-marca').value;
+        const tipo = document.getElementById('frias-carga-tipo').value;
+        const peso = document.getElementById('frias-carga-peso').value;
+        const horaIni = document.getElementById('frias-carga-hora-ini').value;
+        const horaFin = document.getElementById('frias-carga-hora-fin').value;
+        const duracion = document.getElementById('frias-carga-duracion').value;
+
+        let fotoUrl = '';
+        const imgPreview = document.getElementById('frias-carga-foto-preview');
+        if (imgPreview && imgPreview.src && imgPreview.src.startsWith('data:image')) {
+          fotoUrl = imgPreview.src;
+        }
+
+        const newInsp = {
+          id: String(Date.now()),
+          area: 'Frías',
+          maquina: banda,
+          banda: banda,
+          marca_cliente: marca,
+          tipo_prueba_carga: tipo,
+          peso_colocado_kg: peso,
+          hora_inicial: horaIni,
+          hora_final: horaFin,
+          duracion_calculada: duracion,
+          resultado: friasCargaResult,
+          carga_resultado: friasCargaResult === 'Aprobado' ? 'Pasa' : 'Falla',
+          descripcion_defecto: friasCargaResult === 'Rechazado' ? document.getElementById('frias-carga-defecto').value : '',
+          accion_correctiva: friasCargaResult === 'Rechazado' ? document.getElementById('frias-carga-accion').value : '',
+          foto_url: fotoUrl,
+          es_prueba_carga: 1,
+          fecha_registro: new Date().toLocaleString('es-MX')
+        };
+
+        await saveInspectionRecord(newInsp);
+        showToast('✅ Prueba de Carga (Frías) guardada con éxito.');
+        document.getElementById('frias-carga-form').reset();
+        selectFriasCargaResult('Aprobado');
+        if (imgPreview) imgPreview.style.display = 'none';
+      }
+
+      // 3. Lógica Liberación de Tarimas Frías
+      function changeFriasTarimaTab(tab) {
+        const tabReg = document.getElementById('tab-frias-tarima-registro');
+        const tabCon = document.getElementById('tab-frias-tarima-consulta');
+        const viewReg = document.getElementById('frias-tarima-subview-registro');
+        const viewCon = document.getElementById('frias-tarima-subview-consulta');
+
+        if (tab === 'registro') {
+          tabReg?.classList.add('active');
+          tabCon?.classList.remove('active');
+          if (tabReg) tabReg.style.color = '#0284c7';
+          if (tabCon) tabCon.style.color = 'var(--text-muted)';
+          if (viewReg) viewReg.style.display = 'block';
+          if (viewCon) viewCon.style.display = 'none';
+        } else {
+          tabCon?.classList.add('active');
+          tabReg?.classList.remove('active');
+          if (tabCon) tabCon.style.color = '#0284c7';
+          if (tabReg) tabReg.style.color = 'var(--text-muted)';
+          if (viewCon) viewCon.style.display = 'block';
+          if (viewReg) viewReg.style.display = 'none';
+          renderFriasTarimasConsulta();
+        }
+      }
+
+      function selectFriasTarimaEstado(est) {
+        friasTarimaEstado = est;
+        const cardLib = document.getElementById('frias-tarima-res-liberada');
+        const cardCon = document.getElementById('frias-tarima-res-condicionada');
+        const cardRec = document.getElementById('frias-tarima-res-rechazada');
+        const motivoContainer = document.getElementById('frias-tarima-motivo-container');
+
+        cardLib?.classList.remove('active');
+        cardCon?.classList.remove('active');
+        cardRec?.classList.remove('active');
+
+        if (est === 'Liberada') {
+          cardLib?.classList.add('active');
+          if (motivoContainer) motivoContainer.style.display = 'none';
+        } else if (est === 'Condicionada') {
+          cardCon?.classList.add('active');
+          if (motivoContainer) motivoContainer.style.display = 'block';
+        } else {
+          cardRec?.classList.add('active');
+          if (motivoContainer) motivoContainer.style.display = 'block';
+        }
+      }
+
+      function generateFriasTarimaCode(banda) {
+        const now = new Date();
+        const dd = String(now.getDate()).padStart(2, '0');
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        
+        let bandaStr = String(banda).replace(/\s+/g, '');
+        if (!bandaStr.toLowerCase().startsWith('banda')) {
+          bandaStr = 'Banda' + bandaStr;
+        }
+
+        const todayStr = now.toISOString().split('T')[0];
+        const allTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+        
+        const countToday = allTarimas.filter(t => {
+          return t.area === 'Frías' && 
+                 (t.fecha_iso && t.fecha_iso.startsWith(todayStr)) &&
+                 (t.banda === banda || t.maquina === banda || (t.codigo_tarima && t.codigo_tarima.includes(bandaStr)));
+        }).length;
+
+        const sequentialNum = countToday + 1;
+        return `${dd}_${mm}_${bandaStr}_${sequentialNum}_Frías`;
+      }
+
+      async function submitFriasTarima(e) {
+        e.preventDefault();
+        const banda = document.getElementById('frias-tarima-banda').value;
+        const operador = document.getElementById('frias-tarima-operador').value;
+        const bobina = document.getElementById('frias-tarima-bobina').value;
+
+        const etiquetado = document.getElementById('check-frias-etiquetado-ok').checked ? 'Sí' : 'No';
+        const condiciones = document.getElementById('check-frias-condiciones-ok').checked ? 'Sí' : 'No';
+        const cinta = document.getElementById('check-frias-cinta-ok').checked ? 'Sí' : 'No';
+
+        const motivo = (friasTarimaEstado !== 'Liberada') ? document.getElementById('frias-tarima-motivo').value : '';
+        if (friasTarimaEstado !== 'Liberada' && !motivo.trim()) {
+          alert('Por favor especifica el motivo de la tarima ' + friasTarimaEstado);
+          return;
+        }
+
+        let fotoUrl = '';
+        const imgPreview = document.getElementById('frias-tarima-foto-preview');
+        if (imgPreview && imgPreview.src && imgPreview.src.startsWith('data:image')) {
+          fotoUrl = imgPreview.src;
+        }
+
+        if (!fotoUrl) {
+          alert('Por favor toma o adjunta la fotografía de evidencia de la tarima.');
+          return;
+        }
+
+        const codigoGenerado = generateFriasTarimaCode(banda);
+        const now = new Date();
+
+        const newTarima = {
+          id: String(Date.now()),
+          codigo_tarima: codigoGenerado,
+          area: 'Frías',
+          maquina: banda,
+          banda: banda,
+          operador: operador,
+          bobina: bobina,
+          etiquetado_correcto: etiquetado,
+          bolsas_cumplen_condiciones: condiciones,
+          cinta_correctamente_pegada: cinta,
+          estado_liberacion: friasTarimaEstado,
+          motivo: motivo,
+          foto_url: fotoUrl,
+          fecha_registro: now.toLocaleString('es-MX'),
+          fecha_iso: now.toISOString().split('T')[0],
+          dia_mes: `${String(now.getDate()).padStart(2, '0')}_${String(now.getMonth() + 1).padStart(2, '0')}`
+        };
+
+        let tarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+        tarimas.unshift(newTarima);
+        localStorage.setItem('calidad_tarimas', JSON.stringify(tarimas));
+
+        try {
+          await apiFetch('/api/tarimas', {
+            method: 'POST',
+            body: JSON.stringify(newTarima)
+          });
+        } catch (err) {
+          console.log('Error guardando en Supabase tarimas Frías:', err);
+        }
+
+        document.getElementById('frias-tarima-generated-code').textContent = codigoGenerado;
+        document.getElementById('frias-tarima-success-box').style.display = 'flex';
+        showToast('🎉 Tarima de Frías Liberada con éxito. Código: ' + codigoGenerado);
+
+        document.getElementById('frias-tarima-form').reset();
+        selectFriasTarimaEstado('Liberada');
+        if (imgPreview) imgPreview.style.display = 'none';
+      }
+
+      function copyFriasTarimaCode() {
+        const code = document.getElementById('frias-tarima-generated-code').textContent;
+        if (code && code !== '-') {
+          navigator.clipboard.writeText(code);
+          showToast('📋 Código ' + code + ' copiado al portapapeles.');
+        }
+      }
+
+      async function renderFriasTarimasConsulta() {
+        const container = document.getElementById('frias-tarimas-consulta-container');
+        if (!container) return;
+
+        let tarimas = [];
+        try {
+          tarimas = await apiFetch('/api/tarimas') || [];
+        } catch (e) {
+          tarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+        }
+
+        let friasTarimas = tarimas.filter(t => t.area === 'Frías' || (t.codigo_tarima && t.codigo_tarima.endsWith('_Frías')));
+
+        const fechaFiltro = (document.getElementById('frias-consulta-fecha')?.value || '').trim().toLowerCase();
+        const bandaFiltro = (document.getElementById('frias-consulta-banda')?.value || '').trim().toLowerCase();
+
+        if (fechaFiltro) {
+          friasTarimas = friasTarimas.filter(t => {
+            const cod = (t.codigo_tarima || '').toLowerCase();
+            const fec = (t.fecha_registro || '').toLowerCase();
+            const diaMes = (t.dia_mes || '').toLowerCase();
+            return cod.includes(fechaFiltro) || fec.includes(fechaFiltro) || diaMes.includes(fechaFiltro);
+          });
+        }
+
+        if (bandaFiltro) {
+          friasTarimas = friasTarimas.filter(t => {
+            const b = (t.banda || t.maquina || '').toLowerCase();
+            const cod = (t.codigo_tarima || '').toLowerCase();
+            return b.includes(bandaFiltro) || cod.includes(bandaFiltro.replace(/\s+/g, ''));
+          });
+        }
+
+        if (friasTarimas.length === 0) {
+          container.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 2rem; font-style: italic;">No se encontraron tarimas liberadas de Frías que coincidan con la búsqueda.</div>`;
+          return;
+        }
+
+        let html = '';
+        friasTarimas.forEach(t => {
+          const badgeClass = t.estado_liberacion === 'Liberada' ? 'background: #dcfce7; color: #16a34a;' :
+                             t.estado_liberacion === 'Condicionada' ? 'background: #fef3c7; color: #d97706;' :
+                             'background: #fee2e2; color: #dc2626;';
+
+          html += `
+            <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; box-shadow: 0 2px 4px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                <span style="font-weight: 800; font-family: monospace; font-size: 1.1rem; color: #0284c7;">🏷️ ${t.codigo_tarima || 'Sin Código'}</span>
+                <span style="padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 800; ${badgeClass}">
+                  ${t.estado_liberacion || 'Liberada'}
+                </span>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; font-size: 0.85rem;">
+                <div><strong>Banda:</strong> ${t.banda || t.maquina || '-'}</div>
+                <div><strong>Operador:</strong> ${t.operador || '-'}</div>
+                <div><strong>Bobina:</strong> ${t.bobina || '-'}</div>
+                <div><strong>Fecha:</strong> ${t.fecha_registro || '-'}</div>
+              </div>
+
+              <div style="font-size: 0.8rem; background: #f8fafc; padding: 8px 12px; border-radius: 6px; display: flex; gap: 15px; flex-wrap: wrap;">
+                <span>Etiquetado: <strong>${t.etiquetado_correcto || 'Sí'}</strong></span>
+                <span>Condiciones: <strong>${t.bolsas_cumplen_condiciones || 'Sí'}</strong></span>
+                <span>Cinta: <strong>${t.cinta_correctamente_pegada || 'Sí'}</strong></span>
+              </div>
+
+              ${t.motivo ? `<div style="color: #dc2626; font-size: 0.85rem; background: #fff5f5; padding: 8px; border-radius: 6px; border: 1px solid #fecaca;"><strong>Motivo:</strong> ${t.motivo}</div>` : ''}
+
+              ${t.foto_url ? `
+                <div style="margin-top: 5px;">
+                  <a href="${t.foto_url}" target="_blank" rel="noopener noreferrer">
+                    <img src="${t.foto_url}" style="max-height: 120px; border-radius: 8px; border: 1px solid #cbd5e1; object-fit: cover;" title="Toca para ampliar foto de evidencia" />
+                  </a>
+                </div>
+              ` : '<span style="font-size: 0.75rem; color: #94a3b8;">Sin evidencia adjunta</span>'}
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+      }
 
     </script>
 
@@ -7410,6 +8313,7 @@
                   <th style="padding: 10px;">Peso (kg)</th>
                   <th style="padding: 10px;">Defecto / Inconformidad</th>
                   <th style="padding: 10px;">Acción Correctiva</th>
+                    <th style="padding: 10px;">Evidencia Fotográfica</th>
                 </tr>
               </thead>
               <tbody id="carga-modal-tbody">
