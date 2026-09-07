@@ -2186,13 +2186,7 @@
               </div>
               <div class="form-group">
                 <label>Hora de Inspección *</label>
-                <div style="display: flex; gap: 8px;">
-                  <input type="time" id="frias-insp-hora" class="form-control" style="flex: 1;" required />
-                  <select id="frias-insp-hora-ampm" class="form-control" style="width: 85px; font-weight: 700;">
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
-                  </select>
-                </div>
+                <input type="time" id="frias-insp-hora" class="form-control" required />
               </div>
               <div class="form-group">
                 <label>Operador de la Máquina *</label>
@@ -2347,23 +2341,11 @@
               </div>
               <div class="form-group">
                 <label>Hora Inicial *</label>
-                <div style="display: flex; gap: 8px;">
-                  <input type="time" id="frias-carga-hora-ini" class="form-control" style="flex: 1;" required onchange="calcFriasCargaDuracion()" oninput="calcFriasCargaDuracion()" onkeyup="calcFriasCargaDuracion()" onblur="calcFriasCargaDuracion()" />
-                  <select id="frias-carga-hora-ini-ampm" class="form-control" style="width: 85px; font-weight: 700;" onchange="calcFriasCargaDuracion()">
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
-                  </select>
-                </div>
+                <input type="time" id="frias-carga-hora-ini" class="form-control" required onchange="calcFriasCargaDuracion()" oninput="calcFriasCargaDuracion()" />
               </div>
               <div class="form-group">
                 <label>Hora Final *</label>
-                <div style="display: flex; gap: 8px;">
-                  <input type="time" id="frias-carga-hora-fin" class="form-control" style="flex: 1;" required onchange="calcFriasCargaDuracion()" oninput="calcFriasCargaDuracion()" onkeyup="calcFriasCargaDuracion()" onblur="calcFriasCargaDuracion()" />
-                  <select id="frias-carga-hora-fin-ampm" class="form-control" style="width: 85px; font-weight: 700;" onchange="calcFriasCargaDuracion()">
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
-                  </select>
-                </div>
+                <input type="time" id="frias-carga-hora-fin" class="form-control" required onchange="calcFriasCargaDuracion()" oninput="calcFriasCargaDuracion()" />
               </div>
               <div class="form-group" style="grid-column: 1 / -1;">
                 <label>Duración Calculada</label>
@@ -3562,7 +3544,26 @@
         renderConformidadSVGChart(filteredInspections);
         renderInconformidadesTable(filteredInspections);
         renderCargaPieCharts(filteredInspections);
-        updateFriasStatsView(filteredInspections);
+        // Obtener inspecciones de Frías para el periodo/fecha seleccionados (independiente de área)
+        const periodFriasInspections = allInspections.filter(insp => {
+          const inspDate = (insp.fecha_registro || '').split(' ')[0];
+
+          if (insp.area !== 'Frías') return false;
+
+          if (machineFilter && machineFilter.startsWith('Frias-')) {
+            const maq = machineFilter.replace('Frias-', '');
+            if (insp.maquina !== maq && insp.banda !== maq) return false;
+          }
+
+          if (statIndepPeriodo === 'dia') return inspDate === fechaVal;
+          if (statIndepPeriodo === 'semana') return getWeekNumber(inspDate) === getWeekNumber(fechaVal);
+          if (statIndepPeriodo === 'mes') return inspDate.substring(0, 7) === fechaVal.substring(0, 7);
+          if (statIndepPeriodo === 'ano') return inspDate.substring(0, 4) === fechaVal.substring(0, 4);
+
+          return true;
+        });
+
+        updateFriasStatsView(periodFriasInspections);
       }
 
       function renderConformidadSVGChart(inspections) {
@@ -3886,8 +3887,9 @@
 
         // Aplicar los MISMOS filtros del periodo seleccionado para que solo salgan las inspecciones de ese periodo
         const machineInsps = allInsps.filter(insp => {
-          if (insp.maquina !== machineName) return false;
-          if (areaFilter && insp.area !== areaFilter) return false;
+          const isBandaMatch = (insp.maquina === machineName || insp.banda === machineName);
+          if (!isBandaMatch) return false;
+          if (areaFilter && insp.area !== areaFilter && !machineName.startsWith('Banda')) return false;
 
           const inspDate = (insp.fecha_registro || '').split(' ')[0];
           if (statIndepPeriodo === 'dia') return inspDate === fechaVal;
@@ -7903,7 +7905,6 @@
         const hh24 = String(now.getHours()).padStart(2, '0');
         const mmStr = String(now.getMinutes()).padStart(2, '0');
         const defaultTimeStr = `${hh24}:${mmStr}`;
-        const defaultAmPm = now.getHours() >= 12 ? 'PM' : 'AM';
 
         if (sub === 'inspeccion') {
           state.role = 'frias_inspeccion';
@@ -7913,9 +7914,7 @@
           if (badge) badge.textContent = 'Frías - Calidad';
           
           const inputHora = document.getElementById('frias-insp-hora');
-          const selectAmPm = document.getElementById('frias-insp-hora-ampm');
-          if (inputHora) inputHora.value = defaultTimeStr;
-          if (selectAmPm) selectAmPm.value = defaultAmPm;
+          if (inputHora && !inputHora.value) inputHora.value = defaultTimeStr;
         } else if (sub === 'carga') {
           state.role = 'frias_carga';
           const v = document.getElementById('view-frias-carga');
@@ -7924,9 +7923,7 @@
           if (badge) badge.textContent = 'Frías - Pruebas Carga';
           
           const inputHoraIni = document.getElementById('frias-carga-hora-ini');
-          const selectIniAmPm = document.getElementById('frias-carga-hora-ini-ampm');
           if (inputHoraIni && !inputHoraIni.value) inputHoraIni.value = defaultTimeStr;
-          if (selectIniAmPm && !selectIniAmPm.value) selectIniAmPm.value = defaultAmPm;
           
           setTimeout(calcFriasCargaDuracion, 100);
         } else if (sub === 'tarimas') {
@@ -7993,7 +7990,7 @@
       async function submitFriasInspeccion(e) {
         e.preventDefault();
         const banda = document.getElementById('frias-insp-banda').value;
-        const hora = getFormattedTimeWithAmPm('frias-insp-hora', 'frias-insp-hora-ampm');
+        const hora = document.getElementById('frias-insp-hora').value;
         const operador = document.getElementById('frias-insp-operador').value;
         const marca = document.getElementById('frias-insp-marca').value;
 
@@ -8042,38 +8039,14 @@
       }
 
       // 2. Lógica Pruebas de Carga Frías
-      // --- HELPER HORARIOS Y AM/PM PARA FRÍAS ---
-      function getFormattedTimeWithAmPm(timeId, ampmId) {
-        const timeVal = document.getElementById(timeId)?.value;
-        const ampmVal = document.getElementById(ampmId)?.value || 'AM';
-        if (!timeVal) return '';
-        let [h, m] = timeVal.split(':').map(Number);
-        if (h > 12) h -= 12;
-        if (h === 0) h = 12;
-        const hh = String(h).padStart(2, '0');
-        const mm = String(m).padStart(2, '0');
-        return `${hh}:${mm} ${ampmVal}`;
-      }
-
-      function getMinutesFromTimeAndAmPm(timeId, ampmId) {
-        const timeInput = document.getElementById(timeId);
-        const ampmSelect = document.getElementById(ampmId);
-        if (!timeInput) return null;
-
-        const rawVal = (timeInput.value || '').trim();
-        const ampmVal = (ampmSelect?.value || 'AM').toUpperCase();
-
+      // --- HELPER HORARIOS ROBUSTO IGUAL AL RESTO DE CALIDAD ---
+      function getMinutesFromTimeInput(timeId) {
+        const input = document.getElementById(timeId);
+        if (!input) return null;
+        const rawVal = (input.value || '').trim();
         if (!rawVal) return null;
 
         const str = rawVal.toLowerCase();
-        
-        let isPm = str.includes('pm') || str.includes('p.m.');
-        let isAm = str.includes('am') || str.includes('a.m.');
-
-        if (!isPm && !isAm) {
-          isPm = ampmVal === 'PM';
-          isAm = ampmVal === 'AM';
-        }
 
         const matches = str.match(/\d+/g);
         if (!matches || matches.length < 2) return null;
@@ -8083,22 +8056,20 @@
 
         if (isNaN(h) || isNaN(m)) return null;
 
-        if (h > 12) {
-          return h * 60 + m;
-        }
+        const isPm = str.includes('pm') || str.includes('p.m.');
+        const isAm = str.includes('am') || str.includes('a.m.');
 
-        if (h === 12) {
-          h = isPm ? 12 : 0;
-        } else {
-          if (isPm) h += 12;
+        if (h <= 12) {
+          if (isPm && h < 12) h += 12;
+          if (isAm && h === 12) h = 0;
         }
 
         return h * 60 + m;
       }
 
       function calcFriasCargaDuracion() {
-        const t1 = getMinutesFromTimeAndAmPm('frias-carga-hora-ini', 'frias-carga-hora-ini-ampm');
-        const t2 = getMinutesFromTimeAndAmPm('frias-carga-hora-fin', 'frias-carga-hora-fin-ampm');
+        const t1 = getMinutesFromTimeInput('frias-carga-hora-ini');
+        const t2 = getMinutesFromTimeInput('frias-carga-hora-fin');
         const outEl = document.getElementById('frias-carga-duracion');
         if (!outEl) return;
 
@@ -8145,8 +8116,8 @@
         const marca = document.getElementById('frias-carga-marca').value;
         const tipo = document.getElementById('frias-carga-tipo').value;
         const peso = document.getElementById('frias-carga-peso').value;
-        const horaIni = getFormattedTimeWithAmPm('frias-carga-hora-ini', 'frias-carga-hora-ini-ampm');
-        const horaFin = getFormattedTimeWithAmPm('frias-carga-hora-fin', 'frias-carga-hora-fin-ampm');
+        const horaIni = document.getElementById('frias-carga-hora-ini').value;
+        const horaFin = document.getElementById('frias-carga-hora-fin').value;
         const duracion = document.getElementById('frias-carga-duracion').value;
 
         let fotoUrl = '';
@@ -8468,13 +8439,6 @@
         });
 
         const bands = ['Banda 1', 'Banda 2', 'Banda 3', 'Banda 4'];
-        const hasData = qualityInspections.length > 0;
-
-        if (!hasData) {
-          wrapper.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 2rem; font-style: italic;">No hay inspecciones de calidad de Frías registradas para el periodo seleccionado.</div>`;
-          return;
-        }
-
         let svgHtml = `<div style="display: flex; flex-direction: column; gap: 15px;">`;
 
         bands.forEach(b => {
