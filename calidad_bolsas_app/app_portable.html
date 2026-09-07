@@ -2348,7 +2348,7 @@
               <div class="form-group">
                 <label>Hora Inicial *</label>
                 <div style="display: flex; gap: 8px;">
-                  <input type="time" id="frias-carga-hora-ini" class="form-control" style="flex: 1;" required onchange="calcFriasCargaDuracion()" oninput="calcFriasCargaDuracion()" />
+                  <input type="time" id="frias-carga-hora-ini" class="form-control" style="flex: 1;" required onchange="calcFriasCargaDuracion()" oninput="calcFriasCargaDuracion()" onkeyup="calcFriasCargaDuracion()" onblur="calcFriasCargaDuracion()" />
                   <select id="frias-carga-hora-ini-ampm" class="form-control" style="width: 85px; font-weight: 700;" onchange="calcFriasCargaDuracion()">
                     <option value="AM">AM</option>
                     <option value="PM">PM</option>
@@ -2358,7 +2358,7 @@
               <div class="form-group">
                 <label>Hora Final *</label>
                 <div style="display: flex; gap: 8px;">
-                  <input type="time" id="frias-carga-hora-fin" class="form-control" style="flex: 1;" required onchange="calcFriasCargaDuracion()" oninput="calcFriasCargaDuracion()" />
+                  <input type="time" id="frias-carga-hora-fin" class="form-control" style="flex: 1;" required onchange="calcFriasCargaDuracion()" oninput="calcFriasCargaDuracion()" onkeyup="calcFriasCargaDuracion()" onblur="calcFriasCargaDuracion()" />
                   <select id="frias-carga-hora-fin-ampm" class="form-control" style="width: 85px; font-weight: 700;" onchange="calcFriasCargaDuracion()">
                     <option value="AM">AM</option>
                     <option value="PM">PM</option>
@@ -7925,8 +7925,10 @@
           
           const inputHoraIni = document.getElementById('frias-carga-hora-ini');
           const selectIniAmPm = document.getElementById('frias-carga-hora-ini-ampm');
-          if (inputHoraIni) inputHoraIni.value = defaultTimeStr;
-          if (selectIniAmPm) selectIniAmPm.value = defaultAmPm;
+          if (inputHoraIni && !inputHoraIni.value) inputHoraIni.value = defaultTimeStr;
+          if (selectIniAmPm && !selectIniAmPm.value) selectIniAmPm.value = defaultAmPm;
+          
+          setTimeout(calcFriasCargaDuracion, 100);
         } else if (sub === 'tarimas') {
           state.role = 'frias_tarimas';
           const v = document.getElementById('view-frias-tarimas');
@@ -8054,17 +8056,41 @@
       }
 
       function getMinutesFromTimeAndAmPm(timeId, ampmId) {
-        const timeVal = document.getElementById(timeId)?.value;
-        const ampmVal = document.getElementById(ampmId)?.value || 'AM';
-        if (!timeVal) return null;
+        const timeInput = document.getElementById(timeId);
+        const ampmSelect = document.getElementById(ampmId);
+        if (!timeInput) return null;
 
-        let [h, m] = timeVal.split(':').map(Number);
-        if (h > 12) h -= 12;
+        const rawVal = (timeInput.value || '').trim();
+        const ampmVal = (ampmSelect?.value || 'AM').toUpperCase();
+
+        if (!rawVal) return null;
+
+        const str = rawVal.toLowerCase();
         
+        let isPm = str.includes('pm') || str.includes('p.m.');
+        let isAm = str.includes('am') || str.includes('a.m.');
+
+        if (!isPm && !isAm) {
+          isPm = ampmVal === 'PM';
+          isAm = ampmVal === 'AM';
+        }
+
+        const matches = str.match(/\d+/g);
+        if (!matches || matches.length < 2) return null;
+
+        let h = parseInt(matches[0], 10);
+        let m = parseInt(matches[1], 10);
+
+        if (isNaN(h) || isNaN(m)) return null;
+
+        if (h > 12) {
+          return h * 60 + m;
+        }
+
         if (h === 12) {
-          h = ampmVal === 'PM' ? 12 : 0;
+          h = isPm ? 12 : 0;
         } else {
-          if (ampmVal === 'PM') h += 12;
+          if (isPm) h += 12;
         }
 
         return h * 60 + m;
