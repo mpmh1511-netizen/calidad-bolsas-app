@@ -572,6 +572,7 @@
                   <option value="Flexo">Sección 1: Flexo (Impresión)</option>
                   <option value="Nanjang">Sección 2: Nanjang (M1 a M5)</option>
                   <option value="Con Asa">Sección 3: Con Asa (M6 a M13)</option>
+                  <option value="Frías">Sección 4: Frías (Banda 1 a Banda 4)</option>
                 </select>
               </div>
 
@@ -593,6 +594,10 @@
                   <option value="Armado-M11">Máquina M11 (Con Asa)</option>
                   <option value="Armado-M12">Máquina M12 (Con Asa)</option>
                   <option value="Armado-M13">Máquina M13 (Con Asa)</option>
+                  <option value="Frias-Banda 1">Banda 1 (Frías)</option>
+                  <option value="Frias-Banda 2">Banda 2 (Frías)</option>
+                  <option value="Frias-Banda 3">Banda 3 (Frías)</option>
+                  <option value="Frias-Banda 4">Banda 4 (Frías)</option>
                 </select>
               </div>
 
@@ -688,6 +693,86 @@
                   <!-- Se inyectará por JS -->
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- SECCIÓN DEDICADA ESTADÍSTICAS FRÍAS -->
+          <div style="margin-top: 3rem; border-top: 3px solid #0284c7; padding-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+              <h3 style="font-size: 1.4rem; color: #0284c7; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                ❄️ Estadísticas General - Módulo Frías
+              </h3>
+              <span style="font-size: 0.85rem; color: var(--text-muted); background: #e0f2fe; padding: 4px 10px; border-radius: 6px; font-weight: 700;">
+                Bandas 1 a 4
+              </span>
+            </div>
+
+            <!-- Tarjetas KPI Frías -->
+            <div class="kpi-grid" style="margin-bottom: 2rem;">
+              <div class="kpi-card primary" style="border-left: 4px solid #0284c7;">
+                <label>Auditorías Totales (Frías)</label>
+                <div id="frias-stat-kpi-total" class="kpi-val" style="color: #0284c7;">0</div>
+              </div>
+              <div class="kpi-card success">
+                <label>Auditorías Conformes (Frías)</label>
+                <div id="frias-stat-kpi-conformes" class="kpi-val">0</div>
+              </div>
+              <div class="kpi-card danger">
+                <label>No Conformidades (Frías)</label>
+                <div id="frias-stat-kpi-noconformes" class="kpi-val">0</div>
+              </div>
+              <div class="kpi-card warning">
+                <label>% Índice de Conformidad (Frías)</label>
+                <div id="frias-stat-kpi-pct-conformidad" class="kpi-val">0%</div>
+              </div>
+            </div>
+
+            <!-- Gráfica Conformidad vs No Conformidades por Banda -->
+            <div class="card" style="margin-bottom: 2rem;">
+              <div class="card-title">
+                <h3 style="color: #0284c7; font-size: 1.15rem;">📊 Conformidad vs No Conformidades por Banda (Frías)</h3>
+              </div>
+              <div id="wrapper-frias-stat-conformidad-svg" style="min-height: 160px;">
+                <!-- SVG / HTML Bars -->
+              </div>
+            </div>
+
+            <!-- Pruebas de Carga Frías -->
+            <div class="card" style="margin-bottom: 2rem;">
+              <div class="card-title">
+                <h3 style="color: #0284c7; font-size: 1.15rem;">💪 Pruebas de Carga de Asas (Frías - Bandas 1 a 4)</h3>
+              </div>
+              <div id="wrapper-frias-stat-carga-pie" style="min-height: 120px;">
+                <!-- Carga stats -->
+              </div>
+            </div>
+
+            <!-- Tabla No Conformidades Frías -->
+            <div class="card">
+              <div class="card-title">
+                <h3 style="color: var(--color-danger); font-size: 1.15rem;">⚠️ Reporte de No Conformidades y Defectos (Frías)</h3>
+              </div>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Área</th>
+                      <th>Banda</th>
+                      <th>Operador</th>
+                      <th>Registrado por</th>
+                      <th>Marca / Cliente</th>
+                      <th>Defecto</th>
+                      <th>Severidad</th>
+                      <th>Acción Correctiva</th>
+                      <th style="text-align: center;">Evidencia</th>
+                    </tr>
+                  </thead>
+                  <tbody id="frias-table-inconformidades-body">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -2101,7 +2186,13 @@
               </div>
               <div class="form-group">
                 <label>Hora de Inspección *</label>
-                <input type="time" id="frias-insp-hora" class="form-control" required />
+                <div style="display: flex; gap: 8px;">
+                  <input type="time" id="frias-insp-hora" class="form-control" style="flex: 1;" required />
+                  <select id="frias-insp-hora-ampm" class="form-control" style="width: 85px; font-weight: 700;">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
               </div>
               <div class="form-group">
                 <label>Operador de la Máquina *</label>
@@ -2256,11 +2347,23 @@
               </div>
               <div class="form-group">
                 <label>Hora Inicial *</label>
-                <input type="time" id="frias-carga-hora-ini" class="form-control" required onchange="calcFriasCargaDuracion()" />
+                <div style="display: flex; gap: 8px;">
+                  <input type="time" id="frias-carga-hora-ini" class="form-control" style="flex: 1;" required onchange="calcFriasCargaDuracion()" oninput="calcFriasCargaDuracion()" />
+                  <select id="frias-carga-hora-ini-ampm" class="form-control" style="width: 85px; font-weight: 700;" onchange="calcFriasCargaDuracion()">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
               </div>
               <div class="form-group">
                 <label>Hora Final *</label>
-                <input type="time" id="frias-carga-hora-fin" class="form-control" required onchange="calcFriasCargaDuracion()" />
+                <div style="display: flex; gap: 8px;">
+                  <input type="time" id="frias-carga-hora-fin" class="form-control" style="flex: 1;" required onchange="calcFriasCargaDuracion()" oninput="calcFriasCargaDuracion()" />
+                  <select id="frias-carga-hora-fin-ampm" class="form-control" style="width: 85px; font-weight: 700;" onchange="calcFriasCargaDuracion()">
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
               </div>
               <div class="form-group" style="grid-column: 1 / -1;">
                 <label>Duración Calculada</label>
@@ -3459,6 +3562,7 @@
         renderConformidadSVGChart(filteredInspections);
         renderInconformidadesTable(filteredInspections);
         renderCargaPieCharts(filteredInspections);
+        updateFriasStatsView(filteredInspections);
       }
 
       function renderConformidadSVGChart(inspections) {
@@ -7795,26 +7899,34 @@
         
         hideAllViews();
         
+        const now = new Date();
+        const hh24 = String(now.getHours()).padStart(2, '0');
+        const mmStr = String(now.getMinutes()).padStart(2, '0');
+        const defaultTimeStr = `${hh24}:${mmStr}`;
+        const defaultAmPm = now.getHours() >= 12 ? 'PM' : 'AM';
+
         if (sub === 'inspeccion') {
           state.role = 'frias_inspeccion';
           const v = document.getElementById('view-frias-inspeccion');
           if (v) v.style.display = 'block';
           const badge = document.getElementById('app-badge');
           if (badge) badge.textContent = 'Frías - Calidad';
-          const now = new Date();
-          const timeStr = now.toTimeString().substring(0, 5);
+          
           const inputHora = document.getElementById('frias-insp-hora');
-          if (inputHora) inputHora.value = timeStr;
+          const selectAmPm = document.getElementById('frias-insp-hora-ampm');
+          if (inputHora) inputHora.value = defaultTimeStr;
+          if (selectAmPm) selectAmPm.value = defaultAmPm;
         } else if (sub === 'carga') {
           state.role = 'frias_carga';
           const v = document.getElementById('view-frias-carga');
           if (v) v.style.display = 'block';
           const badge = document.getElementById('app-badge');
           if (badge) badge.textContent = 'Frías - Pruebas Carga';
-          const now = new Date();
-          const timeStr = now.toTimeString().substring(0, 5);
+          
           const inputHoraIni = document.getElementById('frias-carga-hora-ini');
-          if (inputHoraIni) inputHoraIni.value = timeStr;
+          const selectIniAmPm = document.getElementById('frias-carga-hora-ini-ampm');
+          if (inputHoraIni) inputHoraIni.value = defaultTimeStr;
+          if (selectIniAmPm) selectIniAmPm.value = defaultAmPm;
         } else if (sub === 'tarimas') {
           state.role = 'frias_tarimas';
           const v = document.getElementById('view-frias-tarimas');
@@ -7879,7 +7991,7 @@
       async function submitFriasInspeccion(e) {
         e.preventDefault();
         const banda = document.getElementById('frias-insp-banda').value;
-        const hora = document.getElementById('frias-insp-hora').value;
+        const hora = getFormattedTimeWithAmPm('frias-insp-hora', 'frias-insp-hora-ampm');
         const operador = document.getElementById('frias-insp-operador').value;
         const marca = document.getElementById('frias-insp-marca').value;
 
@@ -7928,25 +8040,50 @@
       }
 
       // 2. Lógica Pruebas de Carga Frías
+      // --- HELPER HORARIOS Y AM/PM PARA FRÍAS ---
+      function getFormattedTimeWithAmPm(timeId, ampmId) {
+        const timeVal = document.getElementById(timeId)?.value;
+        const ampmVal = document.getElementById(ampmId)?.value || 'AM';
+        if (!timeVal) return '';
+        let [h, m] = timeVal.split(':').map(Number);
+        if (h > 12) h -= 12;
+        if (h === 0) h = 12;
+        const hh = String(h).padStart(2, '0');
+        const mm = String(m).padStart(2, '0');
+        return `${hh}:${mm} ${ampmVal}`;
+      }
+
+      function getMinutesFromTimeAndAmPm(timeId, ampmId) {
+        const timeVal = document.getElementById(timeId)?.value;
+        const ampmVal = document.getElementById(ampmId)?.value || 'AM';
+        if (!timeVal) return null;
+
+        let [h, m] = timeVal.split(':').map(Number);
+        if (h > 12) h -= 12;
+        
+        if (h === 12) {
+          h = ampmVal === 'PM' ? 12 : 0;
+        } else {
+          if (ampmVal === 'PM') h += 12;
+        }
+
+        return h * 60 + m;
+      }
+
       function calcFriasCargaDuracion() {
-        const iniVal = document.getElementById('frias-carga-hora-ini')?.value;
-        const finVal = document.getElementById('frias-carga-hora-fin')?.value;
+        const t1 = getMinutesFromTimeAndAmPm('frias-carga-hora-ini', 'frias-carga-hora-ini-ampm');
+        const t2 = getMinutesFromTimeAndAmPm('frias-carga-hora-fin', 'frias-carga-hora-fin-ampm');
         const outEl = document.getElementById('frias-carga-duracion');
         if (!outEl) return;
 
-        if (!iniVal || !finVal) {
+        if (t1 === null || t2 === null) {
           outEl.value = '';
           return;
         }
 
-        const [h1, m1] = iniVal.split(':').map(Number);
-        const [h2, m2] = finVal.split(':').map(Number);
+        let diffMin = t2 - t1;
+        if (diffMin < 0) diffMin += 24 * 60; // Cruce de medianoche
 
-        let t1 = h1 * 60 + m1;
-        let t2 = h2 * 60 + m2;
-        if (t2 < t1) t2 += 24 * 60;
-
-        const diffMin = t2 - t1;
         outEl.value = `${diffMin} minutos`;
 
         const tipo = document.getElementById('frias-carga-tipo')?.value || '';
@@ -7982,8 +8119,8 @@
         const marca = document.getElementById('frias-carga-marca').value;
         const tipo = document.getElementById('frias-carga-tipo').value;
         const peso = document.getElementById('frias-carga-peso').value;
-        const horaIni = document.getElementById('frias-carga-hora-ini').value;
-        const horaFin = document.getElementById('frias-carga-hora-fin').value;
+        const horaIni = getFormattedTimeWithAmPm('frias-carga-hora-ini', 'frias-carga-hora-ini-ampm');
+        const horaFin = getFormattedTimeWithAmPm('frias-carga-hora-fin', 'frias-carga-hora-fin-ampm');
         const duracion = document.getElementById('frias-carga-duracion').value;
 
         let fotoUrl = '';
@@ -8249,6 +8386,197 @@
         });
 
         container.innerHTML = html;
+      }
+
+    
+      // --- RENDERIZADO ESTADÍSTICAS DEDICADAS FRÍAS ---
+      function updateFriasStatsView(inspections) {
+        const friasInspections = inspections.filter(i => i.area === 'Frías');
+        
+        // KPIs Frías
+        const qualityOnly = friasInspections.filter(i => i.es_prueba_carga !== 1);
+        const total = qualityOnly.length;
+        const conformes = qualityOnly.filter(i => i.resultado === 'Aprobado').length;
+        const noConformes = qualityOnly.filter(i => i.resultado === 'Rechazado').length;
+        const pctConformidad = total > 0 ? ((conformes / total) * 100).toFixed(1) : '0';
+
+        const kpiTotal = document.getElementById('frias-stat-kpi-total');
+        const kpiConf = document.getElementById('frias-stat-kpi-conformes');
+        const kpiNoConf = document.getElementById('frias-stat-kpi-noconformes');
+        const kpiPct = document.getElementById('frias-stat-kpi-pct-conformidad');
+
+        if (kpiTotal) kpiTotal.textContent = total;
+        if (kpiConf) kpiConf.textContent = conformes;
+        if (kpiNoConf) kpiNoConf.textContent = noConformes;
+        if (kpiPct) kpiPct.textContent = pctConformidad + '%';
+
+        renderFriasConformidadSVGChart(friasInspections);
+        renderFriasInconformidadesTable(friasInspections);
+        renderFriasCargaPieCharts(friasInspections);
+      }
+
+      function renderFriasConformidadSVGChart(inspections) {
+        const wrapper = document.getElementById('wrapper-frias-stat-conformidad-svg');
+        if (!wrapper) return;
+
+        const qualityInspections = inspections.filter(i => i.es_prueba_carga !== 1);
+        const bandaMap = {
+          'Banda 1': { total: 0, conformes: 0, noConformes: 0 },
+          'Banda 2': { total: 0, conformes: 0, noConformes: 0 },
+          'Banda 3': { total: 0, conformes: 0, noConformes: 0 },
+          'Banda 4': { total: 0, conformes: 0, noConformes: 0 }
+        };
+
+        qualityInspections.forEach(i => {
+          let b = i.banda || i.maquina || 'Banda 1';
+          if (!b.toLowerCase().startsWith('banda')) b = 'Banda ' + b;
+          if (!bandaMap[b]) {
+            bandaMap[b] = { total: 0, conformes: 0, noConformes: 0 };
+          }
+          bandaMap[b].total++;
+          if (i.resultado === 'Aprobado') {
+            bandaMap[b].conformes++;
+          } else {
+            bandaMap[b].noConformes++;
+          }
+        });
+
+        const bands = ['Banda 1', 'Banda 2', 'Banda 3', 'Banda 4'];
+        const hasData = qualityInspections.length > 0;
+
+        if (!hasData) {
+          wrapper.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 2rem; font-style: italic;">No hay inspecciones de calidad de Frías registradas para el periodo seleccionado.</div>`;
+          return;
+        }
+
+        let svgHtml = `<div style="display: flex; flex-direction: column; gap: 15px;">`;
+
+        bands.forEach(b => {
+          const item = bandaMap[b];
+          const pctConf = item.total > 0 ? Math.round((item.conformes / item.total) * 100) : 0;
+          const pctNoConf = item.total > 0 ? Math.round((item.noConformes / item.total) * 100) : 0;
+
+          svgHtml += `
+            <div 
+              onclick="showMachineInspectionsModal('${b}')"
+              style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;"
+              onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.08)'"
+              onmouseout="this.style.transform='none'; this.style.boxShadow='none'"
+              title="Toca para ver todas las inspecciones de ${b}"
+            >
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-weight: 800; color: #0284c7; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                  <span>${b}</span>
+                  <span style="font-size: 0.75rem; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-weight: 600;">🔍 Ver inspecciones</span>
+                </span>
+                <span style="font-weight: 700; font-size: 0.85rem; color: #475569;">${item.total} Inspecciones (${item.conformes} Conformes / ${item.noConformes} Defectos)</span>
+              </div>
+              <div style="height: 24px; width: 100%; background: #e2e8f0; border-radius: 12px; overflow: hidden; display: flex;">
+                <div style="width: ${pctConf}%; background: #16a34a; height: 100%; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 0.75rem; font-weight: 800;" title="${pctConf}% Conforme">
+                  ${pctConf > 10 ? pctConf + '%' : ''}
+                </div>
+                <div style="width: ${pctNoConf}%; background: #dc2626; height: 100%; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 0.75rem; font-weight: 800;" title="${pctNoConf}% No Conforme">
+                  ${pctNoConf > 10 ? pctNoConf + '%' : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        svgHtml += `</div>`;
+        wrapper.innerHTML = svgHtml;
+      }
+
+      function renderFriasCargaPieCharts(inspections) {
+        const wrapper = document.getElementById('wrapper-frias-stat-carga-pie');
+        if (!wrapper) return;
+
+        const cargaInspections = inspections.filter(i => i.es_prueba_carga === 1);
+        const total = cargaInspections.length;
+
+        if (total === 0) {
+          wrapper.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 1.5rem; font-style: italic;">No se han realizado pruebas de carga en Frías para este periodo.</div>`;
+          return;
+        }
+
+        const pasa = cargaInspections.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+        const falla = cargaInspections.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length;
+        const pctPasa = Math.round((pasa / total) * 100);
+        const pctFalla = Math.round((falla / total) * 100);
+
+        wrapper.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 20px; padding: 10px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+              <div style="position: relative; width: 80px; height: 80px; border-radius: 50%; background: conic-gradient(#16a34a 0% ${pctPasa}%, #dc2626 ${pctPasa}% 100%); display: flex; align-items: center; justify-content: center;">
+                <div style="width: 50px; height: 50px; background: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
+                  ${pctPasa}%
+                </div>
+              </div>
+              <div>
+                <div style="font-weight: 800; font-size: 1.1rem; color: #0284c7;">${total} Pruebas de Carga</div>
+                <div style="font-size: 0.85rem; color: #16a34a; font-weight: 700;">🟢 ${pasa} Aprobadas (${pctPasa}%)</div>
+                <div style="font-size: 0.85rem; color: #dc2626; font-weight: 700;">🔴 ${falla} Falladas (${pctFalla}%)</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderFriasInconformidadesTable(inspections) {
+        const tbody = document.getElementById('frias-table-inconformidades-body');
+        if (!tbody) return;
+
+        const defectsList = inspections.filter(i => 
+          i.resultado === 'Rechazado' || 
+          i.carga_resultado === 'Falla' || 
+          (i.descripcion_defecto && i.descripcion_defecto.trim() !== '') ||
+          i.integridad_bolsa === 0 ||
+          i.pva_suficiente === 0 ||
+          i.hotmelt_suficiente === 0 ||
+          i.posicion_asa_correcta === 0 ||
+          i.pegado_correcto === 0 ||
+          i.posicion_parche_correcta === 0
+        );
+
+        if (defectsList.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="10" style="padding: 20px; text-align: center; color: #16a34a; font-weight: 700; background: #f0fdf4;">🎉 Sin inconformidades registradas en Frías para el periodo seleccionado.</td></tr>`;
+          return;
+        }
+
+        let html = '';
+        defectsList.forEach(i => {
+          let defectoTexto = i.descripcion_defecto || i.observaciones || 'No conformidad detectada';
+          if (i.integridad_bolsa === 0) defectoTexto = 'Falta Integridad Bolsa. ' + defectoTexto;
+          if (i.pva_suficiente === 0) defectoTexto = 'Insuficiente PVA. ' + defectoTexto;
+          if (i.hotmelt_suficiente === 0) defectoTexto = 'Insuficiente Hot Melt. ' + defectoTexto;
+          if (i.posicion_asa_correcta === 0) defectoTexto = 'Fallo Posición Asa. ' + defectoTexto;
+          if (i.pegado_correcto === 0) defectoTexto = 'Fallo en Pegado. ' + defectoTexto;
+
+          const severidadBadge = (i.resultado === 'Rechazado' || i.carga_resultado === 'Falla')
+            ? '<span style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">RECHAZADO / GRAVE</span>'
+            : '<span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">OBSERVACIÓN</span>';
+
+          const fotoCell = i.foto_url
+            ? `<a href="${i.foto_url}" target="_blank" rel="noopener noreferrer" title="Toca para ver foto completa"><img src="${i.foto_url}" style="width: 55px; height: 55px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" /></a>`
+            : `<span style="color: #94a3b8; font-size: 0.75rem;">Sin foto</span>`;
+
+          html += `
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 10px; font-weight: 600;">${i.fecha_registro}</td>
+              <td style="padding: 10px; color: #0284c7; font-weight: 700;">Frías</td>
+              <td style="padding: 10px; font-weight: 800; color: #0284c7;">${i.banda || i.maquina}</td>
+              <td style="padding: 10px;">${i.operador || '-'}</td>
+              <td style="padding: 10px; font-weight: 600; color: #475569;">${i.editado_por || 'Desconocido'}</td>
+              <td style="padding: 10px;">${i.marca_cliente || '-'}</td>
+              <td style="padding: 10px; color: #dc2626; font-weight: 600;">${defectoTexto}</td>
+              <td style="padding: 10px;">${severidadBadge}</td>
+              <td style="padding: 10px; color: #15803d; font-weight: 600;">${i.accion_correctiva || 'Ajuste de máquina requerido'}</td>
+              <td style="padding: 10px; text-align: center;">${fotoCell}</td>
+            </tr>
+          `;
+        });
+
+        tbody.innerHTML = html;
       }
 
     </script>
