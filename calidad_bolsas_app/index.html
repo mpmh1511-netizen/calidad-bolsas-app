@@ -3498,6 +3498,25 @@
         renderStatIndepView();
       }
 
+      
+      function getInspIsoDate(insp) {
+        if (!insp) return '';
+        const raw = (insp.fecha_registro || insp.fecha_iso || '').trim();
+        if (!raw) return '';
+        if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+          return raw.substring(0, 10);
+        }
+        const firstChunk = raw.split(' ')[0];
+        const parts = firstChunk.split('/');
+        if (parts.length === 3) {
+          const d = parts[0].padStart(2, '0');
+          const m = parts[1].padStart(2, '0');
+          const y = parts[2].replace(',', '');
+          if (y.length === 4) return `${y}-${m}-${d}`;
+        }
+        return firstChunk;
+      }
+
       async function renderStatIndepView() {
         const areaFilter = document.getElementById('stat-indep-area-select')?.value || '';
         const machineFilter = document.getElementById('stat-indep-maquina-select')?.value || '';
@@ -3507,7 +3526,7 @@
 
         // Filtrar por Área, Máquina, Periodo y Fecha
         const filteredInspections = allInspections.filter(insp => {
-          const inspDate = (insp.fecha_registro || '').split(' ')[0];
+          const inspDate = getInspIsoDate(insp);
 
           if (areaFilter && insp.area !== areaFilter) return false;
 
@@ -3546,7 +3565,7 @@
         renderCargaPieCharts(filteredInspections);
         // Obtener inspecciones de Frías para el periodo/fecha seleccionados (independiente de área)
         const periodFriasInspections = allInspections.filter(insp => {
-          const inspDate = (insp.fecha_registro || '').split(' ')[0];
+          const inspDate = getInspIsoDate(insp);
 
           if (insp.area !== 'Frías') return false;
 
@@ -3891,7 +3910,7 @@
           if (!isBandaMatch) return false;
           if (areaFilter && insp.area !== areaFilter && !machineName.startsWith('Banda')) return false;
 
-          const inspDate = (insp.fecha_registro || '').split(' ')[0];
+          const inspDate = getInspIsoDate(insp);
           if (statIndepPeriodo === 'dia') return inspDate === fechaVal;
           if (statIndepPeriodo === 'semana') return getWeekNumber(inspDate) === getWeekNumber(fechaVal);
           if (statIndepPeriodo === 'mes') return inspDate.substring(0, 7) === fechaVal.substring(0, 7);
@@ -5892,7 +5911,7 @@
         // 2. Filtrar inspecciones de calidad por periodo y fecha
         const allInspections = (state && state.inspecciones) ? state.inspecciones : [];
         const scopedInspections = allInspections.filter(insp => {
-          const inspDate = (insp.fecha_registro || '').split(' ')[0];
+          const inspDate = getInspIsoDate(insp);
           if (machineFilter) {
             const [tipo, maq] = machineFilter.split('-');
             if (insp.maquina !== maq) return false;
@@ -8008,6 +8027,10 @@
           fotoUrl = imgPreview.src;
         }
 
+        const now = new Date();
+        const todayIso = now.toISOString().split('T')[0];
+        const timeStr = hora ? (hora.length === 5 ? hora + ':00' : hora) : now.toTimeString().split(' ')[0];
+
         const newInsp = {
           id: String(Date.now()),
           area: 'Frías',
@@ -8028,10 +8051,10 @@
           accion_correctiva: friasInspResult === 'Rechazado' ? document.getElementById('frias-insp-accion').value : '',
           foto_url: fotoUrl,
           es_prueba_carga: 0,
-          fecha_registro: new Date().toLocaleString('es-MX')
+          fecha_registro: `${todayIso} ${timeStr}`
         };
 
-        await saveInspectionRecord(newInsp);
+        await saveInspection(newInsp);
         showToast('✅ Inspección de Calidad (Frías) guardada con éxito.');
         document.getElementById('frias-inspeccion-form').reset();
         selectFriasInspResult('Aprobado');
@@ -8126,6 +8149,10 @@
           fotoUrl = imgPreview.src;
         }
 
+        const now = new Date();
+        const todayIso = now.toISOString().split('T')[0];
+        const timeStr = horaFin ? (horaFin.length === 5 ? horaFin + ':00' : horaFin) : now.toTimeString().split(' ')[0];
+
         const newInsp = {
           id: String(Date.now()),
           area: 'Frías',
@@ -8143,10 +8170,10 @@
           accion_correctiva: friasCargaResult === 'Rechazado' ? document.getElementById('frias-carga-accion').value : '',
           foto_url: fotoUrl,
           es_prueba_carga: 1,
-          fecha_registro: new Date().toLocaleString('es-MX')
+          fecha_registro: `${todayIso} ${timeStr}`
         };
 
-        await saveInspectionRecord(newInsp);
+        await saveInspection(newInsp);
         showToast('✅ Prueba de Carga (Frías) guardada con éxito.');
         document.getElementById('frias-carga-form').reset();
         selectFriasCargaResult('Aprobado');
@@ -8273,18 +8300,7 @@
           dia_mes: `${String(now.getDate()).padStart(2, '0')}_${String(now.getMonth() + 1).padStart(2, '0')}`
         };
 
-        let tarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
-        tarimas.unshift(newTarima);
-        localStorage.setItem('calidad_tarimas', JSON.stringify(tarimas));
-
-        try {
-          await apiFetch('/api/tarimas', {
-            method: 'POST',
-            body: JSON.stringify(newTarima)
-          });
-        } catch (err) {
-          console.log('Error guardando en Supabase tarimas Frías:', err);
-        }
+        await saveTarima(newTarima);
 
         document.getElementById('frias-tarima-generated-code').textContent = codigoGenerado;
         document.getElementById('frias-tarima-success-box').style.display = 'flex';
