@@ -3524,15 +3524,21 @@
 
         const allInspections = (state && state.inspecciones) ? state.inspecciones : [];
 
-        // Filtrar por Área, Máquina, Periodo y Fecha
+        // Filtrar por Área, Máquina, Periodo y Fecha (EXCLUYE Frías / Bandas del panel superior)
         const filteredInspections = allInspections.filter(insp => {
           const inspDate = getInspIsoDate(insp);
+
+          // Excluir ÚNICAMENTE registros de Frías / Bandas del panel superior
+          const isFrias = (insp.area === 'Frías') || 
+                          String(insp.maquina || insp.banda || '').toLowerCase().startsWith('banda');
+          if (isFrias) return false;
 
           if (areaFilter && insp.area !== areaFilter) return false;
 
           if (machineFilter) {
+            if (machineFilter.startsWith('Frias-')) return false;
             const [tipo, maq] = machineFilter.split('-');
-            if (insp.maquina !== maq) return false;
+            if (insp.maquina !== maq && insp.banda !== maq) return false;
           }
 
           if (statIndepPeriodo === 'dia') return inspDate === fechaVal;
@@ -3563,15 +3569,21 @@
         renderConformidadSVGChart(filteredInspections);
         renderInconformidadesTable(filteredInspections);
         renderCargaPieCharts(filteredInspections);
-        // Obtener inspecciones de Frías para el periodo/fecha seleccionados (independiente de área)
+        // Obtener inspecciones de Frías (Banda 1 a Banda 4) para el periodo/fecha seleccionados
         const periodFriasInspections = allInspections.filter(insp => {
           const inspDate = getInspIsoDate(insp);
 
-          if (insp.area !== 'Frías') return false;
+          const isFrias = (insp.area === 'Frías') || 
+                          String(insp.maquina || insp.banda || '').toLowerCase().startsWith('banda');
+          if (!isFrias) return false;
 
-          if (machineFilter && machineFilter.startsWith('Frias-')) {
-            const maq = machineFilter.replace('Frias-', '');
-            if (insp.maquina !== maq && insp.banda !== maq) return false;
+          if (machineFilter) {
+            if (machineFilter.startsWith('Frias-')) {
+              const maq = machineFilter.replace('Frias-', '');
+              if (insp.maquina !== maq && insp.banda !== maq) return false;
+            } else {
+              return false;
+            }
           }
 
           if (statIndepPeriodo === 'dia') return inspDate === fechaVal;
@@ -3589,8 +3601,14 @@
         const wrapper = document.getElementById('wrapper-stat-conformidad-svg');
         if (!wrapper) return;
 
-        // Filtrar EXCLUSIVAMENTE inspecciones de calidad (sin pruebas de carga)
-        const qualityInspections = inspections.filter(i => i.es_prueba_carga !== 1);
+        // Filtrar EXCLUSIVAMENTE inspecciones de calidad de máquinas estándar (sin pruebas de carga y sin Frías)
+        const qualityInspections = inspections.filter(i => {
+          if (i.es_prueba_carga === 1) return false;
+          if (i.area === 'Frías') return false;
+          const m = String(i.maquina || i.banda || '').toLowerCase();
+          if (m.startsWith('banda')) return false;
+          return true;
+        });
 
         const machineMap = {};
         qualityInspections.forEach(i => {
