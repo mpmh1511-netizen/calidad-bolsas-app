@@ -1331,7 +1331,18 @@
                   </div>
                   <div class="form-group">
                     <label>Especificaciones / Marca</label>
-                    <input type="text" id="flexo-bobina-marca" class="form-control" placeholder="Ej. Starbucks Kraft M" />
+                    <select id="flexo-bobina-marca" class="form-control" onchange="toggleMarcaOtro('flexo-bobina-marca')">
+                      <option value="">Selecciona una marca</option>
+                      <option value="KOHLS">KOHLS</option>
+                      <option value="MENARDS">MENARDS</option>
+                      <option value="KROGER">KROGER</option>
+                      <option value="SUBWAY">SUBWAY</option>
+                      <option value="TARGET">TARGET</option>
+                      <option value="WALMART">WALMART</option>
+                      <option value="BSK">BSK</option>
+                      <option value="OTRO">OTRO (Escribir manual)</option>
+                    </select>
+                    <input type="text" id="flexo-bobina-marca-otro" class="form-control" placeholder="Escribe la marca..." style="display: none; margin-top: 5px;" />
                   </div>
                   <div class="form-group">
                     <label>Ancho de Bobina (cm)</label>
@@ -1380,7 +1391,18 @@
                   <div class="form-grid">
                     <div class="form-group">
                       <label>Especificaciones / Marca</label>
-                      <input type="text" id="bolsas-manual-marca" class="form-control" placeholder="Ej. Starbucks Kraft M" />
+                      <select id="bolsas-manual-marca" class="form-control" onchange="toggleMarcaOtro('bolsas-manual-marca'); autoValidateBolsasMeasurements()">
+                        <option value="">Selecciona una marca</option>
+                        <option value="KOHLS">KOHLS</option>
+                        <option value="MENARDS">MENARDS</option>
+                        <option value="KROGER">KROGER</option>
+                        <option value="SUBWAY">SUBWAY</option>
+                        <option value="TARGET">TARGET</option>
+                        <option value="WALMART">WALMART</option>
+                        <option value="BSK">BSK</option>
+                        <option value="OTRO">OTRO (Escribir manual)</option>
+                      </select>
+                      <input type="text" id="bolsas-manual-marca-otro" class="form-control" placeholder="Escribe la marca..." style="display: none; margin-top: 5px;" oninput="autoValidateBolsasMeasurements()" />
                     </div>
                     <div class="form-group">
                       <label>Ancho de Bobina (cm)</label>
@@ -1579,7 +1601,7 @@
                     </label>
                     <div style="display: flex; align-items: center; gap: 8px;">
                       <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0;">Unidad:</label>
-                      <select id="b-medidas-unidad" class="form-control" onchange="onMedidasUnidadChange(this.value)" style="width: auto; padding: 4px 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+                      <select id="b-medidas-unidad" class="form-control" onchange="onMedidasUnidadChange(this.value); autoValidateBolsasMeasurements();" style="width: auto; padding: 4px 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">
                         <option value="in" selected>Pulgadas (in)</option>
                         <option value="cm">Centímetros (cm)</option>
                       </select>
@@ -1588,15 +1610,15 @@
                   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-top: 0.5rem;">
                     <div>
                       <label id="lbl-b-medida-ancho" style="font-size: 0.75rem; color: var(--text-muted);">Ancho (pulgadas)</label>
-                      <input type="number" step="any" id="b-medida-ancho" class="form-control" placeholder="Ancho pulg" />
+                      <input type="number" step="any" id="b-medida-ancho" class="form-control" placeholder="Ancho pulg" oninput="autoValidateBolsasMeasurements()" />
                     </div>
                     <div>
                       <label id="lbl-b-medida-largo" style="font-size: 0.75rem; color: var(--text-muted);">Largo/Alto (pulgadas)</label>
-                      <input type="number" step="any" id="b-medida-largo" class="form-control" placeholder="Largo pulg" />
+                      <input type="number" step="any" id="b-medida-largo" class="form-control" placeholder="Largo pulg" oninput="autoValidateBolsasMeasurements()" />
                     </div>
                     <div>
                       <label id="lbl-b-medida-fuelle" style="font-size: 0.75rem; color: var(--text-muted);">Fuelle/Lateral (pulgadas)</label>
-                      <input type="number" step="any" id="b-medida-fuelle" class="form-control" placeholder="Fuelle pulg" />
+                      <input type="number" step="any" id="b-medida-fuelle" class="form-control" placeholder="Fuelle pulg" oninput="autoValidateBolsasMeasurements()" />
                     </div>
                     <div>
                       <label style="font-size: 0.75rem; color: var(--text-muted);">¿Dentro del parámetro?</label>
@@ -7025,7 +7047,9 @@
 
         if (area === 'Flexo') {
           const rollo = document.getElementById('flexo-bobina-rollo').value.trim();
-          const marca = document.getElementById('flexo-bobina-marca').value.trim();
+          let marca = document.getElementById('flexo-bobina-marca').value;
+          if (marca === 'OTRO') marca = document.getElementById('flexo-bobina-marca-otro').value.trim();
+          else marca = marca.trim();
           const ancho = parseFloat(document.getElementById('flexo-bobina-ancho').value);
           const gramaje = parseInt(document.getElementById('flexo-bobina-gramaje').value);
           const fecha = document.getElementById('flexo-bobina-fecha').value;
@@ -7074,7 +7098,9 @@
           if (!bobinaObj) {
             const manualSec = document.getElementById('bolsas-manual-bobina-section');
             if (manualSec && manualSec.style.display === 'block') {
-              const marca = document.getElementById('bolsas-manual-marca').value.trim();
+              let marca = document.getElementById('bolsas-manual-marca').value;
+              if (marca === 'OTRO') marca = document.getElementById('bolsas-manual-marca-otro').value.trim();
+              else marca = marca.trim();
               const ancho = parseFloat(document.getElementById('bolsas-manual-ancho').value);
               const gramaje = parseInt(document.getElementById('bolsas-manual-gramaje').value);
               const humedadVal = document.getElementById('bolsas-manual-humedad').value;
@@ -7243,7 +7269,7 @@
         
         if (area === 'Flexo') {
           document.getElementById('flexo-bobina-rollo').value = '';
-          document.getElementById('flexo-bobina-marca').value = '';
+          document.getElementById('flexo-bobina-marca').value = ''; document.getElementById('flexo-bobina-marca-otro').value = ''; toggleMarcaOtro('flexo-bobina-marca');
           document.getElementById('flexo-bobina-ancho').value = '80';
           document.getElementById('flexo-bobina-gramaje').value = '90';
           document.getElementById('flexo-bobina-humedad').value = '5.0';
@@ -7260,7 +7286,7 @@
           document.getElementById('flexo-bobina-fecha').value = now.toISOString().split('T')[0];
         } else {
           document.getElementById('bolsas-bobina-rollo').value = '';
-          document.getElementById('bolsas-manual-marca').value = '';
+          document.getElementById('bolsas-manual-marca').value = ''; document.getElementById('bolsas-manual-marca-otro').value = ''; toggleMarcaOtro('bolsas-manual-marca');
           document.getElementById('bolsas-manual-ancho').value = '';
           document.getElementById('bolsas-manual-gramaje').value = '';
           document.getElementById('bolsas-manual-humedad').value = '';
@@ -8291,10 +8317,7 @@
           fotoUrl = imgPreview.src;
         }
 
-        if (!fotoUrl) {
-          alert('Por favor toma o adjunta la fotografía de evidencia de la tarima.');
-          return;
-        }
+// Foto opcional para evidencia de tarima
 
         const codigoGenerado = generateFriasTarimaCode(banda);
         const now = new Date();
@@ -8313,12 +8336,13 @@
           estado_liberacion: friasTarimaEstado,
           motivo: motivo,
           foto_url: fotoUrl,
-          fecha_registro: now.toLocaleString('es-MX'),
+          fecha_registro: now.toISOString().replace('T', ' ').substring(0, 19),
           fecha_iso: now.toISOString().split('T')[0],
           dia_mes: `${String(now.getDate()).padStart(2, '0')}_${String(now.getMonth() + 1).padStart(2, '0')}`
         };
 
         await saveTarima(newTarima);
+        renderFriasTarimasConsulta();
 
         document.getElementById('frias-tarima-generated-code').textContent = codigoGenerado;
         document.getElementById('frias-tarima-success-box').style.display = 'flex';
@@ -8341,12 +8365,17 @@
         const container = document.getElementById('frias-tarimas-consulta-container');
         if (!container) return;
 
-        let tarimas = [];
+        let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+        let serverTarimas = [];
         try {
-          tarimas = await apiFetch('/api/tarimas') || [];
+          serverTarimas = await apiFetch('/api/tarimas') || [];
         } catch (e) {
-          tarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+          serverTarimas = [];
         }
+        const tarimaMap = new Map();
+        localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+        serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+        let tarimas = Array.from(tarimaMap.values());
 
         let friasTarimas = tarimas.filter(t => t.area === 'Frías' || (t.codigo_tarima && t.codigo_tarima.endsWith('_Frías')));
 
@@ -8601,6 +8630,106 @@
         });
 
         tbody.innerHTML = html;
+      }
+
+    
+      // ===========================
+      // MARCAS Y VALIDACIÓN DE MEDIDAS
+      // ===========================
+      const PREDEFINED_BRANDS = {
+        "KOHLS": { alto: 47.6, ancho: 45.0, fuelle: 17.8 },
+        "MENARDS": { alto: 43.0, ancho: 30.5, fuelle: 17.2 },
+        "KROGER": { alto: 26.7, ancho: 32.0, fuelle: 18.0 },
+        "SUBWAY": { alto: 36.0, ancho: 32.0, fuelle: 22.0 },
+        "TARGET": { alto: 26.7, ancho: 32.0, fuelle: 18.0 },
+        "WALMART": { alto: 26.0, ancho: 32.0, fuelle: 16.0 },
+        "BSK": { alto: 35.6, ancho: 30.5, fuelle: 17.8 }
+      };
+
+      function toggleMarcaOtro(baseId) {
+        const select = document.getElementById(baseId);
+        const inputOtro = document.getElementById(baseId + '-otro');
+        if (select.value === 'OTRO') {
+          inputOtro.style.display = 'block';
+          inputOtro.required = true;
+        } else {
+          inputOtro.style.display = 'none';
+          inputOtro.value = '';
+          inputOtro.required = false;
+        }
+      }
+
+      function autoValidateBolsasMeasurements() {
+        const area = document.getElementById('insp-area').value;
+        if (area === 'Flexo') return; // Only applies to Nanjang and Con Asa
+
+        let currentBrand = "";
+        const rolloVal = document.getElementById('bolsas-bobina-rollo').value.trim();
+        
+        // If a known bobina is active
+        if (rolloVal && window.currentBobinaBolsas && window.currentBobinaBolsas.numero_rollo.toLowerCase() === rolloVal.toLowerCase()) {
+          currentBrand = window.currentBobinaBolsas.marca_especificaciones;
+        } else {
+          // It's a manual entry
+          const sel = document.getElementById('bolsas-manual-marca').value;
+          if (sel === 'OTRO') {
+            currentBrand = document.getElementById('bolsas-manual-marca-otro').value.trim();
+          } else {
+            currentBrand = sel;
+          }
+        }
+
+        const brandKey = Object.keys(PREDEFINED_BRANDS).find(k => k.toUpperCase() === (currentBrand || "").toUpperCase());
+        const toggleMedidasDentro = document.getElementById('b-medidas-dentro-parametro');
+        const labelMedidasDentro = document.getElementById('label-b-medidas-dentro-parametro');
+
+        if (brandKey) {
+          // Predefined brand found, auto-validate and lock the toggle
+          toggleMedidasDentro.disabled = true;
+
+          const inAncho = parseFloat(document.getElementById('b-medida-ancho').value);
+          const inLargo = parseFloat(document.getElementById('b-medida-largo').value);
+          const inFuelle = parseFloat(document.getElementById('b-medida-fuelle').value);
+          const unit = document.getElementById('b-medidas-unidad').value;
+
+          if (isNaN(inAncho) || isNaN(inLargo) || isNaN(inFuelle)) {
+            // Missing data, assume failure until filled out
+            toggleMedidasDentro.checked = false;
+            labelMedidasDentro.textContent = 'No (Faltan Medidas)';
+            labelMedidasDentro.style.color = 'var(--text-muted)';
+            autoEvaluate();
+            return;
+          }
+
+          let anchoCm = unit === 'in' ? inAncho * 2.54 : inAncho;
+          let altoCm = unit === 'in' ? inLargo * 2.54 : inLargo;
+          let fuelleCm = unit === 'in' ? inFuelle * 2.54 : inFuelle;
+
+          const target = PREDEFINED_BRANDS[brandKey];
+          
+          const isAnchoOk = Math.abs(anchoCm - target.ancho) <= 1.0;
+          const isAltoOk = Math.abs(altoCm - target.alto) <= 1.0;
+          const isFuelleOk = Math.abs(fuelleCm - target.fuelle) <= 1.0;
+
+          if (isAnchoOk && isAltoOk && isFuelleOk) {
+            toggleMedidasDentro.checked = true;
+            labelMedidasDentro.textContent = 'Sí';
+            labelMedidasDentro.style.color = 'var(--color-success)';
+          } else {
+            toggleMedidasDentro.checked = false;
+            labelMedidasDentro.textContent = 'No (Fuera de Rango)';
+            labelMedidasDentro.style.color = '#dc2626'; // Red
+          }
+        } else {
+          // OTRO or Unknown Brand, unlock the toggle
+          toggleMedidasDentro.disabled = false;
+          labelMedidasDentro.style.color = 'var(--text-muted)';
+          if (labelMedidasDentro.textContent.includes('Fuera de Rango') || labelMedidasDentro.textContent.includes('Faltan')) {
+            labelMedidasDentro.textContent = toggleMedidasDentro.checked ? 'Sí' : 'No';
+          }
+        }
+
+        autoEvaluate();
       }
 
     </script>
