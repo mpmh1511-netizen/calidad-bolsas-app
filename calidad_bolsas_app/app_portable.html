@@ -1761,13 +1761,23 @@
                 <textarea id="insp-obs" rows="3" class="form-control" placeholder="Anotar detalles adicionales..."></textarea>
               </div>
             </div>
+            
+            <div class="form-group" style="margin-top: 1.5rem;">
+              <label>Evidencia Fotográfica (Obligatoria)</label>
+              <div class="photo-uploader" onclick="document.getElementById('defect-file').click()">
+                <span style="font-size: 2rem;">📷</span>
+                <span style="font-weight:600; font-size:0.8rem; margin-top:5px; color: var(--text-muted);">Capturar Foto Obligatoria</span>
+                <img id="photo-preview-img" src="" class="photo-preview" style="display: none;" />
+                <input type="file" id="defect-file" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoUpload(event)" />
+              </div>
+            </div>
 
             <!-- Panel de No Conformidad -->
             <div id="defect-panel" class="defect-panel" style="display: none;">
               <h3 style="color: var(--color-danger); font-size: 1.05rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 6px;">
                 ⚠️ Reportar Defecto y Acción Correctiva
               </h3>
-              <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+              <div class="form-grid" style="grid-template-columns: 1fr;">
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                   <div class="form-group">
                     <label>Descripción del Defecto</label>
@@ -1778,15 +1788,7 @@
                     <textarea id="defect-accion" rows="3" class="form-control" placeholder="Qué medidas se tomaron..."></textarea>
                   </div>
                 </div>
-                <div class="form-group">
-                  <label>Evidencia Fotográfica</label>
-                  <div class="photo-uploader" onclick="document.getElementById('defect-file').click()">
-                    <span style="font-size: 2rem;">📷</span>
-                    <span style="font-weight:600; font-size:0.8rem; margin-top:5px; color: var(--text-muted);">Subir o tomar foto</span>
-                    <img id="photo-preview-img" src="" class="photo-preview" style="display: none;" />
-                    <input type="file" id="defect-file" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoUpload(event)" />
-                  </div>
-                </div>
+
               </div>
             </div>
 
@@ -2311,16 +2313,18 @@
                   <label>Acción Correctiva *</label>
                   <textarea id="frias-insp-accion" class="form-control" rows="2" placeholder="Acción tomada para solucionar la falla..."></textarea>
                 </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                  <label>Fotografía de Evidencia</label>
-                  <div class="photo-uploader" onclick="document.getElementById('frias-insp-foto-input').click()">
-                    <span style="font-size: 1.5rem;">📷</span>
-                    <span id="frias-insp-foto-label" style="font-size: 0.85rem; color: var(--text-muted);">Toca para tomar foto o adjuntar evidencia</span>
-                  </div>
-                  <input type="file" id="frias-insp-foto-input" accept="image/*" capture="environment" style="display: none;" onchange="previewFriasPhoto(this, 'frias-insp-foto-preview', 'frias-insp-foto-label')" />
-                  <img id="frias-insp-foto-preview" style="display: none; margin-top: 10px; max-height: 150px; border-radius: 8px; border: 1px solid #cbd5e1;" />
-                </div>
+
               </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+              <label>Fotografía de Evidencia (Obligatoria)</label>
+              <div class="photo-uploader" onclick="document.getElementById('frias-insp-foto-input').click()">
+                <span style="font-size: 1.5rem;">📷</span>
+                <span id="frias-insp-foto-label" style="font-size: 0.85rem; color: var(--text-muted);">Capturar Foto Obligatoria</span>
+              </div>
+              <input type="file" id="frias-insp-foto-input" accept="image/*" capture="environment" style="display: none;" onchange="previewFriasPhoto(this, 'frias-insp-foto-preview', 'frias-insp-foto-label')" />
+              <img id="frias-insp-foto-preview" style="display: none; margin-top: 10px; max-height: 150px; border-radius: 8px; border: 1px solid #cbd5e1;" />
             </div>
 
             <button type="submit" class="btn-primary" style="margin-top: 1.5rem; width: 100%; justify-content: center; padding: 12px; font-size: 1rem;">
@@ -2396,16 +2400,18 @@
                   <label>Acción Correctiva *</label>
                   <textarea id="frias-carga-accion" class="form-control" rows="2" placeholder="Acción tomada para solucionar la falla..."></textarea>
                 </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                  <label>Fotografía de Evidencia</label>
-                  <div class="photo-uploader" onclick="document.getElementById('frias-carga-foto-input').click()">
-                    <span style="font-size: 1.5rem;">📷</span>
-                    <span id="frias-carga-foto-label" style="font-size: 0.85rem; color: var(--text-muted);">Toca para tomar foto o adjuntar evidencia</span>
-                  </div>
-                  <input type="file" id="frias-carga-foto-input" accept="image/*" capture="environment" style="display: none;" onchange="previewFriasPhoto(this, 'frias-carga-foto-preview', 'frias-carga-foto-label')" />
-                  <img id="frias-carga-foto-preview" style="display: none; margin-top: 10px; max-height: 150px; border-radius: 8px; border: 1px solid #cbd5e1;" />
-                </div>
+
               </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+              <label>Fotografía de Evidencia (Obligatoria)</label>
+              <div class="photo-uploader" onclick="document.getElementById('frias-carga-foto-input').click()">
+                <span style="font-size: 1.5rem;">📷</span>
+                <span id="frias-carga-foto-label" style="font-size: 0.85rem; color: var(--text-muted);">Capturar Foto Obligatoria</span>
+              </div>
+              <input type="file" id="frias-carga-foto-input" accept="image/*" capture="environment" style="display: none;" onchange="previewFriasPhoto(this, 'frias-carga-foto-preview', 'frias-carga-foto-label')" />
+              <img id="frias-carga-foto-preview" style="display: none; margin-top: 10px; max-height: 150px; border-radius: 8px; border: 1px solid #cbd5e1;" />
             </div>
 
             <button type="submit" class="btn-primary" style="margin-top: 1.5rem; width: 100%; justify-content: center; padding: 12px; font-size: 1rem; background-color: var(--color-primary-light);">
@@ -3904,7 +3910,7 @@
         );
 
         if (defects.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8" style="padding: 20px; text-align: center; color: #16a34a; font-weight: 700; background: #f0fdf4;">🎉 No hay registros de fallas para esta máquina y tipo de prueba.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="9" style="padding: 20px; text-align: center; color: #16a34a; font-weight: 700; background: #f0fdf4;">🎉 No hay registros de fallas para esta máquina y tipo de prueba.</td></tr>`;
         } else {
           let html = '';
           defects.forEach(d => {
@@ -3918,6 +3924,9 @@
                 <td style="padding: 10px; font-weight: 700; color: #2563eb;">${d.carga_peso_kg || 0} kg</td>
                 <td style="padding: 10px; color: #dc2626; font-weight: 700;">${d.observaciones || d.descripcion_defecto || 'Falla en desprendimiento/resistencia de asa'}</td>
                 <td style="padding: 10px; color: #15803d; font-weight: 600;">${d.accion_correctiva || 'Ajustar pegado / sellado de asa'}</td>
+                <td style="padding: 10px; text-align: center;">
+                  ${d.foto_url ? `<button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="showFullPhoto('${d.foto_url}')">📷 Ver Foto</button>` : '<span style="color:#94a3b8; font-size: 0.8rem;">Sin foto</span>'}
+                </td>
               </tr>
             `;
           });
@@ -3971,7 +3980,7 @@
         }
 
         if (machineInsps.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" style="padding: 20px; text-align: center; color: #64748b; font-style: italic; background: #f8fafc;">No hay inspecciones registradas para la Máquina ${machineName}.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="8" style="padding: 20px; text-align: center; color: #64748b; font-style: italic; background: #f8fafc;">No hay inspecciones registradas para la Máquina ${machineName}.</td></tr>`;
         } else {
           let html = '';
           machineInsps.forEach(ins => {
@@ -4007,6 +4016,9 @@
                 <td style="padding: 10px;"><code>${ins.numero_rollo || '-'}</code></td>
                 <td style="padding: 10px;">${resBadge}</td>
                 <td style="padding: 10px; font-size: 0.8rem; color: var(--text-main);">${obs || 'Sin observaciones'}</td>
+                <td style="padding: 10px; text-align: center;">
+                  ${ins.foto_url ? `<button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="showFullPhoto('${ins.foto_url}')">📷 Ver Foto</button>` : '<span style="color:#94a3b8; font-size: 0.8rem;">Sin foto</span>'}
+                </td>
               </tr>
             `;
           });
@@ -7234,6 +7246,12 @@
           newInsp.ultimo_lavado_grabado = document.getElementById('flexo-lavado').value;
         }
 
+        if (!state.uploadedPhotoBase64) {
+          showToast('La evidencia fotográfica es obligatoria para todas las inspecciones.', 'danger');
+          return;
+        }
+        newInsp.foto_url = state.uploadedPhotoBase64;
+
         if (state.currentResult === 'Rechazado') {
           const defDesc = document.getElementById('defect-desc').value;
           const defAccion = document.getElementById('defect-accion').value;
@@ -7244,7 +7262,6 @@
           }
           newInsp.descripcion_defecto = defDesc;
           newInsp.accion_correctiva = defAccion;
-          newInsp.foto_url = state.uploadedPhotoBase64 || '';
         }
 
         if (bobinaObj) {
@@ -8071,6 +8088,11 @@
           fotoUrl = imgPreview.src;
         }
 
+        if (!fotoUrl) {
+          showToast('La evidencia fotográfica es obligatoria.', 'danger');
+          return;
+        }
+
         const now = new Date();
         const todayIso = now.toISOString().split('T')[0];
         const timeStr = hora ? (hora.length === 5 ? hora + ':00' : hora) : now.toTimeString().split(' ')[0];
@@ -8102,7 +8124,7 @@
         showToast('✅ Inspección de Calidad (Frías) guardada con éxito.');
         document.getElementById('frias-inspeccion-form').reset();
         selectFriasInspResult('Aprobado');
-        if (imgPreview) imgPreview.style.display = 'none';
+        if (imgPreview) { imgPreview.style.display = 'none'; imgPreview.src = ''; }
       }
 
       // 2. Lógica Pruebas de Carga Frías
@@ -8193,6 +8215,11 @@
           fotoUrl = imgPreview.src;
         }
 
+        if (!fotoUrl) {
+          showToast('La evidencia fotográfica es obligatoria.', 'danger');
+          return;
+        }
+
         const now = new Date();
         const todayIso = now.toISOString().split('T')[0];
         const timeStr = horaFin ? (horaFin.length === 5 ? horaFin + ':00' : horaFin) : now.toTimeString().split(' ')[0];
@@ -8221,7 +8248,7 @@
         showToast('✅ Prueba de Carga (Frías) guardada con éxito.');
         document.getElementById('frias-carga-form').reset();
         selectFriasCargaResult('Aprobado');
-        if (imgPreview) imgPreview.style.display = 'none';
+        if (imgPreview) { imgPreview.style.display = 'none'; imgPreview.src = ''; }
       }
 
       // 3. Lógica Liberación de Tarimas Frías
@@ -8350,7 +8377,7 @@
 
         document.getElementById('frias-tarima-form').reset();
         selectFriasTarimaEstado('Liberada');
-        if (imgPreview) imgPreview.style.display = 'none';
+        if (imgPreview) { imgPreview.style.display = 'none'; imgPreview.src = ''; }
       }
 
       function copyFriasTarimaCode() {
@@ -8732,6 +8759,15 @@
         autoEvaluate();
       }
 
+    
+      function showFullPhoto(src) {
+        if (!src || src === 'null' || src === '') return;
+        const modal = document.getElementById('full-photo-modal');
+        const img = document.getElementById('full-photo-img');
+        img.src = src;
+        modal.style.display = 'flex';
+      }
+
     </script>
 
     <!-- Modal de Confirmación para Reiniciar Datos -->
@@ -8883,6 +8919,7 @@
                   <th style="padding: 10px;">No. Rollo</th>
                   <th style="padding: 10px;">Resultado</th>
                   <th style="padding: 10px;">Detalles / Observaciones</th>
+                  <th style="padding: 10px;">Evidencia Fotográfica</th>
                 </tr>
               </thead>
               <tbody id="machine-modal-tbody">
@@ -8897,6 +8934,12 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- MODAL PARA VER FOTO COMPLETA -->
+    <div id="full-photo-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 100000; align-items: center; justify-content: center; backdrop-filter: blur(4px);" onclick="this.style.display='none'">
+      <span style="position: absolute; top: 20px; right: 30px; font-size: 30px; color: white; cursor: pointer; font-weight: bold;">&times;</span>
+      <img id="full-photo-img" src="" style="max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);" />
     </div>
   </body>
 </html>
