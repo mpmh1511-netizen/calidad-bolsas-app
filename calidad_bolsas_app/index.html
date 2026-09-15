@@ -3474,6 +3474,57 @@
       }
 
       function onStatIndepFilterChange() {
+        const marcaSel = document.getElementById('stat-indep-marca-select');
+        const maqSel = document.getElementById('stat-indep-maquina-select');
+        const allInsps = (state && state.inspecciones) ? state.inspecciones : [];
+        
+        const marcaVal = marcaSel ? marcaSel.value : '';
+        const maqVal = maqSel ? maqSel.value : '';
+        
+        let validMarcas = new Set();
+        let validMaq = new Set();
+        
+        allInsps.forEach(i => {
+           const mMarca = (i.marca_especificaciones || i.marca_cliente || i.marca || '').trim().toUpperCase();
+           let mMaq = '';
+           if (i.area === 'Flexo') mMaq = 'Flexo-Flexo';
+           else if (i.area === 'Nanjang' || i.area === 'Con Asa') mMaq = 'Armado-' + i.maquina;
+           else if (i.area === 'Frías') mMaq = 'Frias-' + (i.banda || i.maquina);
+           
+           if (!maqVal || maqVal === mMaq) {
+               if (mMarca) validMarcas.add(mMarca);
+           }
+           if (!marcaVal || marcaVal === mMarca) {
+               if (mMaq) validMaq.add(mMaq);
+           }
+        });
+        
+        if (marcaSel) {
+            let autoSelectMarca = null;
+            if (maqVal && validMarcas.size === 1 && !marcaVal) autoSelectMarca = Array.from(validMarcas)[0];
+            
+            Array.from(marcaSel.options).forEach(opt => {
+                if (opt.value === "") return;
+                if (!maqVal) { opt.style.display = ''; opt.disabled = false; }
+                else if (validMarcas.has(opt.value)) { opt.style.display = ''; opt.disabled = false; }
+                else { opt.style.display = 'none'; opt.disabled = true; }
+            });
+            
+            if (autoSelectMarca) marcaSel.value = autoSelectMarca;
+        }
+        
+        if (maqSel) {
+            Array.from(maqSel.options).forEach(opt => {
+                if (opt.value === "") return;
+                if (!marcaVal) { opt.style.display = ''; opt.disabled = false; }
+                else if (validMaq.has(opt.value)) { opt.style.display = ''; opt.disabled = false; }
+                else { opt.style.display = 'none'; opt.disabled = true; }
+            });
+            
+            // Si la máquina seleccionada se ocultó, resetear
+            if (maqVal && validMaq.size > 0 && !validMaq.has(maqVal)) maqSel.value = "";
+        }
+        
         renderStatIndepView();
       }
 
@@ -6028,6 +6079,7 @@
           selectedDate,
           machineFilter: machineFilter || 'Todas las Máquinas',
           personaFilter: personaFilter || 'Todas las Personas',
+          marcaFilter: marcaExportFilter || 'Todas las Marcas',
           scopedProduction,
           scopedInspections,
           flexo: { prod: flexoProd, insp: flexoInsp },
@@ -6345,7 +6397,7 @@
         </style></head><body>`;
 
         html += `<h2>CONTROL DE CALIDAD DIPAPEL - REPORTES DE ESTADÍSTICAS</h2>`;
-        html += `<p><strong>Periodo:</strong> ${data.periodo} | <strong>Fecha:</strong> ${data.selectedDate} | <strong>Filtro Máquina:</strong> ${data.machineFilter}</p>`;
+        html += `<p><strong>Periodo:</strong> ${data.periodo} | <strong>Fecha:</strong> ${data.selectedDate} | <strong>Filtro Máquina:</strong> ${data.machineFilter} | <strong>Marca:</strong> ${data.marcaFilter}</p>`;
 
         // Flexo Table
         html += `<h3 class="section-title">1. FLEXO (IMPRESIÓN) - ${data.flexo.insp.length} Auditorías</h3><table><tr><th>Fecha</th><th>Máquina</th><th>Operador</th><th>Rollo</th><th>Marca</th><th>Tintas</th><th>Impresión</th><th>Registro</th><th>Resultado</th></tr>`;
@@ -6403,6 +6455,7 @@
           const conformes = data.scopedInspections.filter(i => i.resultado === 'Aprobado' || i.carga_resultado === 'Pasa').length;
           const noConformes = data.scopedInspections.filter(i => i.resultado === 'Rechazado' || i.carga_resultado === 'Falla').length;
           const pctConformidad = totalInsp > 0 ? ((conformes / totalInsp) * 100).toFixed(1) + '%' : '0%';
+          const marcaText = data.marcaFilter ? `Marca: ${data.marcaFilter}` : '';
 
           const bolsasProducidas = data.scopedProduction.reduce((sum, r) => sum + (parseInt(r.bolsas_producidas) || 0), 0);
           const bolsasTarima = data.scopedProduction.reduce((sum, r) => sum + (parseInt(r.bolsas_tarima) || 0), 0);
