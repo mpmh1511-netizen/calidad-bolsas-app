@@ -580,6 +580,13 @@
                 <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Filtrar por Marca:</label>
                 <select id="stat-indep-marca-select" class="form-control" onchange="onStatIndepFilterChange()" style="width: 100%; padding: 8px; font-weight: 600;">
                   <option value="">Todas las Marcas</option>
+                  <option value="KOHLS">KOHLS</option>
+                  <option value="MENARDS">MENARDS</option>
+                  <option value="KROGER">KROGER</option>
+                  <option value="SUBWAY">SUBWAY</option>
+                  <option value="TARGET">TARGET</option>
+                  <option value="WALMART">WALMART</option>
+                  <option value="BSK">BSK</option>
                 </select>
               </div>
 
@@ -3560,29 +3567,7 @@
 
         const allInspections = (state && state.inspecciones) ? state.inspecciones : [];
 
-        // Poblar dinámicamente el dropdown de Marcas si está vacío o si queremos actualizar
-        const marcaSelect = document.getElementById('stat-indep-marca-select');
-        if (marcaSelect) {
-            const currentValue = marcaSelect.value;
-            const uniqueMarcas = new Set();
-            allInspections.forEach(i => {
-                const m = i.marca_especificaciones || i.marca_cliente || i.marca;
-                if (m) uniqueMarcas.add(m.trim().toUpperCase());
-            });
-            const marcasArray = Array.from(uniqueMarcas).sort();
-            
-            marcaSelect.innerHTML = '<option value="">Todas las Marcas</option>';
-            marcasArray.forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m;
-                opt.textContent = m;
-                marcaSelect.appendChild(opt);
-            });
-            // Restaurar valor previo si existe
-            if (marcasArray.includes(currentValue)) {
-                marcaSelect.value = currentValue;
-            }
-        }
+
 
         // Filtrar por Área, Máquina, Periodo y Fecha (EXCLUYE Frías / Bandas del panel superior)
         const filteredInspections = allInspections.filter(insp => {
@@ -6004,8 +5989,15 @@
 
         // 2. Filtrar inspecciones de calidad por periodo y fecha
         const allInspections = (state && state.inspecciones) ? state.inspecciones : [];
+        const marcaIndepEl = document.getElementById('stat-indep-marca-select');
+        const marcaExportFilter = marcaIndepEl ? marcaIndepEl.value : '';
+
         const scopedInspections = allInspections.filter(insp => {
           const inspDate = getInspIsoDate(insp);
+          if (marcaExportFilter) {
+            const m = (insp.marca_especificaciones || insp.marca_cliente || insp.marca || '').trim().toUpperCase();
+            if (m !== marcaExportFilter) return false;
+          }
           if (machineFilter) {
             const [tipo, maq] = machineFilter.split('-');
             if (insp.maquina !== maq) return false;
