@@ -577,6 +577,13 @@
               </div>
 
               <div>
+                <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Filtrar por Marca:</label>
+                <select id="stat-indep-marca-select" class="form-control" onchange="onStatIndepFilterChange()" style="width: 100%; padding: 8px; font-weight: 600;">
+                  <option value="">Todas las Marcas</option>
+                </select>
+              </div>
+
+              <div>
                 <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Filtrar por Máquina Específica:</label>
                 <select id="stat-indep-maquina-select" class="form-control" onchange="onStatIndepFilterChange()" style="width: 100%; padding: 8px; font-weight: 600;">
                   <option value="">Todas las Máquinas</option>
@@ -3548,9 +3555,34 @@
       async function renderStatIndepView() {
         const areaFilter = document.getElementById('stat-indep-area-select')?.value || '';
         const machineFilter = document.getElementById('stat-indep-maquina-select')?.value || '';
+        const marcaFilter = document.getElementById('stat-indep-marca-select')?.value || '';
         const fechaVal = document.getElementById('stat-indep-fecha-input')?.value || new Date().toISOString().split('T')[0];
 
         const allInspections = (state && state.inspecciones) ? state.inspecciones : [];
+
+        // Poblar dinámicamente el dropdown de Marcas si está vacío o si queremos actualizar
+        const marcaSelect = document.getElementById('stat-indep-marca-select');
+        if (marcaSelect) {
+            const currentValue = marcaSelect.value;
+            const uniqueMarcas = new Set();
+            allInspections.forEach(i => {
+                const m = i.marca_especificaciones || i.marca_cliente || i.marca;
+                if (m) uniqueMarcas.add(m.trim().toUpperCase());
+            });
+            const marcasArray = Array.from(uniqueMarcas).sort();
+            
+            marcaSelect.innerHTML = '<option value="">Todas las Marcas</option>';
+            marcasArray.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                marcaSelect.appendChild(opt);
+            });
+            // Restaurar valor previo si existe
+            if (marcasArray.includes(currentValue)) {
+                marcaSelect.value = currentValue;
+            }
+        }
 
         // Filtrar por Área, Máquina, Periodo y Fecha (EXCLUYE Frías / Bandas del panel superior)
         const filteredInspections = allInspections.filter(insp => {
@@ -3567,6 +3599,11 @@
             if (machineFilter.startsWith('Frias-')) return false;
             const [tipo, maq] = machineFilter.split('-');
             if (insp.maquina !== maq && insp.banda !== maq) return false;
+          }
+
+          if (marcaFilter) {
+            const m = (insp.marca_especificaciones || insp.marca_cliente || insp.marca || '').trim().toUpperCase();
+            if (m !== marcaFilter) return false;
           }
 
           if (statIndepPeriodo === 'dia') return inspDate === fechaVal;
@@ -3612,6 +3649,11 @@
             } else {
               return false;
             }
+          }
+
+          if (marcaFilter) {
+            const m = (insp.marca_especificaciones || insp.marca_cliente || insp.marca || '').trim().toUpperCase();
+            if (m !== marcaFilter) return false;
           }
 
           if (statIndepPeriodo === 'dia') return inspDate === fechaVal;
