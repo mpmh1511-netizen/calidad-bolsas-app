@@ -55,12 +55,47 @@ function writeDb(db) {
 }
 
 const server = http.createServer(async (req, res) => {
+  // Configurar CORS y anti-caché
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  // --- PROTECCIÓN POR CONTRASEÑA (BASIC AUTH) ---
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Acceso Privado Dipapel"');
+    res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Acceso Restringido. Se requiere contraseña.');
+    return;
+  }
+
+  const auth = Buffer.from(authHeader.split(' ')[1] || '', 'base64').toString().split(':');
+  const user = auth[0];
+  const pass = auth[1];
+
+  // Creadenciales de acceso para la empresa
+  const validUser = process.env.APP_USER || 'dipapel';
+  const validPass = process.env.APP_PASS || 'calidad2024';
+
+  if (user !== validUser || pass !== validPass) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Acceso Privado Dipapel"');
+    res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Credenciales incorrectas.');
+    return;
+  }
+
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
   const method = req.method;
-
-  // Configurar CORS y anti-caché
-  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
