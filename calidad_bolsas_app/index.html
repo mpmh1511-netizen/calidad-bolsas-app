@@ -2840,18 +2840,51 @@
       }
 
       async function saveDatabase() {
+        // CLEANUP PREVENTIVO DE MEMORIA: Reducir fotos excesivamente grandes (sin comprimir previas)
+        if (state.inspecciones) {
+           state.inspecciones.forEach(i => {
+              if (i.foto_url && i.foto_url.length > 500000) i.foto_url = null;
+           });
+        }
+        let storedTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+        storedTarimas.forEach(t => {
+           if (t.foto_url && t.foto_url.length > 500000) t.foto_url = null;
+        });
+        
         const db = {
           bobinas: state.bobinas,
           inspecciones: state.inspecciones,
           produccion_personal: JSON.parse(localStorage.getItem('produccion_personal')) || [],
-          tarimas: JSON.parse(localStorage.getItem('calidad_tarimas')) || []
+          tarimas: storedTarimas
         };
         
         // Guardar localmente como respaldo
-        localStorage.setItem('calidad_bobinas', JSON.stringify(state.bobinas));
-        localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
-        localStorage.setItem('produccion_personal', JSON.stringify(db.produccion_personal));
-        localStorage.setItem('calidad_tarimas', JSON.stringify(db.tarimas));
+        try {
+          try {
+          localStorage.setItem('calidad_bobinas', JSON.stringify(state.bobinas));
+        } catch (e) {
+          console.warn('Quota exceeded in saveBobina');
+        }
+          // Auto-cleanup huge photos before saving
+        state.inspecciones.forEach(i => {
+           if (i.foto_url && i.foto_url.length > 500000) i.foto_url = null;
+        });
+        try {
+          localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
+        } catch (e) {
+          showToast('La memoria del dispositivo está casi llena. Se borrarán fotos antiguas.', 'warning');
+          if (state.inspecciones.length > 0) state.inspecciones[state.inspecciones.length - 1].foto_url = null;
+          try { localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones)); } catch (err) {}
+        }
+          localStorage.setItem('produccion_personal', JSON.stringify(db.produccion_personal));
+          localStorage.setItem('calidad_tarimas', JSON.stringify(db.tarimas));
+        } catch (e) {
+          if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+             showToast('Error: La memoria de tu dispositivo está muy llena. Elimina registros antiguos o sincroniza.', 'danger');
+             alert('Error: La memoria del navegador está llena por el peso de las fotos. Se recomienda borrar el historial/datos del sitio o sincronizar.');
+             return;
+          }
+        }
 
         if (CLOUD_URL) {
           const res = await apiFetch(CLOUD_URL, {
@@ -2871,7 +2904,11 @@
         } else {
           state.bobinas.unshift(bobinaObj);
         }
-        localStorage.setItem('calidad_bobinas', JSON.stringify(state.bobinas));
+        try {
+          localStorage.setItem('calidad_bobinas', JSON.stringify(state.bobinas));
+        } catch (e) {
+          console.warn('Quota exceeded in saveBobina');
+        }
 
         if (CLOUD_URL) {
           await saveDatabase();
@@ -2895,7 +2932,17 @@
         } else {
           state.inspecciones.unshift(newInsp);
         }
-        localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
+        // Auto-cleanup huge photos before saving
+        state.inspecciones.forEach(i => {
+           if (i.foto_url && i.foto_url.length > 500000) i.foto_url = null;
+        });
+        try {
+          localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
+        } catch (e) {
+          showToast('La memoria del dispositivo está casi llena. Se borrarán fotos antiguas.', 'warning');
+          if (state.inspecciones.length > 0) state.inspecciones[state.inspecciones.length - 1].foto_url = null;
+          try { localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones)); } catch (err) {}
+        }
 
         // Renderizado inmediato local (0ms latencia)
         if (state.role === 'calidad') {
@@ -2922,7 +2969,14 @@
         } else {
           tarimas.unshift(newTarima);
         }
-        localStorage.setItem('calidad_tarimas', JSON.stringify(tarimas));
+        tarimas.forEach(t => {
+           if (t.foto_url && t.foto_url.length > 500000) t.foto_url = null;
+        });
+        try {
+          localStorage.setItem('calidad_tarimas', JSON.stringify(tarimas));
+        } catch (e) {
+          console.warn('Quota exceeded in saveTarima');
+        }
 
         if (CLOUD_URL) {
           await saveDatabase();
@@ -3234,8 +3288,22 @@
           if (db) {
             state.bobinas = db.bobinas || [];
             state.inspecciones = db.inspecciones || [];
-            localStorage.setItem('calidad_bobinas', JSON.stringify(state.bobinas));
-            localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
+            try {
+          localStorage.setItem('calidad_bobinas', JSON.stringify(state.bobinas));
+        } catch (e) {
+          console.warn('Quota exceeded in saveBobina');
+        }
+            // Auto-cleanup huge photos before saving
+        state.inspecciones.forEach(i => {
+           if (i.foto_url && i.foto_url.length > 500000) i.foto_url = null;
+        });
+        try {
+          localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
+        } catch (e) {
+          showToast('La memoria del dispositivo está casi llena. Se borrarán fotos antiguas.', 'warning');
+          if (state.inspecciones.length > 0) state.inspecciones[state.inspecciones.length - 1].foto_url = null;
+          try { localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones)); } catch (err) {}
+        }
             localStorage.setItem('produccion_personal', JSON.stringify(db.produccion_personal || []));
             localStorage.setItem('calidad_tarimas', JSON.stringify(db.tarimas || []));
           } else {
@@ -7640,7 +7708,17 @@
             if (list) state.inspecciones = list;
           } else {
             state.inspecciones = state.inspecciones.filter(i => i.id !== id);
-            localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
+            // Auto-cleanup huge photos before saving
+        state.inspecciones.forEach(i => {
+           if (i.foto_url && i.foto_url.length > 500000) i.foto_url = null;
+        });
+        try {
+          localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
+        } catch (e) {
+          showToast('La memoria del dispositivo está casi llena. Se borrarán fotos antiguas.', 'warning');
+          if (state.inspecciones.length > 0) state.inspecciones[state.inspecciones.length - 1].foto_url = null;
+          try { localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones)); } catch (err) {}
+        }
           }
           renderTimeline();
           renderDashboard();
@@ -8107,15 +8185,42 @@
         if (input.files && input.files[0]) {
           const reader = new FileReader();
           reader.onload = function(e) {
-            const img = document.getElementById(imgId);
-            const lbl = document.getElementById(labelId);
-            if (img) {
-              img.src = e.target.result;
-              img.style.display = 'block';
-            }
-            if (lbl) {
-              lbl.textContent = '📸 Foto cargada correctamente (Toca para cambiar)';
-            }
+            const imgEl = new Image();
+            imgEl.onload = function() {
+              const canvas = document.createElement('canvas');
+              const max_size = 800;
+              let width = imgEl.width;
+              let height = imgEl.height;
+
+              if (width > height) {
+                if (width > max_size) {
+                  height *= max_size / width;
+                  width = max_size;
+                }
+              } else {
+                if (height > max_size) {
+                  width *= max_size / height;
+                  height = max_size;
+                }
+              }
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(imgEl, 0, 0, width, height);
+
+              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+              
+              const img = document.getElementById(imgId);
+              const lbl = document.getElementById(labelId);
+              if (img) {
+                img.src = compressedBase64;
+                img.style.display = 'block';
+              }
+              if (lbl) {
+                lbl.textContent = '📸 Foto cargada correctamente (Toca para cambiar)';
+              }
+            };
+            imgEl.src = e.target.result;
           };
           reader.readAsDataURL(input.files[0]);
         }
