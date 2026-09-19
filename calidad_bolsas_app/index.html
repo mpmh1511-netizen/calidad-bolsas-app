@@ -3600,6 +3600,22 @@
             let autoSelectMarca = null;
             if (maqVal && validMarcas.size === 1 && !marcaVal) autoSelectMarca = Array.from(validMarcas)[0];
             
+            // Garantizar que TODAS las marcas (incluyendo manuales "OTRO") existan en el menú antes de filtrar
+            let allGlobalMarcas = new Set();
+            allInsps.forEach(i => {
+               const m = (i.marca_especificaciones || i.marca_cliente || i.marca || '').trim().toUpperCase();
+               if (m) allGlobalMarcas.add(m);
+            });
+            const existingOptions = Array.from(marcaSel.options).map(o => o.value);
+            allGlobalMarcas.forEach(v => {
+                if (!existingOptions.includes(v)) {
+                    const newOpt = document.createElement('option');
+                    newOpt.value = v;
+                    newOpt.textContent = v;
+                    marcaSel.appendChild(newOpt);
+                }
+            });
+
             Array.from(marcaSel.options).forEach(opt => {
                 if (opt.value === "") return;
                 if (!maqVal) { opt.style.display = ''; opt.disabled = false; }
@@ -6506,6 +6522,7 @@
                 <div><span style="color:#64748b; font-size:0.85rem;">Fecha/Hora:</span> <strong style="display:block;">${insp.fecha_registro || insp.hora_inspeccion || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Área:</span> <strong style="display:block;">${insp.area || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Máquina:</span> <strong style="display:block;">${insp.maquina || insp.banda || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Marca:</span> <strong style="display:block; color:#0284c7;">${insp.marca_especificaciones || insp.marca_cliente || insp.marca || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Operador:</span> <strong style="display:block;">${insp.operador || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Registró:</span> <strong style="display:block;">${insp.editado_por || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Resultado:</span> <strong style="display:block; color:${(insp.resultado==='Rechazado' || insp.carga_resultado==='Falla') ? '#dc2626':'#15803d'}">${insp.resultado || insp.carga_resultado || '-'}</strong></div>
@@ -6633,6 +6650,7 @@
                 <div><span style="color:#64748b; font-size:0.85rem;">Fecha/Hora:</span> <strong style="display:block;">${insp.fecha_registro || insp.hora_inspeccion || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Área:</span> <strong style="display:block;">${insp.area || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Máquina:</span> <strong style="display:block;">${insp.maquina || insp.banda || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Marca:</span> <strong style="display:block; color:#0284c7;">${insp.marca_especificaciones || insp.marca_cliente || insp.marca || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Operador:</span> <strong style="display:block;">${insp.operador || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Registró:</span> <strong style="display:block;">${insp.editado_por || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Resultado:</span> <strong style="display:block; color:${(insp.resultado==='Rechazado' || insp.carga_resultado==='Falla') ? '#dc2626':'#15803d'}">${insp.resultado || insp.carga_resultado || '-'}</strong></div>
@@ -7084,6 +7102,7 @@
                 <div><span style="color:#64748b; font-size:0.85rem;">Fecha/Hora:</span> <strong style="display:block;">${insp.fecha_registro || insp.hora_inspeccion || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Área:</span> <strong style="display:block;">${insp.area || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Máquina:</span> <strong style="display:block;">${insp.maquina || insp.banda || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Marca:</span> <strong style="display:block; color:#0284c7;">${insp.marca_especificaciones || insp.marca_cliente || insp.marca || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Operador:</span> <strong style="display:block;">${insp.operador || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Registró:</span> <strong style="display:block;">${insp.editado_por || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Resultado:</span> <strong style="display:block; color:${(insp.resultado==='Rechazado' || insp.carga_resultado==='Falla') ? '#dc2626':'#15803d'}">${insp.resultado || insp.carga_resultado || '-'}</strong></div>
@@ -9436,6 +9455,7 @@
                 <div><span style="color:#64748b; font-size:0.85rem;">Fecha/Hora:</span> <strong style="display:block;">${insp.fecha_registro || insp.hora_inspeccion || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Área:</span> <strong style="display:block;">${insp.area || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Máquina:</span> <strong style="display:block;">${insp.maquina || insp.banda || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Marca:</span> <strong style="display:block; color:#0284c7;">${insp.marca_especificaciones || insp.marca_cliente || insp.marca || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Operador:</span> <strong style="display:block;">${insp.operador || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Registró:</span> <strong style="display:block;">${insp.editado_por || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Resultado:</span> <strong style="display:block; color:${(insp.resultado==='Rechazado' || insp.carga_resultado==='Falla') ? '#dc2626':'#15803d'}">${insp.resultado || insp.carga_resultado || '-'}</strong></div>
