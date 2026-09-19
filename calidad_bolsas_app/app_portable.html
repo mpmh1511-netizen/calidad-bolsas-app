@@ -6491,7 +6491,7 @@
 
         const xlsDataUrl = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent('<html><head><meta charset="utf-8"/></head><body><table>' + summaryData.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('') + '</table>
     <!-- FULL INSPECTION DETAIL MODAL -->
-    <div id="full-inspection-detail-modal" class="modal-overlay">
+    <div id="full-inspection-detail-modal" class="modal-overlay" style="display: none;">
       <div class="modal-content" style="max-width: 700px;">
         <button class="modal-close" onclick="document.getElementById('full-inspection-detail-modal').style.display='none'">×</button>
         <div style="padding: 10px 0;">
@@ -6619,7 +6619,7 @@
         });
         html += `</table>
     <!-- FULL INSPECTION DETAIL MODAL -->
-    <div id="full-inspection-detail-modal" class="modal-overlay">
+    <div id="full-inspection-detail-modal" class="modal-overlay" style="display: none;">
       <div class="modal-content" style="max-width: 700px;">
         <button class="modal-close" onclick="document.getElementById('full-inspection-detail-modal').style.display='none'">×</button>
         <div style="padding: 10px 0;">
@@ -7071,7 +7071,7 @@
         const bodyContent = bodyContainer.innerHTML;
         const fullHtml = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Reporte Dipapel</title></head><body style="padding:20px; font-family:sans-serif;">${bodyContent}
     <!-- FULL INSPECTION DETAIL MODAL -->
-    <div id="full-inspection-detail-modal" class="modal-overlay">
+    <div id="full-inspection-detail-modal" class="modal-overlay" style="display: none;">
       <div class="modal-content" style="max-width: 700px;">
         <button class="modal-close" onclick="document.getElementById('full-inspection-detail-modal').style.display='none'">×</button>
         <div style="padding: 10px 0;">
@@ -9424,7 +9424,7 @@
     </div>
   
     <!-- FULL INSPECTION DETAIL MODAL -->
-    <div id="full-inspection-detail-modal" class="modal-overlay">
+    <div id="full-inspection-detail-modal" class="modal-overlay" style="display: none;">
       <div class="modal-content" style="max-width: 700px;">
         <button class="modal-close" onclick="document.getElementById('full-inspection-detail-modal').style.display='none'">×</button>
         <div style="padding: 10px 0;">
