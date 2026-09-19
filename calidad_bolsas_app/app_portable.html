@@ -1451,11 +1451,10 @@
                     <div class="form-group">
                       <label>Máquina de Impresión (Flexo)</label>
                       <select id="bolsas-manual-maquina-flexo" class="form-control">
-                        <option value="M1">M1</option>
-                        <option value="M2">M2</option>
-                        <option value="M3">M3</option>
-                        <option value="M4">M4</option>
-                        <option value="M5">M5</option>
+                        <option value="Flexo 1">Flexo 1</option>
+                        <option value="Flexo 2">Flexo 2</option>
+                        <option value="Flexo 3">Flexo 3</option>
+                        <option value="Flexo 4">Flexo 4</option>
                       </select>
                     </div>
                     <div class="form-group">
@@ -3225,6 +3224,36 @@
         }
       }
 
+      // Migración para arreglar datos viejos (Flexo mal asignado a M1-M13) y Falsos Aprobados
+      function fixOldFlexoRecords() {
+        let changed = false;
+        if (state && state.inspecciones) {
+          state.inspecciones.forEach(i => {
+            // Fix Flexo Maquinas
+            if (i.area === 'Flexo' && String(i.maquina).startsWith('M')) {
+              i.maquina = 'Flexo ' + i.maquina.replace('M', ''); // M1 -> Flexo 1
+              changed = true;
+            }
+            
+            // Fix Falsos Aprobados (donde resultado es Aprobado pero había inconformidades)
+            if (i.resultado === 'Aprobado') {
+               let failed = false;
+               if (i.area === 'Flexo' && (i.impresion_correcta === 0 || i.registro_correcto === 0 || i.estado_fisico_rollo === 'Malas condiciones')) failed = true;
+               if ((i.area === 'Nanjang' || i.area === 'Con Asa') && (i.pegado_disco === 0 || i.pegado_fondo === 0 || i.sin_rebabas_pegamento === 0 || i.sin_ruptura_papel === 0 || i.medidas_coinciden === 0 || i.estado_gomas_fondo === 'Malas condiciones' || i.pegamento_lineal === 0 || i.defecto_impresion === 1 || i.medidas_dentro_parametro === 0)) failed = true;
+               if (i.area === 'Con Asa' && (i.pegamiento_suficiente_asa === 0 || i.pegamiento_suficiente_parche === 0 || i.posicion_asa_correcta === 0 || i.pegado_correcto_parche === 0 || i.aplicacion_hot_melt_correcta === 0 || i.posicion_parche_correcta === 0)) failed = true;
+               
+               if (failed) {
+                  i.resultado = 'Rechazado';
+                  changed = true;
+               }
+            }
+          });
+          if (changed) {
+             try { localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones)); } catch(e){}
+          }
+        }
+      }
+
       async function syncLocalToCloud() {
         try {
           showToast('Enviando registros guardados en esta compu al servidor...', 'info');
@@ -3888,8 +3917,8 @@
             : `<span style="color: #94a3b8; font-size: 0.75rem;">Sin foto</span>`;
 
           html += `
-            <tr style="border-bottom: 1px solid #e2e8f0;">
-              <td style="padding: 10px; font-weight: 600;">${i.fecha_registro}</td>
+            <tr onclick="if(!event.target.closest('a') && !event.target.closest('button')) viewInspectionDetail('${i.id}')" style="cursor:pointer; border-bottom: 1px solid #e2e8f0;" onmouseover="this.style.backgroundColor='#f1f5f9'" onmouseout="this.style.backgroundColor='transparent'" title="Haz clic para ver detalles">
+              <td style="padding: 10px; font-weight: 600; color:#0284c7;">${i.fecha_registro} 🔍</td>
               <td style="padding: 10px;">${i.area}</td>
               <td style="padding: 10px; font-weight: 800; color: var(--color-primary);">${i.maquina}</td>
               <td style="padding: 10px;">${i.operador || '-'}</td>
@@ -4061,8 +4090,8 @@
           let html = '';
           defects.forEach(d => {
             html += `
-              <tr style="border-bottom: 1px solid #e2e8f0;">
-                <td style="padding: 10px; font-weight: 600;">${d.fecha_registro}</td>
+              <tr onclick="if(!event.target.closest('button')) viewInspectionDetail('${d.id}')" style="cursor:pointer; border-bottom: 1px solid #e2e8f0;" onmouseover="this.style.backgroundColor='#fef2f2'" onmouseout="this.style.backgroundColor='transparent'" title="Haz clic para ver detalles">
+                <td style="padding: 10px; font-weight: 600; color:#0284c7;">${d.fecha_registro} 🔍</td>
                 <td style="padding: 10px; font-weight: 800; color: var(--color-primary);">${d.maquina}</td>
                 <td style="padding: 10px;">${d.operador || '-'}</td>
                 <td style="padding: 10px; font-weight: 600; color: #475569;">${d.editado_por || 'Desconocido'}</td>
@@ -4101,6 +4130,9 @@
 
         // Aplicar los MISMOS filtros del periodo seleccionado para que solo salgan las inspecciones de ese periodo
         const machineInsps = allInsps.filter(insp => {
+          // EXCLUIR Pruebas de Carga de este modal general de inspecciones de calidad
+          if (insp.es_prueba_carga === 1) return false;
+          
           const isBandaMatch = (insp.maquina === machineName || insp.banda === machineName);
           if (!isBandaMatch) return false;
           if (areaFilter && insp.area !== areaFilter && !machineName.startsWith('Banda')) return false;
@@ -4245,6 +4277,7 @@
           'view-frias-tarimas').style.display = 'block';
           
           state.inspecciones = JSON.parse(localStorage.getItem('calidad_inspecciones')) || [];
+          fixOldFlexoRecords();
           renderTimeline();
           renderDashboard();
         }
@@ -6440,7 +6473,78 @@
         cargaAsaSummaryRows.forEach(r => tsvContent += r.join('\t') + '\n');
         currentRawExcelData = tsvContent;
 
-        const xlsDataUrl = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent('<html><head><meta charset="utf-8"/></head><body><table>' + summaryData.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('') + '</table></body></html>');
+        const xlsDataUrl = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent('<html><head><meta charset="utf-8"/></head><body><table>' + summaryData.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('') + '</table>
+    <!-- FULL INSPECTION DETAIL MODAL -->
+    <div id="full-inspection-detail-modal" class="modal-overlay">
+      <div class="modal-content" style="max-width: 700px;">
+        <button class="modal-close" onclick="document.getElementById('full-inspection-detail-modal').style.display='none'">×</button>
+        <div style="padding: 10px 0;">
+          <h2 style="color: var(--color-primary); font-size: 1.4rem; font-weight: 800; display:flex; align-items:center; gap:8px;">
+            🔍 Detalles de la Inspección
+          </h2>
+          <div id="full-inspection-detail-body" style="margin-top: 15px; display: grid; gap: 10px; max-height: 70vh; overflow-y: auto;">
+             <!-- RENDERED DYNAMICALLY -->
+          </div>
+          <div style="margin-top:20px; text-align:right;">
+             <button onclick="document.getElementById('full-inspection-detail-modal').style.display='none'" style="background:var(--color-primary); color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+      function viewInspectionDetail(idStr) {
+         if (!state || !state.inspecciones) return;
+         const insp = state.inspecciones.find(i => String(i.id) === String(idStr));
+         if (!insp) return;
+         
+         const body = document.getElementById('full-inspection-detail-body');
+         if (!body) return;
+         
+         let html = `<div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:15px; margin-bottom:10px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div><span style="color:#64748b; font-size:0.85rem;">Fecha/Hora:</span> <strong style="display:block;">${insp.fecha_registro || insp.hora_inspeccion || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Área:</span> <strong style="display:block;">${insp.area || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Máquina:</span> <strong style="display:block;">${insp.maquina || insp.banda || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Operador:</span> <strong style="display:block;">${insp.operador || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Registró:</span> <strong style="display:block;">${insp.editado_por || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Resultado:</span> <strong style="display:block; color:${(insp.resultado==='Rechazado' || insp.carga_resultado==='Falla') ? '#dc2626':'#15803d'}">${insp.resultado || insp.carga_resultado || '-'}</strong></div>
+            </div>
+         </div>`;
+         
+         html += `<h3 style="font-size:1rem; color:#0f172a; margin-top:10px; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">Parámetros Evaluados</h3>`;
+         html += `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:10px; padding: 10px;">`;
+         
+         const excludeKeys = ['id', 'area', 'maquina', 'banda', 'hora_inspeccion', 'fecha_registro', 'operador', 'editado_por', 'resultado', 'carga_resultado', 'foto_url'];
+         
+         for (const key in insp) {
+            if (excludeKeys.includes(key)) continue;
+            let val = insp[key];
+            if (val === 1) val = 'Sí / Correcto ✅';
+            if (val === 0) val = 'No / Incorrecto ❌';
+            if (val === null || val === '') val = '-';
+            
+            // formatear nombre de llave
+            let label = key.replace(/_/g, ' ').replace(/\w/g, l => l.toUpperCase());
+            html += `<div style="background:#fff; border:1px solid #e2e8f0; padding:8px 12px; border-radius:6px;">
+                <span style="color:#64748b; font-size:0.75rem; display:block;">${label}</span>
+                <strong style="font-size:0.9rem;">${val}</strong>
+            </div>`;
+         }
+         html += `</div>`;
+         
+         if (insp.foto_url && insp.foto_url.startsWith('data:image')) {
+             html += `<div style="margin-top:15px; text-align:center;">
+                <h3 style="font-size:1rem; color:#0f172a; margin-bottom:10px;">Evidencia Fotográfica</h3>
+                <img src="${insp.foto_url}" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="showFullPhoto('${insp.foto_url}')"/>
+             </div>`;
+         }
+         
+         body.innerHTML = html;
+         document.getElementById('full-inspection-detail-modal').style.display = 'flex';
+      }
+    </script>
+</body></html>');
         const btnXls = document.getElementById('btn-download-xls-direct');
         if (btnXls) {
           btnXls.href = xlsDataUrl;
@@ -6496,7 +6600,78 @@
           const res = i.carga_resultado || (i.resultado === 'Aprobado' ? 'Pasa' : 'Falla');
           html += `<tr><td>${i.fecha_registro}</td><td>${i.maquina}</td><td>${i.operador}</td><td>${i.numero_rollo}</td><td>${i.carga_tipo_prueba==='estatica'?'Estática':'Dinámica'}</td><td>${i.carga_peso_kg||0} kg</td><td class="${res==='Pasa'?'pass':'fail'}">${res}</td></tr>`;
         });
-        html += `</table></body></html>`;
+        html += `</table>
+    <!-- FULL INSPECTION DETAIL MODAL -->
+    <div id="full-inspection-detail-modal" class="modal-overlay">
+      <div class="modal-content" style="max-width: 700px;">
+        <button class="modal-close" onclick="document.getElementById('full-inspection-detail-modal').style.display='none'">×</button>
+        <div style="padding: 10px 0;">
+          <h2 style="color: var(--color-primary); font-size: 1.4rem; font-weight: 800; display:flex; align-items:center; gap:8px;">
+            🔍 Detalles de la Inspección
+          </h2>
+          <div id="full-inspection-detail-body" style="margin-top: 15px; display: grid; gap: 10px; max-height: 70vh; overflow-y: auto;">
+             <!-- RENDERED DYNAMICALLY -->
+          </div>
+          <div style="margin-top:20px; text-align:right;">
+             <button onclick="document.getElementById('full-inspection-detail-modal').style.display='none'" style="background:var(--color-primary); color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+      function viewInspectionDetail(idStr) {
+         if (!state || !state.inspecciones) return;
+         const insp = state.inspecciones.find(i => String(i.id) === String(idStr));
+         if (!insp) return;
+         
+         const body = document.getElementById('full-inspection-detail-body');
+         if (!body) return;
+         
+         let html = `<div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:15px; margin-bottom:10px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div><span style="color:#64748b; font-size:0.85rem;">Fecha/Hora:</span> <strong style="display:block;">${insp.fecha_registro || insp.hora_inspeccion || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Área:</span> <strong style="display:block;">${insp.area || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Máquina:</span> <strong style="display:block;">${insp.maquina || insp.banda || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Operador:</span> <strong style="display:block;">${insp.operador || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Registró:</span> <strong style="display:block;">${insp.editado_por || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Resultado:</span> <strong style="display:block; color:${(insp.resultado==='Rechazado' || insp.carga_resultado==='Falla') ? '#dc2626':'#15803d'}">${insp.resultado || insp.carga_resultado || '-'}</strong></div>
+            </div>
+         </div>`;
+         
+         html += `<h3 style="font-size:1rem; color:#0f172a; margin-top:10px; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">Parámetros Evaluados</h3>`;
+         html += `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:10px; padding: 10px;">`;
+         
+         const excludeKeys = ['id', 'area', 'maquina', 'banda', 'hora_inspeccion', 'fecha_registro', 'operador', 'editado_por', 'resultado', 'carga_resultado', 'foto_url'];
+         
+         for (const key in insp) {
+            if (excludeKeys.includes(key)) continue;
+            let val = insp[key];
+            if (val === 1) val = 'Sí / Correcto ✅';
+            if (val === 0) val = 'No / Incorrecto ❌';
+            if (val === null || val === '') val = '-';
+            
+            // formatear nombre de llave
+            let label = key.replace(/_/g, ' ').replace(/\w/g, l => l.toUpperCase());
+            html += `<div style="background:#fff; border:1px solid #e2e8f0; padding:8px 12px; border-radius:6px;">
+                <span style="color:#64748b; font-size:0.75rem; display:block;">${label}</span>
+                <strong style="font-size:0.9rem;">${val}</strong>
+            </div>`;
+         }
+         html += `</div>`;
+         
+         if (insp.foto_url && insp.foto_url.startsWith('data:image')) {
+             html += `<div style="margin-top:15px; text-align:center;">
+                <h3 style="font-size:1rem; color:#0f172a; margin-bottom:10px;">Evidencia Fotográfica</h3>
+                <img src="${insp.foto_url}" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="showFullPhoto('${insp.foto_url}')"/>
+             </div>`;
+         }
+         
+         body.innerHTML = html;
+         document.getElementById('full-inspection-detail-modal').style.display = 'flex';
+      }
+    </script>
+</body></html>`;
 
         try {
           const encodedUri = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html);
@@ -6876,7 +7051,78 @@
         const bodyContainer = document.getElementById('pdf-report-modal-body');
         if (!bodyContainer) return;
         const bodyContent = bodyContainer.innerHTML;
-        const fullHtml = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Reporte Dipapel</title></head><body style="padding:20px; font-family:sans-serif;">${bodyContent}</body></html>`;
+        const fullHtml = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Reporte Dipapel</title></head><body style="padding:20px; font-family:sans-serif;">${bodyContent}
+    <!-- FULL INSPECTION DETAIL MODAL -->
+    <div id="full-inspection-detail-modal" class="modal-overlay">
+      <div class="modal-content" style="max-width: 700px;">
+        <button class="modal-close" onclick="document.getElementById('full-inspection-detail-modal').style.display='none'">×</button>
+        <div style="padding: 10px 0;">
+          <h2 style="color: var(--color-primary); font-size: 1.4rem; font-weight: 800; display:flex; align-items:center; gap:8px;">
+            🔍 Detalles de la Inspección
+          </h2>
+          <div id="full-inspection-detail-body" style="margin-top: 15px; display: grid; gap: 10px; max-height: 70vh; overflow-y: auto;">
+             <!-- RENDERED DYNAMICALLY -->
+          </div>
+          <div style="margin-top:20px; text-align:right;">
+             <button onclick="document.getElementById('full-inspection-detail-modal').style.display='none'" style="background:var(--color-primary); color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+      function viewInspectionDetail(idStr) {
+         if (!state || !state.inspecciones) return;
+         const insp = state.inspecciones.find(i => String(i.id) === String(idStr));
+         if (!insp) return;
+         
+         const body = document.getElementById('full-inspection-detail-body');
+         if (!body) return;
+         
+         let html = `<div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:15px; margin-bottom:10px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div><span style="color:#64748b; font-size:0.85rem;">Fecha/Hora:</span> <strong style="display:block;">${insp.fecha_registro || insp.hora_inspeccion || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Área:</span> <strong style="display:block;">${insp.area || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Máquina:</span> <strong style="display:block;">${insp.maquina || insp.banda || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Operador:</span> <strong style="display:block;">${insp.operador || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Registró:</span> <strong style="display:block;">${insp.editado_por || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Resultado:</span> <strong style="display:block; color:${(insp.resultado==='Rechazado' || insp.carga_resultado==='Falla') ? '#dc2626':'#15803d'}">${insp.resultado || insp.carga_resultado || '-'}</strong></div>
+            </div>
+         </div>`;
+         
+         html += `<h3 style="font-size:1rem; color:#0f172a; margin-top:10px; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">Parámetros Evaluados</h3>`;
+         html += `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:10px; padding: 10px;">`;
+         
+         const excludeKeys = ['id', 'area', 'maquina', 'banda', 'hora_inspeccion', 'fecha_registro', 'operador', 'editado_por', 'resultado', 'carga_resultado', 'foto_url'];
+         
+         for (const key in insp) {
+            if (excludeKeys.includes(key)) continue;
+            let val = insp[key];
+            if (val === 1) val = 'Sí / Correcto ✅';
+            if (val === 0) val = 'No / Incorrecto ❌';
+            if (val === null || val === '') val = '-';
+            
+            // formatear nombre de llave
+            let label = key.replace(/_/g, ' ').replace(/\w/g, l => l.toUpperCase());
+            html += `<div style="background:#fff; border:1px solid #e2e8f0; padding:8px 12px; border-radius:6px;">
+                <span style="color:#64748b; font-size:0.75rem; display:block;">${label}</span>
+                <strong style="font-size:0.9rem;">${val}</strong>
+            </div>`;
+         }
+         html += `</div>`;
+         
+         if (insp.foto_url && insp.foto_url.startsWith('data:image')) {
+             html += `<div style="margin-top:15px; text-align:center;">
+                <h3 style="font-size:1rem; color:#0f172a; margin-bottom:10px;">Evidencia Fotográfica</h3>
+                <img src="${insp.foto_url}" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="showFullPhoto('${insp.foto_url}')"/>
+             </div>`;
+         }
+         
+         body.innerHTML = html;
+         document.getElementById('full-inspection-detail-modal').style.display = 'flex';
+      }
+    </script>
+</body></html>`;
         try {
           const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8;' });
           triggerBlobDownload(blob, 'Reporte_Estadistico_Dipapel.html');
@@ -7148,11 +7394,35 @@
         setResult(fail ? 'Rechazado' : 'Aprobado');
       }
 
+      function isCurrentlyFailing() {
+        const area = document.getElementById('insp-area').value;
+        let fail = false;
+        if (area === 'Flexo') {
+          if (!document.getElementById('flexo-imp').checked || !document.getElementById('flexo-reg').checked || document.getElementById('flexo-estado').value === 'Malas condiciones') fail = true;
+        } else if (area === 'Nanjang' || (area === 'Con Asa' && currentAsaSubtab === 'visual')) {
+          if (!document.getElementById('b-disco').checked || !document.getElementById('b-fondo').checked || !document.getElementById('b-rebabas').checked || !document.getElementById('b-ruptura').checked || !document.getElementById('b-medidas').checked || document.getElementById('b-gomas').value === 'Malas condiciones' || !document.getElementById('b-pegamento-lineal').checked || document.getElementById('b-defecto-impresion').checked || !document.getElementById('b-medidas-dentro-parametro').checked) fail = true;
+          if (area === 'Con Asa') {
+            if (!document.getElementById('asa-peg').checked || !document.getElementById('asa-parche').checked || !document.getElementById('asa-pos').checked || !document.getElementById('asa-parche-glued').checked || !document.getElementById('asa-hot-melt').checked || !document.getElementById('asa-parche-pos').checked) fail = true;
+          }
+        }
+        return fail;
+      }
+
       function setResult(res) {
+        if (res === 'Aprobado' && isCurrentlyFailing()) {
+          showToast('No puedes aprobar la inspección porque hay parámetros fuera de norma.', 'danger');
+          res = 'Rechazado';
+        }
         state.currentResult = res;
         document.getElementById('res-aprobado').classList.toggle('active', res === 'Aprobado');
         document.getElementById('res-rechazado').classList.toggle('active', res === 'Rechazado');
         document.getElementById('defect-panel').style.display = res === 'Rechazado' ? 'block' : 'none';
+        
+        if (res === 'Rechazado') {
+           document.getElementById('res-aprobado').style.opacity = '0.5';
+        } else {
+           document.getElementById('res-aprobado').style.opacity = '1';
+        }
       }
 
       function handlePhotoUpload(event) {
@@ -8833,8 +9103,8 @@
             : `<span style="color: #94a3b8; font-size: 0.75rem;">Sin foto</span>`;
 
           html += `
-            <tr style="border-bottom: 1px solid #e2e8f0;">
-              <td style="padding: 10px; font-weight: 600;">${i.fecha_registro}</td>
+            <tr onclick="if(!event.target.closest('a') && !event.target.closest('button')) viewInspectionDetail('${i.id}')" style="cursor:pointer; border-bottom: 1px solid #e2e8f0;" onmouseover="this.style.backgroundColor='#f0f9ff'" onmouseout="this.style.backgroundColor='transparent'" title="Haz clic para ver detalles">
+              <td style="padding: 10px; font-weight: 600; color:#0284c7;">${i.fecha_registro} 🔍</td>
               <td style="padding: 10px; color: #0284c7; font-weight: 700;">Frías</td>
               <td style="padding: 10px; font-weight: 800; color: #0284c7;">${i.banda || i.maquina}</td>
               <td style="padding: 10px;">${i.operador || '-'}</td>
@@ -9133,5 +9403,76 @@
       <span style="position: absolute; top: 20px; right: 30px; font-size: 30px; color: white; cursor: pointer; font-weight: bold;">&times;</span>
       <img id="full-photo-img" src="" style="max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);" />
     </div>
-  </body>
+  
+    <!-- FULL INSPECTION DETAIL MODAL -->
+    <div id="full-inspection-detail-modal" class="modal-overlay">
+      <div class="modal-content" style="max-width: 700px;">
+        <button class="modal-close" onclick="document.getElementById('full-inspection-detail-modal').style.display='none'">×</button>
+        <div style="padding: 10px 0;">
+          <h2 style="color: var(--color-primary); font-size: 1.4rem; font-weight: 800; display:flex; align-items:center; gap:8px;">
+            🔍 Detalles de la Inspección
+          </h2>
+          <div id="full-inspection-detail-body" style="margin-top: 15px; display: grid; gap: 10px; max-height: 70vh; overflow-y: auto;">
+             <!-- RENDERED DYNAMICALLY -->
+          </div>
+          <div style="margin-top:20px; text-align:right;">
+             <button onclick="document.getElementById('full-inspection-detail-modal').style.display='none'" style="background:var(--color-primary); color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+      function viewInspectionDetail(idStr) {
+         if (!state || !state.inspecciones) return;
+         const insp = state.inspecciones.find(i => String(i.id) === String(idStr));
+         if (!insp) return;
+         
+         const body = document.getElementById('full-inspection-detail-body');
+         if (!body) return;
+         
+         let html = `<div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:15px; margin-bottom:10px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div><span style="color:#64748b; font-size:0.85rem;">Fecha/Hora:</span> <strong style="display:block;">${insp.fecha_registro || insp.hora_inspeccion || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Área:</span> <strong style="display:block;">${insp.area || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Máquina:</span> <strong style="display:block;">${insp.maquina || insp.banda || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Operador:</span> <strong style="display:block;">${insp.operador || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Registró:</span> <strong style="display:block;">${insp.editado_por || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Resultado:</span> <strong style="display:block; color:${(insp.resultado==='Rechazado' || insp.carga_resultado==='Falla') ? '#dc2626':'#15803d'}">${insp.resultado || insp.carga_resultado || '-'}</strong></div>
+            </div>
+         </div>`;
+         
+         html += `<h3 style="font-size:1rem; color:#0f172a; margin-top:10px; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">Parámetros Evaluados</h3>`;
+         html += `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:10px; padding: 10px;">`;
+         
+         const excludeKeys = ['id', 'area', 'maquina', 'banda', 'hora_inspeccion', 'fecha_registro', 'operador', 'editado_por', 'resultado', 'carga_resultado', 'foto_url'];
+         
+         for (const key in insp) {
+            if (excludeKeys.includes(key)) continue;
+            let val = insp[key];
+            if (val === 1) val = 'Sí / Correcto ✅';
+            if (val === 0) val = 'No / Incorrecto ❌';
+            if (val === null || val === '') val = '-';
+            
+            // formatear nombre de llave
+            let label = key.replace(/_/g, ' ').replace(/\w/g, l => l.toUpperCase());
+            html += `<div style="background:#fff; border:1px solid #e2e8f0; padding:8px 12px; border-radius:6px;">
+                <span style="color:#64748b; font-size:0.75rem; display:block;">${label}</span>
+                <strong style="font-size:0.9rem;">${val}</strong>
+            </div>`;
+         }
+         html += `</div>`;
+         
+         if (insp.foto_url && insp.foto_url.startsWith('data:image')) {
+             html += `<div style="margin-top:15px; text-align:center;">
+                <h3 style="font-size:1rem; color:#0f172a; margin-bottom:10px;">Evidencia Fotográfica</h3>
+                <img src="${insp.foto_url}" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="showFullPhoto('${insp.foto_url}')"/>
+             </div>`;
+         }
+         
+         body.innerHTML = html;
+         document.getElementById('full-inspection-detail-modal').style.display = 'flex';
+      }
+    </script>
+</body>
 </html>
