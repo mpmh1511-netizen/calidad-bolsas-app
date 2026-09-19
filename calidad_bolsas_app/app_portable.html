@@ -3176,9 +3176,13 @@
             }
           }
           if (i && Array.isArray(i)) {
-            const strI = JSON.stringify(i);
+            let strI = JSON.stringify(i);
             if (JSON.stringify(state.inspecciones) !== strI) {
               state.inspecciones = i;
+              if (typeof fixOldFlexoRecords === 'function') {
+                  fixOldFlexoRecords();
+                  strI = JSON.stringify(state.inspecciones); // Refresh string if migration modified data
+              }
               localStorage.setItem('calidad_inspecciones', strI);
               needsReRender = true;
             }
@@ -3229,22 +3233,29 @@
         let changed = false;
         if (state && state.inspecciones) {
           state.inspecciones.forEach(i => {
-            // Fix Flexo Maquinas
-            if (i.area === 'Flexo' && String(i.maquina) === 'Flexo AQUINA PRUEBA') {
+            // Fix Flexo Maquinas y Pruebas de Carga Legacy
+            const a = (i.area || '').toUpperCase();
+            if (a === 'FLEXO' && String(i.maquina) === 'Flexo AQUINA PRUEBA') {
               i.maquina = 'MAQUINA PRUEBA';
               changed = true;
             }
-            if (i.area === 'Flexo' && String(i.maquina).startsWith('M') && String(i.maquina) !== 'MAQUINA PRUEBA') {
+            if (a === 'FLEXO' && String(i.maquina).startsWith('M') && String(i.maquina) !== 'MAQUINA PRUEBA') {
               i.maquina = 'Flexo ' + i.maquina.replace('M', ''); // M1 -> Flexo 1
               changed = true;
+            }
+            
+            // Fix Legacy Carga
+            if (!i.es_prueba_carga && (i.carga_resultado || i.carga_peso_kg)) {
+               i.es_prueba_carga = 1;
+               changed = true;
             }
             
             // Fix Falsos Aprobados (donde resultado es Aprobado pero había inconformidades)
             if (i.resultado === 'Aprobado') {
                let failed = false;
-               if (i.area === 'Flexo' && (i.impresion_correcta === 0 || i.registro_correcto === 0 || i.estado_fisico_rollo === 'Malas condiciones')) failed = true;
-               if ((i.area === 'Nanjang' || i.area === 'Con Asa') && (i.pegado_disco === 0 || i.pegado_fondo === 0 || i.sin_rebabas_pegamento === 0 || i.sin_ruptura_papel === 0 || i.medidas_coinciden === 0 || i.estado_gomas_fondo === 'Malas condiciones' || i.pegamento_lineal === 0 || i.defecto_impresion === 1 || i.medidas_dentro_parametro === 0)) failed = true;
-               if (i.area === 'Con Asa' && (i.pegamiento_suficiente_asa === 0 || i.pegamiento_suficiente_parche === 0 || i.posicion_asa_correcta === 0 || i.pegado_correcto_parche === 0 || i.aplicacion_hot_melt_correcta === 0 || i.posicion_parche_correcta === 0)) failed = true;
+               if (a === 'FLEXO' && (i.impresion_correcta === 0 || i.registro_correcto === 0 || i.estado_fisico_rollo === 'Malas condiciones')) failed = true;
+               if ((a === 'NANJANG' || a === 'CON ASA') && (i.pegado_disco === 0 || i.pegado_fondo === 0 || i.sin_rebabas_pegamento === 0 || i.sin_ruptura_papel === 0 || i.medidas_coinciden === 0 || i.estado_gomas_fondo === 'Malas condiciones' || i.pegamento_lineal === 0 || i.defecto_impresion === 1 || i.medidas_dentro_parametro === 0)) failed = true;
+               if (a === 'CON ASA' && (i.pegamiento_suficiente_asa === 0 || i.pegamiento_suficiente_parche === 0 || i.posicion_asa_correcta === 0 || i.pegado_correcto_parche === 0 || i.aplicacion_hot_melt_correcta === 0 || i.posicion_parche_correcta === 0)) failed = true;
                
                if (failed) {
                   i.resultado = 'Rechazado';
@@ -3685,6 +3696,7 @@
       }
 
       function openIndependentEstadisticas() {
+        if (typeof fixOldFlexoRecords === 'function') fixOldFlexoRecords();
         state.role = 'estadisticas_globales';
         const landing = document.getElementById('landing-screen');
         const appScreen = document.getElementById('app-screen');
@@ -4178,7 +4190,7 @@
         }
 
         if (machineInsps.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8" style="padding: 20px; text-align: center; color: #64748b; font-style: italic; background: #f8fafc;">No hay inspecciones registradas para la Máquina ${machineName}.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="9" style="padding: 20px; text-align: center; color: #64748b; font-style: italic; background: #f8fafc;">No hay inspecciones registradas para la Máquina ${machineName}.</td></tr>`;
         } else {
           let html = '';
           machineInsps.forEach(ins => {
@@ -4202,8 +4214,8 @@
             }
 
             html += `
-              <tr style="border-bottom: 1px solid #e2e8f0;">
-                <td style="padding: 10px; font-weight: 600;">${ins.fecha_registro || ins.hora_inspeccion || '-'}</td>
+              <tr onclick="if(!event.target.closest('button') && !event.target.closest('a')) viewInspectionDetail('${ins.id}')" style="cursor:pointer; border-bottom: 1px solid #e2e8f0;" onmouseover="this.style.backgroundColor='#f1f5f9'" onmouseout="this.style.backgroundColor='transparent'" title="Haz clic para ver detalles completos">
+                <td style="padding: 10px; font-weight: 600; color:#0284c7;">${ins.fecha_registro || ins.hora_inspeccion || '-'} 🔍</td>
                 <td style="padding: 10px;">
                   <span class="badge area-${ins.area === 'Flexo' ? 'flexo' : ins.area === 'Nanjang' ? 'nanjang' : 'asa'}">
                     ${ins.area}${ins.es_prueba_carga === 1 ? ' (Carga)' : ''}
@@ -4211,6 +4223,7 @@
                 </td>
                 <td style="padding: 10px;">${ins.operador || '-'}</td>
                 <td style="padding: 10px; font-weight: 600; color: #475569;">${ins.editado_por || 'Desconocido'}</td>
+                <td style="padding: 10px; font-weight: 600; color: #0f172a;">${ins.marca_especificaciones || ins.marca_cliente || ins.marca || '-'}</td>
                 <td style="padding: 10px;"><code>${ins.numero_rollo || '-'}</code></td>
                 <td style="padding: 10px;">${resBadge}</td>
                 <td style="padding: 10px; font-size: 0.8rem; color: var(--text-main);">${obs || 'Sin observaciones'}</td>
@@ -9187,6 +9200,7 @@
                   <th style="padding: 10px;">Área</th>
                   <th style="padding: 10px;">Operador</th>
                   <th style="padding: 10px;">Registrado Por</th>
+                  <th style="padding: 10px; color:#0f172a;">Marca</th>
                   <th style="padding: 10px;">No. Rollo</th>
                   <th style="padding: 10px;">Resultado</th>
                   <th style="padding: 10px;">Detalles / Observaciones</th>
