@@ -698,8 +698,7 @@
                     <th style="padding: 10px;">Registrado Por</th>
                     <th style="padding: 10px;">Nº Rollo / Ficha</th>
                     <th style="padding: 10px;">Defecto / Inconformidad</th>
-                    <th style="padding: 10px;">Severidad</th>
-                    <th style="padding: 10px;">Acción Correctiva</th>
+                                        <th style="padding: 10px;">Acción Correctiva</th>
                     <th style="padding: 10px;">Evidencia Fotográfica</th>
                   </tr>
                 </thead>
@@ -777,8 +776,7 @@
                       <th>Registrado por</th>
                       <th>Marca / Cliente</th>
                       <th>Defecto</th>
-                      <th>Severidad</th>
-                      <th>Acción Correctiva</th>
+                                            <th>Acción Correctiva</th>
                       <th style="text-align: center;">Evidencia</th>
                     </tr>
                   </thead>
@@ -3937,12 +3935,11 @@
           let defectoTexto = i.descripcion_defecto || i.observaciones || 'No conformidad detectada';
           if (i.impresion_correcta === 0) defectoTexto = 'Fallo en Impresión/Tinta. ' + defectoTexto;
           if (i.registro_correcto === 0) defectoTexto = 'Fallo en Registro. ' + defectoTexto;
-          if (i.medidas_dentro_parametro === 0) defectoTexto = 'Medidas Fuera de Rango. ' + defectoTexto;
+          if (i.medidas_dentro_parametro === 0) {
+            const u = i.medidas_unidad === 'cm' ? 'cm' : 'in';
+            defectoTexto = `Medidas Fuera de Rango [A: ${i.medida_ancho||'-'}${u}, L: ${i.medida_largo||'-'}${u}, F: ${i.medida_fuelle||'-'}${u}]. ` + defectoTexto;
+          }
           if (i.carga_resultado === 'Falla') defectoTexto = 'Falla en Resistencia de Asas. ' + defectoTexto;
-
-          const severidadBadge = (i.resultado === 'Rechazado' || i.carga_resultado === 'Falla')
-            ? '<span style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">RECHAZADO / GRAVE</span>'
-            : '<span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">OBSERVACIÓN</span>';
 
           const fotoCell = i.foto_url
             ? `<a href="${i.foto_url}" target="_blank" rel="noopener noreferrer" title="Toca para ver foto completa"><img src="${i.foto_url}" style="width: 55px; height: 55px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" /></a>`
@@ -3957,7 +3954,6 @@
               <td style="padding: 10px; font-weight: 600; color: #475569;">${i.editado_por || 'Desconocido'}</td>
               <td style="padding: 10px;">${i.numero_rollo || '-'}</td>
               <td style="padding: 10px; color: #dc2626; font-weight: 600;">${defectoTexto}</td>
-              <td style="padding: 10px;">${severidadBadge}</td>
               <td style="padding: 10px; color: #15803d; font-weight: 600;">${i.accion_correctiva || 'Ajuste de máquina requerido'}</td>
               <td style="padding: 10px; text-align: center;">${fotoCell}</td>
             </tr>
@@ -6321,7 +6317,7 @@
               ["REPORTES DE INCONFORMIDADES Y DEFECTOS EN MÁQUINAS (SIN IMÁGENES)"],
               ["Periodo:", periodoName, "Fecha:", data.selectedDate],
               [],
-              ["Fecha/Hora", "Área", "Máquina", "Operador", "Registrado Por (Auditor)", "Nº Rollo / Ficha", "Defecto / Inconformidad Detectada", "Severidad", "Acción Correctiva Implementada"]
+              ["Fecha/Hora", "Área", "Máquina", "Operador", "Registrado Por (Auditor)", "Nº Rollo / Ficha", "Defecto / Inconformidad Detectada", "Acción Correctiva Implementada"]
             ];
 
             const allDefects = data.scopedInspections.filter(i => 
@@ -6340,7 +6336,10 @@
                 let defectoTexto = i.descripcion_defecto || i.observaciones || 'No conformidad detectada';
                 if (i.impresion_correcta === 0) defectoTexto = 'Fallo en Impresión/Tinta. ' + defectoTexto;
                 if (i.registro_correcto === 0) defectoTexto = 'Fallo en Registro. ' + defectoTexto;
-                if (i.medidas_dentro_parametro === 0) defectoTexto = 'Medidas Fuera de Rango. ' + defectoTexto;
+                if (i.medidas_dentro_parametro === 0) {
+            const u = i.medidas_unidad === 'cm' ? 'cm' : 'in';
+            defectoTexto = `Medidas Fuera de Rango [A: ${i.medida_ancho||'-'}${u}, L: ${i.medida_largo||'-'}${u}, F: ${i.medida_fuelle||'-'}${u}]. ` + defectoTexto;
+          }
                 if (i.carga_resultado === 'Falla') defectoTexto = 'Falla en Resistencia de Asas. ' + defectoTexto;
 
                 inconformidadesRows.push([
@@ -6699,8 +6698,7 @@
                       <th style="padding: 5px;">Operador</th>
                       <th style="padding: 5px;">Registrado Por</th>
                       <th style="padding: 5px;">Defecto / Inconformidad</th>
-                      <th style="padding: 5px;">Severidad</th>
-                      <th style="padding: 5px;">Acción Correctiva</th>
+                                            <th style="padding: 5px;">Acción Correctiva</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -6713,7 +6711,10 @@
                 let defectoTexto = i.descripcion_defecto || i.observaciones || 'No conformidad detectada';
                 if (i.impresion_correcta === 0) defectoTexto = 'Fallo en Impresión. ' + defectoTexto;
                 if (i.registro_correcto === 0) defectoTexto = 'Fallo en Registro. ' + defectoTexto;
-                if (i.medidas_dentro_parametro === 0) defectoTexto = 'Medidas Fuera de Tolerancia. ' + defectoTexto;
+                if (i.medidas_dentro_parametro === 0) {
+              const u = i.medidas_unidad === 'cm' ? 'cm' : 'in';
+              defectoTexto = `Medidas Fuera de Rango [A: ${i.medida_ancho||'-'}${u}, L: ${i.medida_largo||'-'}${u}, F: ${i.medida_fuelle||'-'}${u}]. ` + defectoTexto;
+            }
                 if (i.carga_resultado === 'Falla') defectoTexto = 'Falla en Resistencia de Asas. ' + defectoTexto;
 
                 reportHtml += `<tr style="border-bottom: 1px solid #e2e8f0;">
@@ -6883,7 +6884,10 @@
             let defectoTexto = i.descripcion_defecto || i.observaciones || 'No conformidad detectada';
             if (i.impresion_correcta === 0) defectoTexto = 'Fallo en Impresión. ' + defectoTexto;
             if (i.registro_correcto === 0) defectoTexto = 'Fallo en Registro. ' + defectoTexto;
-            if (i.medidas_dentro_parametro === 0) defectoTexto = 'Medidas Fuera de Tolerancia. ' + defectoTexto;
+            if (i.medidas_dentro_parametro === 0) {
+              const u = i.medidas_unidad === 'cm' ? 'cm' : 'in';
+              defectoTexto = `Medidas Fuera de Rango [A: ${i.medida_ancho||'-'}${u}, L: ${i.medida_largo||'-'}${u}, F: ${i.medida_fuelle||'-'}${u}]. ` + defectoTexto;
+            }
             if (i.carga_resultado === 'Falla') defectoTexto = 'Falla en Resistencia de Asas. ' + defectoTexto;
 
             return [
@@ -8916,10 +8920,6 @@
           if (i.posicion_asa_correcta === 0) defectoTexto = 'Fallo Posición Asa. ' + defectoTexto;
           if (i.pegado_correcto === 0) defectoTexto = 'Fallo en Pegado. ' + defectoTexto;
 
-          const severidadBadge = (i.resultado === 'Rechazado' || i.carga_resultado === 'Falla')
-            ? '<span style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">RECHAZADO / GRAVE</span>'
-            : '<span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">OBSERVACIÓN</span>';
-
           const fotoCell = i.foto_url
             ? `<a href="${i.foto_url}" target="_blank" rel="noopener noreferrer" title="Toca para ver foto completa"><img src="${i.foto_url}" style="width: 55px; height: 55px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" /></a>`
             : `<span style="color: #94a3b8; font-size: 0.75rem;">Sin foto</span>`;
@@ -8933,7 +8933,6 @@
               <td style="padding: 10px; font-weight: 600; color: #475569;">${i.editado_por || 'Desconocido'}</td>
               <td style="padding: 10px;">${i.marca_cliente || '-'}</td>
               <td style="padding: 10px; color: #dc2626; font-weight: 600;">${defectoTexto}</td>
-              <td style="padding: 10px;">${severidadBadge}</td>
               <td style="padding: 10px; color: #15803d; font-weight: 600;">${i.accion_correctiva || 'Ajuste de máquina requerido'}</td>
               <td style="padding: 10px; text-align: center;">${fotoCell}</td>
             </tr>
@@ -9269,13 +9268,24 @@
          html += `<h3 style="font-size:1rem; color:#0f172a; margin-top:10px; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">Parámetros Evaluados</h3>`;
          html += `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:10px; padding: 10px;">`;
          
-         const excludeKeys = ['id', 'area', 'maquina', 'banda', 'hora_inspeccion', 'fecha_registro', 'operador', 'editado_por', 'resultado', 'carga_resultado', 'foto_url'];
+         const excludeKeys = [
+            'id', 'area', 'maquina', 'banda', 'hora_inspeccion', 'fecha_registro', 
+            'operador', 'editado_por', 'resultado', 'carga_resultado', 'foto_url',
+            'es_prueba_carga', 'bobina_id', 'marca', 'marca_cliente', 'marca_especificaciones',
+            'timestamp', 'carga_tipo_prueba', 'carga_peso_kg', 'carga_tiempo_seg'
+         ];
          
          for (const key in insp) {
             if (excludeKeys.includes(key)) continue;
             let val = insp[key];
-            if (val === 1) val = 'Sí / Correcto ✅';
-            if (val === 0) val = 'No / Incorrecto ❌';
+            
+            if (key === 'defecto_impresion') {
+                if (val === 1) val = 'Sí (Hay defecto) ❌';
+                if (val === 0) val = 'No (Sin defecto) ✅';
+            } else {
+                if (val === 1) val = 'Sí / Correcto ✅';
+                if (val === 0) val = 'No / Incorrecto ❌';
+            }
             if (val === null || val === '') val = '-';
             
             // formatear nombre de llave
