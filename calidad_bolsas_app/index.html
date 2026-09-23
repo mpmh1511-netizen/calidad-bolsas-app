@@ -709,6 +709,20 @@
             </div>
           </div>
 
+          <div style="margin-top: 2rem; padding: 1.5rem; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h4 style="margin: 0; color: #d97706; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                🧹 Optimización de Espacio (Supabase/Render)
+              </h4>
+              <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #92400e;">
+                Elimina las fotografías de inspecciones con más de 30 días de antigüedad para liberar espacio, conservando las estadísticas intactas.
+              </p>
+            </div>
+            <button onclick="optimizarEspacio()" class="btn-primary" style="background: #d97706; border: none; padding: 10px 15px; border-radius: 6px; color: white; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+              Liberar Espacio
+            </button>
+          </div>
+
           <!-- SECCIÓN DEDICADA ESTADÍSTICAS FRÍAS -->
           <div style="margin-top: 3rem; border-top: 3px solid #0284c7; padding-top: 2rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
@@ -4410,7 +4424,7 @@
             const img = new Image();
             img.onload = function() {
               const canvas = document.createElement('canvas');
-              const max_size = 800;
+              const max_size = 450;
               let width = img.width;
               let height = img.height;
 
@@ -4431,7 +4445,7 @@
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0, width, height);
 
-              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.4);
               uploadedTarimaPhotoBase64 = compressedBase64;
 
               document.getElementById('tarima-preview-img').src = compressedBase64;
@@ -7259,7 +7273,7 @@
             const img = new Image();
             img.onload = function() {
               const canvas = document.createElement('canvas');
-              const max_size = 800;
+              const max_size = 450;
               let width = img.width;
               let height = img.height;
 
@@ -7280,7 +7294,7 @@
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0, width, height);
 
-              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.4);
               state.uploadedPhotoBase64 = compressedBase64;
 
               const previewImg = document.getElementById('photo-preview-img');
@@ -8284,7 +8298,7 @@
             const imgEl = new Image();
             imgEl.onload = function() {
               const canvas = document.createElement('canvas');
-              const max_size = 800;
+              const max_size = 450;
               let width = imgEl.width;
               let height = imgEl.height;
 
@@ -8304,7 +8318,7 @@
               const ctx = canvas.getContext('2d');
               ctx.drawImage(imgEl, 0, 0, width, height);
 
-              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.4);
               
               const img = document.getElementById(imgId);
               const lbl = document.getElementById(labelId);
@@ -9306,6 +9320,45 @@
          
          body.innerHTML = html;
          document.getElementById('full-inspection-detail-modal').style.display = 'flex';
+      }
+      async function optimizarEspacio() {
+        if (!confirm('¿Estás seguro de que deseas eliminar las FOTOS de las inspecciones de hace más de 30 días? (Las estadísticas y los reportes escritos NO se borrarán, solo se liberará el espacio de las imágenes antiguas).')) return;
+        
+        try {
+          showToast('Iniciando optimización. Esto puede tardar unos segundos...', 'info');
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          const thresholdIso = thirtyDaysAgo.toISOString().split('T')[0];
+
+          let cleanedCount = 0;
+          
+          for (const insp of state.inspecciones) {
+            const inspDate = getInspIsoDate(insp);
+            if (inspDate < thresholdIso && insp.foto_url) {
+              // Delete foto locally
+              insp.foto_url = null;
+              cleanedCount++;
+              
+              // Tell server to delete foto_url for this specific inspection
+              const updatedInsp = { ...insp, foto_url: null };
+              await fetch(`${CLOUD_URL}/api/inspecciones?id=${insp.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedInsp)
+              });
+            }
+          }
+
+          if (cleanedCount > 0) {
+            localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
+            showToast(`¡Éxito! Se liberó el espacio de ${cleanedCount} fotografías antiguas.`, 'success');
+          } else {
+            showToast('No se encontraron fotografías antiguas (más de 30 días) para limpiar.', 'info');
+          }
+        } catch (e) {
+          console.error(e);
+          showToast('Hubo un error al optimizar el espacio. Revisa tu conexión.', 'error');
+        }
       }
     </script>
 </body>

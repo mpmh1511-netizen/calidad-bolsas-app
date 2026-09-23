@@ -289,6 +289,36 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(201, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(responseItem));
       });
+    } else if (method === 'PUT' || method === 'PATCH') {
+      const id = parsedUrl.searchParams.get('id');
+      parseBody(req, async (parsedBody) => {
+        if (!id) {
+          res.writeHead(400); res.end(JSON.stringify({ error: 'Falta ID' }));
+          return;
+        }
+        let payload = parsedBody;
+        if (parsedBody && parsedBody.data) {
+          payload = typeof parsedBody.data === 'string' ? JSON.parse(parsedBody.data) : parsedBody.data;
+        }
+        const itemToSave = {
+          area: payload.area || 'Flexo',
+          maquina: payload.maquina || 'M-1',
+          tipo: payload.resultado || 'Aprobado',
+          datos: payload,
+          fecha: payload.fecha_registro || new Date().toISOString(),
+          usuario: payload.operador || 'Inspector'
+        };
+        await supabaseRequest(`inspecciones?id=eq.${id}`, 'PATCH', itemToSave);
+        
+        const db = readDb();
+        const idx = db.inspecciones.findIndex(i => String(i.id) === String(id));
+        if (idx >= 0) {
+          db.inspecciones[idx] = { ...payload, id };
+          writeDb(db);
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      });
     } else if (method === 'DELETE') {
       const id = parsedUrl.searchParams.get('id');
       if (id) {
