@@ -8034,7 +8034,7 @@
             <td style="font-weight:600;">${ins.maquina}</td>
             <td>${ins.operador}</td>
             <td><code style="background:var(--bg-main); padding:2px 6px; border-radius:4px; font-size:0.8rem; color:var(--text-muted);">${ins.numero_rollo}</code></td>
-            <td><span class="badge ${ins.resultado.toLowerCase()}">${ins.resultado}</span></td>
+            <td><span class="badge ${(ins.resultado || "").toLowerCase()}">${ins.resultado || "N/A"}</span></td>
             <td style="font-size:0.8rem; color:var(--text-muted);">${ins.editado_por || 'Desconocido'}</td>
             <td>
               <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation()">

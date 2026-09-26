@@ -174,8 +174,12 @@ const server = http.createServer(async (req, res) => {
   // --- API BOBINAS ---
   if (pathname === '/api/bobinas') {
     if (method === 'GET') {
-      let list = await supabaseRequest('bobinas?select=*');
-      if (!list) list = readDb().bobinas || [];
+      let list = await supabaseRequest('bobinas?select=*&order=id.desc&limit=800');
+      if (!list) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Database timeout or failure' }));
+        return;
+      }
       
       const mapped = list.map(b => {
         const num = b.numero_rollo || b.numero_bobina || '';
@@ -233,8 +237,12 @@ const server = http.createServer(async (req, res) => {
   // --- API INSPECCIONES ---
   if (pathname === '/api/inspecciones') {
     if (method === 'GET') {
-      let list = await supabaseRequest('inspecciones?select=*');
-      if (!list) list = readDb().inspecciones || [];
+      let list = await supabaseRequest('inspecciones?select=*&order=id.desc&limit=800');
+      if (!list) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Database timeout or failure' }));
+        return;
+      }
       
       const mapped = list.map(item => {
         const d = item.datos || {};
@@ -341,8 +349,12 @@ const server = http.createServer(async (req, res) => {
   // --- API PERSONAL ---
   if (pathname === '/api/produccion/personal') {
     if (method === 'GET') {
-      let list = await supabaseRequest('personal?select=*');
-      if (!list) list = readDb().produccion_personal || [];
+      let list = await supabaseRequest('personal?select=*&order=id.desc&limit=800');
+      if (!list) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Database timeout or failure' }));
+        return;
+      }
       const mapped = list.map(item => item.datos || item);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(mapped));
@@ -366,8 +378,12 @@ const server = http.createServer(async (req, res) => {
   // --- API BOLSAS / TARIMAS ---
   if (pathname === '/api/tarimas' || pathname === '/api/produccion/bolsas') {
     if (method === 'GET') {
-      let list = await supabaseRequest('bolsas?select=*');
-      if (!list) list = readDb().tarimas || [];
+      let list = await supabaseRequest('bolsas?select=*&order=id.desc&limit=800');
+      if (!list) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Database timeout or failure' }));
+        return;
+      }
       const mapped = list.map(item => item.datos || item);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(mapped));
