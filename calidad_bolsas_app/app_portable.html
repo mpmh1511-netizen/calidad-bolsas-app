@@ -2868,6 +2868,7 @@
       
       async function apiFetch(endpoint, options = {}) {
         try {
+          if (!options.credentials) options.credentials = 'same-origin';
           const fullUrl = endpoint.startsWith('http') ? endpoint : (SERVER_URL + endpoint);
           const res = await fetch(fullUrl, options);
           if (!res.ok) throw new Error('API Error');
@@ -3207,6 +3208,10 @@
 
           let needsReRender = false;
 
+          if (!b && state.bobinas.length === 0) {
+            state.bobinas = JSON.parse(localStorage.getItem('calidad_bobinas')) || [];
+            needsReRender = true;
+          }
           if (b && Array.isArray(b)) {
             const strB = JSON.stringify(b);
             if (JSON.stringify(state.bobinas) !== strB) {
@@ -3214,6 +3219,10 @@
               localStorage.setItem('calidad_bobinas', strB);
               needsReRender = true;
             }
+          }
+          if (!i && state.inspecciones.length === 0) {
+            state.inspecciones = JSON.parse(localStorage.getItem('calidad_inspecciones')) || [];
+            needsReRender = true;
           }
           if (i && Array.isArray(i)) {
             let strI = JSON.stringify(i);
