@@ -2989,6 +2989,7 @@
           if (typeof renderTimeline === 'function') renderTimeline();
           if (typeof renderDashboard === 'function') renderDashboard();
           if (typeof updateDashboardCounters === 'function') updateDashboardCounters();
+          if (typeof renderStatIndepView === 'function') renderStatIndepView();
         }
 
         if (isOnline) {
@@ -3271,6 +3272,7 @@
           if (typeof renderFriasCargasConsulta === 'function') renderFriasCargasConsulta();
           if (typeof renderFriasTarimasConsulta === 'function') renderFriasTarimasConsulta();
           if (typeof updateDashboardCounters === 'function') updateDashboardCounters();
+          if (typeof renderStatIndepView === 'function') renderStatIndepView();
         } catch (e) {
           console.error('Error rendering active views:', e);
         }
