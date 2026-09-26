@@ -56,7 +56,7 @@ function writeDb(db) {
 
 const server = http.createServer(async (req, res) => {
   // Configurar CORS y anti-caché
-  const origin = req.headers.origin || '*';
+  const origin = req.headers.origin || 'https://calidad-bolsas-app.onrender.com';
   res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');

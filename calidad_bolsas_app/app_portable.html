@@ -2868,7 +2868,7 @@
       
       async function apiFetch(endpoint, options = {}) {
         try {
-          if (!options.credentials) options.credentials = 'include';
+          
           const fullUrl = endpoint.startsWith('http') ? endpoint : (SERVER_URL + endpoint);
           const res = await fetch(fullUrl, options);
           if (!res.ok) throw new Error('API Error');
@@ -2986,8 +2986,9 @@
 
         // Renderizado inmediato local (0ms latencia)
         if (state.role === 'calidad') {
-          renderInspeccionesTable();
-          renderStatsKPIs();
+          if (typeof renderTimeline === 'function') renderTimeline();
+          if (typeof renderDashboard === 'function') renderDashboard();
+          if (typeof updateDashboardCounters === 'function') updateDashboardCounters();
         }
 
         if (isOnline) {
@@ -3260,20 +3261,18 @@
       }
 
       function renderActiveViews() {
-        const indepView = document.getElementById('view-estadisticas-independiente');
-        if (indepView && indepView.style.display !== 'none') {
-          renderStatIndepView();
-        }
-        const inspView = document.getElementById('view-inspector');
-        if (inspView && inspView.style.display !== 'none') {
-          renderDashboard();
-        }
-        if (state.role === 'calidad') {
-          renderInspeccionesTable();
-          renderStatsKPIs();
-        } else if (state.role === 'produccion') {
-          if (state.selectedArea === 'Tarimas') renderTarimasTable();
-          if (state.selectedArea === 'Bolsas') renderPersonalTable();
+        try {
+          if (typeof renderTimeline === 'function') renderTimeline();
+          if (typeof renderDashboard === 'function') renderDashboard();
+          if (typeof renderProduccionPersonalTable === 'function') renderProduccionPersonalTable();
+          if (typeof renderBolsasProduccion === 'function') renderBolsasProduccion();
+          if (typeof renderTarimasLiberadasTable === 'function') renderTarimasLiberadasTable();
+          if (typeof renderFriasInspeccionesConsulta === 'function') renderFriasInspeccionesConsulta();
+          if (typeof renderFriasCargasConsulta === 'function') renderFriasCargasConsulta();
+          if (typeof renderFriasTarimasConsulta === 'function') renderFriasTarimasConsulta();
+          if (typeof updateDashboardCounters === 'function') updateDashboardCounters();
+        } catch (e) {
+          console.error('Error rendering active views:', e);
         }
       }
 
