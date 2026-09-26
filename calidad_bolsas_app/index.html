@@ -3483,6 +3483,7 @@
         state.usuarioActual = name;
         document.getElementById('current-user-label').textContent = name;
         document.getElementById('landing-user-label').textContent = name;
+        if (document.getElementById('form-inspector-label')) document.getElementById('form-inspector-label').textContent = name;
         document.getElementById('landing-session-info').style.display = 'flex';
         showToast(`Bienvenido, ${name}`, 'success');
         
@@ -8457,6 +8458,7 @@
           pegado_correcto: pegado,
           posicion_parche_correcta: posParche,
           temperatura_hotmelt: tempHotmelt,
+          editado_por: state.usuarioActual,
           resultado: friasInspResult,
           descripcion_defecto: friasInspResult === 'Rechazado' ? document.getElementById('frias-insp-defecto').value : '',
           accion_correctiva: friasInspResult === 'Rechazado' ? document.getElementById('frias-insp-accion').value : '',
@@ -8580,6 +8582,7 @@
           hora_inicial: horaIni,
           hora_final: horaFin,
           duracion_calculada: duracion,
+          editado_por: state.usuarioActual,
           resultado: friasCargaResult,
           carga_resultado: friasCargaResult === 'Aprobado' ? 'Pasa' : 'Falla',
           descripcion_defecto: friasCargaResult === 'Rechazado' ? document.getElementById('frias-carga-defecto').value : '',
@@ -8705,6 +8708,7 @@
           etiquetado_correcto: etiquetado,
           bolsas_cumplen_condiciones: condiciones,
           cinta_correctamente_pegada: cinta,
+          editado_por: state.usuarioActual,
           estado_liberacion: friasTarimaEstado,
           motivo: motivo,
           foto_url: fotoUrl,
