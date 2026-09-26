@@ -2868,7 +2868,7 @@
       
       async function apiFetch(endpoint, options = {}) {
         try {
-          if (!options.credentials) options.credentials = 'same-origin';
+          if (!options.credentials) options.credentials = 'include';
           const fullUrl = endpoint.startsWith('http') ? endpoint : (SERVER_URL + endpoint);
           const res = await fetch(fullUrl, options);
           if (!res.ok) throw new Error('API Error');
