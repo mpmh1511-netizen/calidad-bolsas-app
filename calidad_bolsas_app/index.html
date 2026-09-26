@@ -803,6 +803,29 @@
           </div>
         </div>
 
+        <!-- VISTA DE FICHAS TECNICAS -->
+        <div id="view-fichas-tecnicas" style="display: none; height: calc(100vh - 120px); flex-direction: column;">
+          <div class="card" style="flex: 1; padding: 1.5rem; display: flex; flex-direction: column; height: 100%;">
+            <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h3 style="margin: 0; font-size: 1.25rem; color: #8b5cf6; display: flex; align-items: center; gap: 8px;">
+                  📄 Catálogo de Fichas Técnicas
+                </h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">
+                  Haz doble clic en un archivo PDF para visualizar las especificaciones.
+                </p>
+              </div>
+              <a href="https://drive.google.com/drive/folders/1UoaO0rfrWbLAISwraWicTK-cIJu9aju9?usp=share_link" target="_blank" rel="noopener noreferrer" style="font-size: 0.85rem; background: #f1f5f9; padding: 8px 12px; border-radius: 6px; text-decoration: none; color: #475569; font-weight: 600;">
+                Abrir en Drive ↗
+              </a>
+            </div>
+            
+            <div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #f8fafc; display: flex;">
+              <iframe src="https://drive.google.com/embeddedfolderview?id=1UoaO0rfrWbLAISwraWicTK-cIJu9aju9#grid" width="100%" height="100%" style="border: none; flex: 1;"></iframe>
+            </div>
+          </div>
+        </div>
+
         <!-- VISTA DE PRODUCCIÓN - REGISTRO DE PERSONAL -->
         <div id="view-produccion-personal" style="display: none; margin-bottom: 2rem;">
           <!-- Selector de periodo y turno en la parte superior -->
@@ -3684,6 +3707,8 @@
           document.getElementById('step-prod-menu').style.display = 'block';
         } else if (sec === 'estadisticas') {
           openIndependentEstadisticas();
+        } else if (sec === 'fichas') {
+          openFichasTecnicas();
         }
       }
 
@@ -3699,12 +3724,24 @@
           'view-estadisticas',
           'view-frias-inspeccion',
           'view-frias-carga',
-          'view-frias-tarimas'
+          'view-frias-tarimas',
+          'view-fichas-tecnicas'
         ];
         viewIds.forEach(id => {
           const el = document.getElementById(id);
           if (el) el.style.display = 'none';
         });
+      }
+
+      function openFichasTecnicas() {
+        state.role = 'fichas_tecnicas';
+        const landing = document.getElementById('landing-screen');
+        const appScreen = document.getElementById('app-screen');
+        if (landing) landing.style.display = 'none';
+        if (appScreen) appScreen.style.display = 'block';
+        hideAllViews();
+        document.getElementById('view-fichas-tecnicas').style.display = 'flex';
+        document.getElementById('header-title').textContent = 'Fichas Técnicas de Marca';
       }
 
       function openIndependentEstadisticas() {
