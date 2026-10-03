@@ -3097,7 +3097,7 @@
           dateInput.removeAttribute('disabled');
           dateInput.setAttribute('required', 'true');
           selectInput.removeAttribute('disabled');
-          selectInput.value = 'M1';
+          selectInput.value = 'Flexo 1';
           opInput.removeAttribute('disabled');
           opInput.value = '';
         }
@@ -3291,6 +3291,10 @@
             }
             if (a === 'FLEXO' && String(i.maquina).startsWith('M') && String(i.maquina) !== 'MAQUINA PRUEBA') {
               i.maquina = 'Flexo ' + i.maquina.replace('M', ''); // M1 -> Flexo 1
+              changed = true;
+            }
+            if (i.maquina === 'Flexo -1' || i.maquina === 'M-1' || i.maquina === '') {
+              i.maquina = 'Desconocida';
               changed = true;
             }
             
