@@ -1349,6 +1349,10 @@
                 </select>
               </div>
               <div class="form-group">
+                <label>Fecha de Inspección</label>
+                <input type="date" id="insp-fecha" class="form-control" required />
+              </div>
+              <div class="form-group">
                 <label>Hora de Inspección</label>
                 <input type="time" id="insp-hora" class="form-control" required />
               </div>
@@ -2262,6 +2266,10 @@
                 </select>
               </div>
               <div class="form-group">
+                <label>Fecha de Inspección *</label>
+                <input type="date" id="frias-insp-fecha" class="form-control" required />
+              </div>
+              <div class="form-group">
                 <label>Hora de Inspección *</label>
                 <input type="time" id="frias-insp-hora" class="form-control" required />
               </div>
@@ -2417,6 +2425,10 @@
               <div class="form-group">
                 <label>Peso Colocado (kg) *</label>
                 <input type="number" step="0.1" id="frias-carga-peso" class="form-control" placeholder="Ej. 10.5" required />
+              </div>
+              <div class="form-group">
+                <label>Fecha de Prueba *</label>
+                <input type="date" id="frias-carga-fecha" class="form-control" required />
               </div>
               <div class="form-group">
                 <label>Hora Inicial *</label>
@@ -2865,6 +2877,59 @@
         ? window.location.origin 
         : 'https://calidad-bolsas-app.onrender.com';
       const isOnline = true;
+
+      let isSubmittingData = false;
+
+      // WRAPPERS ANTI-DOBLE-CLICK
+      async function submitInspection() {
+        if (isSubmittingData) return;
+        const btn = document.querySelector('button[onclick="submitInspection()"]');
+        if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Guardando...'; }
+        isSubmittingData = true;
+        try { await _submitInspection_impl(); } 
+        finally { isSubmittingData = false; if (btn) { btn.disabled = false; btn.innerHTML = '💾 Guardar Inspección'; } }
+      }
+
+      async function submitTarima(e) {
+        if (e) e.preventDefault();
+        if (isSubmittingData) return;
+        const btn = document.querySelector('#tarima-form button[type="submit"]');
+        if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Guardando...'; }
+        isSubmittingData = true;
+        try { await _submitTarima_impl(e); } 
+        finally { isSubmittingData = false; if (btn) { btn.disabled = false; btn.innerHTML = '💾 Generar Etiqueta y Guardar'; } }
+      }
+
+      async function submitFriasInspeccion(e) {
+        if (e) e.preventDefault();
+        if (isSubmittingData) return;
+        const btn = document.querySelector('#frias-inspeccion-form button[type="submit"]');
+        if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Guardando...'; }
+        isSubmittingData = true;
+        try { await _submitFriasInspeccion_impl(e); } 
+        finally { isSubmittingData = false; if (btn) { btn.disabled = false; btn.innerHTML = '💾 Guardar Inspección (Frías)'; } }
+      }
+
+      async function submitFriasCarga(e) {
+        if (e) e.preventDefault();
+        if (isSubmittingData) return;
+        const btn = document.querySelector('#frias-carga-form button[type="submit"]');
+        if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Guardando...'; }
+        isSubmittingData = true;
+        try { await _submitFriasCarga_impl(e); } 
+        finally { isSubmittingData = false; if (btn) { btn.disabled = false; btn.innerHTML = '💾 Guardar Prueba de Carga'; } }
+      }
+
+      async function submitFriasTarima(e) {
+        if (e) e.preventDefault();
+        if (isSubmittingData) return;
+        const btn = document.querySelector('#frias-tarima-form button[type="submit"]');
+        if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Guardando...'; }
+        isSubmittingData = true;
+        try { await _submitFriasTarima_impl(e); } 
+        finally { isSubmittingData = false; if (btn) { btn.disabled = false; btn.innerHTML = '💾 Generar Etiqueta Frías'; } }
+      }
+
       
       async function apiFetch(endpoint, options = {}) {
         try {
@@ -3097,7 +3162,7 @@
           dateInput.removeAttribute('disabled');
           dateInput.setAttribute('required', 'true');
           selectInput.removeAttribute('disabled');
-          selectInput.value = 'M1';
+          selectInput.value = 'Flexo 1';
           opInput.removeAttribute('disabled');
           opInput.value = '';
         }
@@ -3293,6 +3358,10 @@
               i.maquina = 'Flexo ' + i.maquina.replace('M', ''); // M1 -> Flexo 1
               changed = true;
             }
+            if (i.maquina === 'Flexo -1' || i.maquina === 'M-1' || i.maquina === '') {
+              i.maquina = 'Desconocida';
+              changed = true;
+            }
             
             // Fix Legacy Carga
             if (!i.es_prueba_carga && (i.carga_resultado || i.carga_peso_kg)) {
@@ -3441,6 +3510,7 @@
         }
 
         const now = new Date();
+        document.getElementById('insp-fecha').value = now.toISOString().split('T')[0];
         document.getElementById('insp-hora').value = now.toTimeString().split(' ')[0].substring(0, 5);
         document.getElementById('flexo-lavado').value = now.toTimeString().split(' ')[0].substring(0, 5);
         document.getElementById('flexo-bobina-fecha').value = now.toISOString().split('T')[0];
@@ -3816,6 +3886,8 @@
 
         // Filtrar por Área, Máquina, Periodo y Fecha (EXCLUYE Frías / Bandas del panel superior)
         const filteredInspections = allInspections.filter(insp => {
+          if (insp.maquina === 'Desconocida') return false; // Ocultar registros simulados de las gráficas
+
           const inspDate = getInspIsoDate(insp);
 
           // Excluir ÚNICAMENTE registros de Frías / Bandas del panel superior
@@ -4133,9 +4205,9 @@
             <div class="card" style="padding: 1rem; border-radius: 12px; box-shadow: 0 3px 6px rgba(0,0,0,0.05); ${cardBorder}">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
                 <h4 
-                  onclick="showMachineInspectionsModal('${m}')"
+                  onclick="showMachineInspectionsModal('${m}', 'carga')"
                   style="margin: 0; font-weight: 800; color: var(--color-primary); font-size: 0.95rem; display: flex; align-items: center; gap: 6px; cursor: pointer;"
-                  title="Toca para ver todas las inspecciones de Máquina ${m}"
+                  title="Toca para ver todas las pruebas de carga de Máquina ${m}"
                 >
                   🤖 Máquina ${m} <span style="font-size:0.7rem; font-weight:600; background:#e2e8f0; color:#334155; padding:1px 5px; border-radius:4px;">🔍 Ver todas</span>
                 </h4>
@@ -4211,7 +4283,7 @@
         if (modal) modal.style.display = 'none';
       }
 
-      function showMachineInspectionsModal(machineName) {
+      function showMachineInspectionsModal(machineName, filterType = 'general') {
         const modal = document.getElementById('machine-inspections-detail-modal');
         const title = document.getElementById('machine-modal-title');
         const subtitle = document.getElementById('machine-modal-subtitle');
@@ -4225,8 +4297,12 @@
 
         // Aplicar los MISMOS filtros del periodo seleccionado para que solo salgan las inspecciones de ese periodo
         const machineInsps = allInsps.filter(insp => {
-          // EXCLUIR Pruebas de Carga de este modal general de inspecciones de calidad
-          if (insp.es_prueba_carga === 1) return false;
+          // EXCLUIR Pruebas de Carga de este modal general, o incluir SOLO pruebas de carga si es el modal de carga
+          if (filterType === 'carga') {
+             if (insp.es_prueba_carga !== 1) return false;
+          } else {
+             if (insp.es_prueba_carga === 1) return false;
+          }
           
           const isBandaMatch = (insp.maquina === machineName || insp.banda === machineName);
           if (!isBandaMatch) return false;
@@ -4243,7 +4319,11 @@
 
         const periodLabel = statIndepPeriodo === 'dia' ? `del Día ${fechaVal}` : statIndepPeriodo === 'semana' ? 'de la Semana' : statIndepPeriodo === 'mes' ? `de ${fechaVal.substring(0, 7)}` : `del Año ${fechaVal.substring(0, 4)}`;
 
-        if (title) title.textContent = `📊 Inspecciones en Máquina ${machineName} (${periodLabel})`;
+        if (title) {
+          title.textContent = filterType === 'carga' 
+            ? `📊 Pruebas de Carga en Máquina ${machineName} (${periodLabel})`
+            : `📊 Inspecciones en Máquina ${machineName} (${periodLabel})`;
+        }
 
         const approvedCount = machineInsps.filter(i => i.resultado === 'Aprobado' || i.carga_resultado === 'Pasa').length;
         const rejectedCount = machineInsps.filter(i => i.resultado === 'Rechazado' || i.carga_resultado === 'Falla').length;
@@ -4532,7 +4612,7 @@
         }
       }
 
-      async function submitTarima(e) {
+      async function _submitTarima_impl(e) {
         e.preventDefault();
         
         const maquina = document.getElementById('tarima-maquina').value;
@@ -7360,7 +7440,7 @@
         }
       }
 
-      async function submitInspection() {
+      async function _submitInspection_impl() {
         const area = document.getElementById('insp-area').value;
         const maquina = document.getElementById('insp-maquina').value;
         const hora = document.getElementById('insp-hora').value;
@@ -7513,7 +7593,7 @@
           resultado: state.currentResult,
           observaciones: obs,
           editado_por: state.usuarioActual,
-          fecha_registro: new Date().toISOString().split('T')[0] + ' ' + hora + ':00',
+          fecha_registro: document.getElementById('insp-fecha').value + ' ' + hora + ':00',
           es_prueba_carga: (area === 'Con Asa' && currentAsaSubtab === 'carga') ? 1 : 0
         };
 
@@ -7945,6 +8025,7 @@
         populateFiltroPersonaOptions();
 
         const dayInspections = state.inspecciones.filter(i => {
+          if (i.maquina === 'Desconocida') return false; // Ocultar registros simulados
           if (i.area !== state.selectedArea) return false;
           
           if (state.filtroPersona && i.editado_por !== state.filtroPersona && i.operador !== state.filtroPersona) {
@@ -8323,6 +8404,9 @@
           if (badge) badge.textContent = 'Frías - Calidad';
           
           const inputHora = document.getElementById('frias-insp-hora');
+          if (document.getElementById('frias-insp-fecha') && !document.getElementById('frias-insp-fecha').value) {
+            document.getElementById('frias-insp-fecha').value = new Date().toISOString().split('T')[0];
+          }
           if (inputHora && !inputHora.value) inputHora.value = defaultTimeStr;
         } else if (sub === 'carga') {
           state.role = 'frias_carga';
@@ -8332,6 +8416,9 @@
           if (badge) badge.textContent = 'Frías - Pruebas Carga';
           
           const inputHoraIni = document.getElementById('frias-carga-hora-ini');
+          if (document.getElementById('frias-carga-fecha') && !document.getElementById('frias-carga-fecha').value) {
+            document.getElementById('frias-carga-fecha').value = new Date().toISOString().split('T')[0];
+          }
           if (inputHoraIni && !inputHoraIni.value) inputHoraIni.value = defaultTimeStr;
           
           setTimeout(calcFriasCargaDuracion, 100);
@@ -8423,7 +8510,7 @@
         }
       }
 
-      async function submitFriasInspeccion(e) {
+      async function _submitFriasInspeccion_impl(e) {
         e.preventDefault();
         const banda = document.getElementById('frias-insp-banda').value;
         const hora = document.getElementById('frias-insp-hora').value;
@@ -8474,7 +8561,7 @@
           accion_correctiva: friasInspResult === 'Rechazado' ? document.getElementById('frias-insp-accion').value : '',
           foto_url: fotoUrl,
           es_prueba_carga: 0,
-          fecha_registro: `${todayIso} ${timeStr}`
+          fecha_registro: `${document.getElementById('frias-insp-fecha').value} ${timeStr}`
         };
 
         await saveInspection(newInsp);
@@ -8556,7 +8643,7 @@
         }
       }
 
-      async function submitFriasCarga(e) {
+      async function _submitFriasCarga_impl(e) {
         e.preventDefault();
         const banda = document.getElementById('frias-carga-banda').value;
         const marca = document.getElementById('frias-carga-marca').value;
@@ -8599,7 +8686,7 @@
           accion_correctiva: friasCargaResult === 'Rechazado' ? document.getElementById('frias-carga-accion').value : '',
           foto_url: fotoUrl,
           es_prueba_carga: 1,
-          fecha_registro: `${todayIso} ${timeStr}`
+          fecha_registro: `${document.getElementById('frias-carga-fecha').value} ${timeStr}`
         };
 
         await saveInspection(newInsp);
@@ -8680,7 +8767,7 @@
         return `${dd}_${mm}_${bandaStr}_${sequentialNum}_Frías`;
       }
 
-      async function submitFriasTarima(e) {
+      async function _submitFriasTarima_impl(e) {
         e.preventDefault();
         const banda = document.getElementById('frias-tarima-banda').value;
         const operador = document.getElementById('frias-tarima-operador').value;
@@ -9308,7 +9395,8 @@
           <div id="full-inspection-detail-body" style="margin-top: 15px; display: grid; gap: 10px; max-height: 70vh; overflow-y: auto;">
              <!-- RENDERED DYNAMICALLY -->
           </div>
-          <div style="margin-top:20px; text-align:right;">
+          <div style="margin-top:20px; display:flex; justify-content:space-between;">
+             <button id="btn-delete-full-insp" style="background:#dc2626; color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🗑️ Eliminar Registro</button>
              <button onclick="document.getElementById('full-inspection-detail-modal').style.display='none'" style="background:var(--color-primary); color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Cerrar</button>
           </div>
         </div>
@@ -9376,6 +9464,12 @@
          }
          
          body.innerHTML = html;
+         document.getElementById('btn-delete-full-insp').onclick = function() {
+             document.getElementById('full-inspection-detail-modal').style.display = 'none';
+             const m2 = document.getElementById('stat-machine-inspections-modal');
+             if (m2) m2.style.display = 'none';
+             deleteInspection(idStr);
+         };
          document.getElementById('full-inspection-detail-modal').style.display = 'flex';
       }
       async function optimizarEspacio() {
