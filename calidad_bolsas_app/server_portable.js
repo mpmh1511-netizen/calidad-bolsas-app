@@ -87,8 +87,16 @@ const server = http.createServer(async (req, res) => {
   // Creadenciales de acceso para la empresa
   const validUser = process.env.APP_USER || 'dipapel';
   const validPass = process.env.APP_PASS || 'calidad2024';
+  
+  const clienteUser = process.env.CLIENTE_USER || 'mcdonalds';
+  const clientePass = process.env.CLIENTE_PASS || 'mcR3visi0n';
 
-  if (user !== validUser || pass !== validPass) {
+  let role = '';
+  if (user === validUser && pass === validPass) {
+    role = 'admin';
+  } else if (user === clienteUser && pass === clientePass) {
+    role = 'cliente';
+  } else {
     res.setHeader('WWW-Authenticate', 'Basic realm="Acceso Privado Dipapel"');
     res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Credenciales incorrectas.');
@@ -98,6 +106,13 @@ const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
   const method = req.method;
+
+  if (role === 'cliente' && method !== 'GET' && method !== 'OPTIONS') {
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Operación no permitida para clientes' }));
+    return;
+  }
+
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -111,8 +126,12 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- SERVIR FRONTEND ---
-  if (pathname === '/' || pathname === '/index.html' || pathname === '/app_portable.html') {
-    fs.readFile(FILE_PATH, (err, data) => {
+  if (pathname === '/' || pathname === '/index.html' || pathname === '/app_portable.html' || pathname === '/cliente_mcdonalds.html') {
+    const fileToServe = (role === 'cliente') 
+       ? path.join(process.cwd(), 'cliente_mcdonalds.html') 
+       : FILE_PATH;
+    
+    fs.readFile(fileToServe, (err, data) => {
       if (err) {
         res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('Error al leer el archivo portable: ' + err.message);
@@ -181,7 +200,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       
-      const mapped = list.map(b => {
+      let mapped = list.map(b => {
         const num = b.numero_rollo || b.numero_bobina || '';
         return {
           ...b,
@@ -195,6 +214,19 @@ const server = http.createServer(async (req, res) => {
           fecha_produccion_bobina: b.fecha_produccion_bobina || b.fecha || new Date().toISOString().split('T')[0]
         };
       });
+
+      if (role === 'cliente') {
+        mapped = mapped.filter(b => {
+           const marca = (b.marca_especificaciones || b.proveedor || '').toLowerCase();
+           return marca.includes('mcdonalds') || marca.includes('mc donalds');
+        });
+        mapped = mapped.map(b => {
+           delete b.operador;
+           delete b.editado_por;
+           delete b.usuario;
+           return b;
+        });
+      }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(mapped));
@@ -268,8 +300,22 @@ const server = http.createServer(async (req, res) => {
         }
       }
 
+      let clientList = uniqueList;
+      if (role === 'cliente') {
+        clientList = clientList.filter(i => {
+           const marca = (i.marca_especificaciones || i.marca_cliente || i.marca || '').toLowerCase();
+           return marca.includes('mcdonalds') || marca.includes('mc donalds');
+        });
+        clientList = clientList.map(i => {
+           delete i.operador;
+           delete i.editado_por;
+           delete i.usuario;
+           return i;
+        });
+      }
+
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(uniqueList));
+      res.end(JSON.stringify(clientList));
     } else if (method === 'POST') {
       getBody(req, async (parsedBody) => {
         let payload = parsedBody;
@@ -356,6 +402,19 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const mapped = list.map(item => item.datos || item);
+      if (role === 'cliente') {
+        mapped = mapped.filter(b => {
+           const marca = (b.marca_especificaciones || b.proveedor || '').toLowerCase();
+           return marca.includes('mcdonalds') || marca.includes('mc donalds');
+        });
+        mapped = mapped.map(b => {
+           delete b.operador;
+           delete b.editado_por;
+           delete b.usuario;
+           return b;
+        });
+      }
+
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(mapped));
     } else if (method === 'POST') {
@@ -385,6 +444,19 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       const mapped = list.map(item => item.datos || item);
+      if (role === 'cliente') {
+        mapped = mapped.filter(b => {
+           const marca = (b.marca_especificaciones || b.proveedor || '').toLowerCase();
+           return marca.includes('mcdonalds') || marca.includes('mc donalds');
+        });
+        mapped = mapped.map(b => {
+           delete b.operador;
+           delete b.editado_por;
+           delete b.usuario;
+           return b;
+        });
+      }
+
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(mapped));
     } else if (method === 'POST') {
