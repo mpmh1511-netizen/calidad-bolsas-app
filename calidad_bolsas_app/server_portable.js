@@ -229,7 +229,7 @@ const server = http.createServer(async (req, res) => {
         
         mapped = mapped.filter(b => {
            // Si es una bolsa/producción normal que tiene marca
-           let marca = (b.marca_especificaciones || b.proveedor || '').toLowerCase();
+           let marca = (b.marca_especificaciones || b.proveedor || b.marca || '').toLowerCase();
            
            // Si es una tarima, heredar la marca de su bobina vinculada
            if (!marca && b.codigo_liberacion && b.bobina_id) {
@@ -434,7 +434,7 @@ const server = http.createServer(async (req, res) => {
         
         mapped = mapped.filter(b => {
            // Si es una bolsa/producción normal que tiene marca
-           let marca = (b.marca_especificaciones || b.proveedor || '').toLowerCase();
+           let marca = (b.marca_especificaciones || b.proveedor || b.marca || '').toLowerCase();
            
            // Si es una tarima, heredar la marca de su bobina vinculada
            if (!marca && b.codigo_liberacion && b.bobina_id) {
@@ -494,7 +494,7 @@ const server = http.createServer(async (req, res) => {
         
         mapped = mapped.filter(b => {
            // Si es una bolsa/producción normal que tiene marca
-           let marca = (b.marca_especificaciones || b.proveedor || '').toLowerCase();
+           let marca = (b.marca_especificaciones || b.proveedor || b.marca || '').toLowerCase();
            
            // Si es una tarima, heredar la marca de su bobina vinculada
            if (!marca && b.codigo_liberacion && b.bobina_id) {

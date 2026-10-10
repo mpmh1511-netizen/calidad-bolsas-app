@@ -1944,6 +1944,23 @@
                 </div>
 
                 <div class="form-group" style="grid-column: 1 / -1;">
+                  <label>Marca de la Tarima *</label>
+                  <select id="tarima-marca-principal" class="form-control" required>
+                    <option value="">Selecciona la marca...</option>
+                    <option value="KOHLS">KOHLS</option>
+                    <option value="MENARDS">MENARDS</option>
+                    <option value="KROGER">KROGER</option>
+                    <option value="SUBWAY">SUBWAY</option>
+                    <option value="TARGET">TARGET</option>
+                    <option value="WALMART">WALMART</option>
+                    <option value="BSK">BSK</option>
+                    <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
+                    <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                    <option value="OTRO">OTRO (Especificar en Rollo Manual)</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="grid-column: 1 / -1;">
                   <label>Número de Rollo (Bobina Activa)</label>
                   <input type="text" id="tarima-rollo" class="form-control" placeholder="Ej: R-1002" list="bobinas-datalist" oninput="onTarimaRolloInput()" required />
                 </div>
@@ -1971,7 +1988,20 @@
                 <div class="form-grid">
                   <div class="form-group">
                     <label>Marca / Especificaciones *</label>
-                    <input type="text" id="tarima-manual-marca" class="form-control" placeholder="Ej. Starbucks Kraft M" />
+                    <select id="tarima-manual-marca-select" class="form-control" onchange="toggleTarimaManualMarcaOtro()">
+                      <option value="">Selecciona la marca...</option>
+                      <option value="KOHLS">KOHLS</option>
+                      <option value="MENARDS">MENARDS</option>
+                      <option value="KROGER">KROGER</option>
+                      <option value="SUBWAY">SUBWAY</option>
+                      <option value="TARGET">TARGET</option>
+                      <option value="WALMART">WALMART</option>
+                      <option value="BSK">BSK</option>
+                      <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
+                      <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                      <option value="OTRO">OTRO (Escribir manual)</option>
+                    </select>
+                    <input type="text" id="tarima-manual-marca-otro" class="form-control" placeholder="Escribe la marca..." style="display: none; margin-top: 5px;" />
                   </div>
                   <div class="form-group">
                     <label>Ancho de bobina (cm) *</label>
@@ -3240,6 +3270,18 @@
           input.setAttribute('disabled', 'true');
         } else {
           input.removeAttribute('disabled');
+        }
+      }
+
+            function toggleTarimaManualMarcaOtro() {
+        const select = document.getElementById('tarima-manual-marca-select');
+        const inputOtro = document.getElementById('tarima-manual-marca-otro');
+        if (select && inputOtro) {
+          if (select.value === 'OTRO') {
+            inputOtro.style.display = 'block';
+          } else {
+            inputOtro.style.display = 'none';
+          }
         }
       }
 
@@ -4541,6 +4583,12 @@
           infoBox.style.background = '#fafafa';
           infoBox.innerHTML = '<span style="color: var(--text-muted);">Escribe el número de rollo registrado en Flexo para autocompletar la ficha técnica.</span>';
           document.getElementById('tarima-manual-bobina-section').style.display = 'none';
+          const mainMarca = document.getElementById('tarima-marca-principal');
+          if (mainMarca) {
+             const foundMarca = Array.from(mainMarca.options).find(opt => opt.value === b.marca_especificaciones.toUpperCase());
+             if (foundMarca) mainMarca.value = foundMarca.value;
+             else mainMarca.value = 'OTRO';
+          }
           return;
         }
 
@@ -4649,6 +4697,7 @@
         
         const maquina = document.getElementById('tarima-maquina').value;
         const operador = document.getElementById('tarima-operador').value;
+        const marcaPrincipal = document.getElementById('tarima-marca-principal').value;
         const numeroRollo = document.getElementById('tarima-rollo').value;
         const tarimaOk = document.getElementById('check-tarima-ok').checked ? 1 : 0;
         const etiquetadoOk = document.getElementById('check-etiquetado-ok').checked ? 1 : 0;
@@ -4674,7 +4723,12 @@
         if (!b) {
           const manualSec = document.getElementById('tarima-manual-bobina-section');
           if (manualSec && manualSec.style.display === 'block') {
-            const marca = document.getElementById('tarima-manual-marca').value.trim();
+            let marca = document.getElementById('tarima-manual-marca-select').value;
+            if (marca === 'OTRO') {
+              marca = document.getElementById('tarima-manual-marca-otro').value.trim();
+            } else {
+              marca = marca.trim();
+            }
             const ancho = parseFloat(document.getElementById('tarima-manual-ancho').value);
             const gramaje = parseInt(document.getElementById('tarima-manual-gramaje').value);
             const humedadVal = document.getElementById('tarima-manual-humedad').value;
@@ -4757,6 +4811,7 @@
           id: Date.now(),
           codigo_liberacion: codigo,
           maquina,
+          marca: marcaPrincipal,
           numero_rollo: numeroRollo,
           bobina_id: bobinaId,
           tarima_correcta: tarimaOk,
