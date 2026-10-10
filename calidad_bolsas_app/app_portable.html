@@ -594,8 +594,6 @@
                   <option value="BSK">BSK</option>
                   <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
                   <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
-                  <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
-                  <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
                 </select>
               </div>
 
@@ -688,6 +686,32 @@
             </div>
           </div>
 
+                    <!-- Resumen de Tarimas Liberadas -->
+          <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <div class="card-title" style="margin-bottom: 1rem;">
+              <h3 style="margin: 0; font-size: 1.15rem; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
+                📦 Resumen de Tarimas Liberadas por Máquina
+              </h3>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Conteo total de tarimas liberadas en el periodo seleccionado (Omitiendo Frías)</span>
+            </div>
+            <div class="table-container" style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead>
+                  <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                    <th style="padding: 10px;">Máquina</th>
+                    <th style="padding: 10px;">Aprobadas</th>
+                    <th style="padding: 10px;">Condicionadas</th>
+                    <th style="padding: 10px;">Rechazadas</th>
+                    <th style="padding: 10px; font-weight: bold;">Total Tarimas</th>
+                  </tr>
+                </thead>
+                <tbody id="table-tarimas-stats-body">
+                  <tr><td colspan="5" style="padding: 10px; text-align: center;">Cargando estadísticas de tarimas...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
           <!-- Registro de Inconformidades y Defectos Detectados (Sin Imágenes) -->
           <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
             <div class="card-title" style="margin-bottom: 1rem;">
@@ -1404,8 +1428,6 @@
                       <option value="BSK">BSK</option>
                   <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
                   <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
-                  <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
-                  <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
                       <option value="OTRO">OTRO (Escribir manual)</option>
                     </select>
                     <input type="text" id="flexo-bobina-marca-otro" class="form-control" placeholder="Escribe la marca..." style="display: none; margin-top: 5px;" />
@@ -1466,8 +1488,6 @@
                         <option value="TARGET">TARGET</option>
                         <option value="WALMART">WALMART</option>
                         <option value="BSK">BSK</option>
-                  <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
-                  <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
                   <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
                   <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
                         <option value="OTRO">OTRO (Escribir manual)</option>

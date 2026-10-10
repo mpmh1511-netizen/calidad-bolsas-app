@@ -216,8 +216,26 @@ const server = http.createServer(async (req, res) => {
       });
 
       if (role === 'cliente') {
+        // Para filtrar tarimas (que no tienen marca directamente), necesitamos cruzar con bobinas
+        let bobinasList = await supabaseRequest('bobinas?select=*&order=id.desc&limit=1000');
+        let bobinasMap = {};
+        if (bobinasList) {
+          bobinasList.forEach(item => {
+             const bd = item.datos || {};
+             const m = (bd.marca_especificaciones || bd.proveedor || '').toLowerCase();
+             bobinasMap[bd.id || item.id] = m;
+          });
+        }
+        
         mapped = mapped.filter(b => {
-           const marca = (b.marca_especificaciones || b.proveedor || '').toLowerCase();
+           // Si es una bolsa/producción normal que tiene marca
+           let marca = (b.marca_especificaciones || b.proveedor || '').toLowerCase();
+           
+           // Si es una tarima, heredar la marca de su bobina vinculada
+           if (!marca && b.codigo_liberacion && b.bobina_id) {
+             marca = bobinasMap[b.bobina_id] || '';
+           }
+           
            return marca.includes('mcdonalds') || marca.includes('mc donalds');
         });
         mapped = mapped.map(b => {
@@ -403,8 +421,26 @@ const server = http.createServer(async (req, res) => {
       }
       const mapped = list.map(item => item.datos || item);
       if (role === 'cliente') {
+        // Para filtrar tarimas (que no tienen marca directamente), necesitamos cruzar con bobinas
+        let bobinasList = await supabaseRequest('bobinas?select=*&order=id.desc&limit=1000');
+        let bobinasMap = {};
+        if (bobinasList) {
+          bobinasList.forEach(item => {
+             const bd = item.datos || {};
+             const m = (bd.marca_especificaciones || bd.proveedor || '').toLowerCase();
+             bobinasMap[bd.id || item.id] = m;
+          });
+        }
+        
         mapped = mapped.filter(b => {
-           const marca = (b.marca_especificaciones || b.proveedor || '').toLowerCase();
+           // Si es una bolsa/producción normal que tiene marca
+           let marca = (b.marca_especificaciones || b.proveedor || '').toLowerCase();
+           
+           // Si es una tarima, heredar la marca de su bobina vinculada
+           if (!marca && b.codigo_liberacion && b.bobina_id) {
+             marca = bobinasMap[b.bobina_id] || '';
+           }
+           
            return marca.includes('mcdonalds') || marca.includes('mc donalds');
         });
         mapped = mapped.map(b => {
@@ -445,8 +481,26 @@ const server = http.createServer(async (req, res) => {
       }
       const mapped = list.map(item => item.datos || item);
       if (role === 'cliente') {
+        // Para filtrar tarimas (que no tienen marca directamente), necesitamos cruzar con bobinas
+        let bobinasList = await supabaseRequest('bobinas?select=*&order=id.desc&limit=1000');
+        let bobinasMap = {};
+        if (bobinasList) {
+          bobinasList.forEach(item => {
+             const bd = item.datos || {};
+             const m = (bd.marca_especificaciones || bd.proveedor || '').toLowerCase();
+             bobinasMap[bd.id || item.id] = m;
+          });
+        }
+        
         mapped = mapped.filter(b => {
-           const marca = (b.marca_especificaciones || b.proveedor || '').toLowerCase();
+           // Si es una bolsa/producción normal que tiene marca
+           let marca = (b.marca_especificaciones || b.proveedor || '').toLowerCase();
+           
+           // Si es una tarima, heredar la marca de su bobina vinculada
+           if (!marca && b.codigo_liberacion && b.bobina_id) {
+             marca = bobinasMap[b.bobina_id] || '';
+           }
+           
            return marca.includes('mcdonalds') || marca.includes('mc donalds');
         });
         mapped = mapped.map(b => {
