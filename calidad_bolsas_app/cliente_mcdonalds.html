@@ -4309,15 +4309,20 @@
         if (!modal || !tbody) return;
 
         const tipoText = type === 'estatica' ? 'Estática (30 min)' : 'Dinámica (15 min)';
-        if (title) title.textContent = `🚨 Detalles de Defectos en Pruebas de Carga - Máquina ${machine} (${tipoText})`;
+        if (title) title.textContent = `🚨 Detalles de Defectos en Pruebas de Carga - ${machine.startsWith('Banda') ? machine : 'Máquina ' + machine} (${tipoText})`;
 
         const allInsps = (state && state.inspecciones) ? state.inspecciones : [];
-        const defects = allInsps.filter(i => 
-          i.es_prueba_carga === 1 &&
-          i.maquina === machine &&
-          i.carga_tipo_prueba === type &&
-          (i.carga_resultado === 'Falla' || i.resultado === 'Rechazado')
-        );
+        const defects = allInsps.filter(i => {
+          if (i.es_prueba_carga !== 1) return false;
+          const isMachMatch = (i.maquina === machine || i.banda === machine);
+          if (!isMachMatch) return false;
+          const rawTipo = String(i.carga_tipo_prueba || i.tipo_prueba_carga || '').toLowerCase();
+          const isEst = rawTipo === 'estatica' || rawTipo.includes('estática') || rawTipo.includes('estatica');
+          const isDin = rawTipo === 'dinamica' || rawTipo.includes('dinámica') || rawTipo.includes('dinamica');
+          if (type === 'estatica' && !isEst) return false;
+          if (type === 'dinamica' && !isDin) return false;
+          return (i.carga_resultado === 'Falla' || i.resultado === 'Rechazado');
+        });
 
         if (defects.length === 0) {
           tbody.innerHTML = `<tr><td colspan="9" style="padding: 20px; text-align: center; color: #16a34a; font-weight: 700; background: #f0fdf4;">🎉 No hay registros de fallas para esta máquina y tipo de prueba.</td></tr>`;
@@ -4327,11 +4332,11 @@
             html += `
               <tr onclick="if(!event.target.closest('button')) viewInspectionDetail('${d.id}')" style="cursor:pointer; border-bottom: 1px solid #e2e8f0;" onmouseover="this.style.backgroundColor='#fef2f2'" onmouseout="this.style.backgroundColor='transparent'" title="Haz clic para ver detalles">
                 <td style="padding: 10px; font-weight: 600; color:#0284c7;">${d.fecha_registro} 🔍</td>
-                <td style="padding: 10px; font-weight: 800; color: var(--color-primary);">${d.maquina}</td>
-                <td style="padding: 10px;">${d.operador || '-'}</td>
+                <td style="padding: 10px; font-weight: 800; color: var(--color-primary);">${d.banda || d.maquina}</td>
+                <td style="padding: 10px;">${d.operador || d.carga_realizado_por || '-'}</td>
                 <td style="padding: 10px; font-weight: 600; color: #475569;">${d.editado_por || 'Desconocido'}</td>
-                <td style="padding: 10px;">${d.numero_rollo || '-'}</td>
-                <td style="padding: 10px; font-weight: 700; color: #2563eb;">${d.carga_peso_kg || 0} kg</td>
+                <td style="padding: 10px;">${d.numero_rollo || d.marca_cliente || '-'}</td>
+                <td style="padding: 10px; font-weight: 700; color: #2563eb;">${d.carga_peso_kg || d.peso_colocado_kg || 0} kg</td>
                 <td style="padding: 10px; color: #dc2626; font-weight: 700;">${d.observaciones || d.descripcion_defecto || 'Falla en desprendimiento/resistencia de asa'}</td>
                 <td style="padding: 10px; color: #15803d; font-weight: 600;">${d.accion_correctiva || 'Ajustar pegado / sellado de asa'}</td>
                 <td style="padding: 10px; text-align: center;">
@@ -4386,22 +4391,23 @@
         });
 
         const periodLabel = statIndepPeriodo === 'dia' ? `del Día ${fechaVal}` : statIndepPeriodo === 'semana' ? 'de la Semana' : statIndepPeriodo === 'mes' ? `de ${fechaVal.substring(0, 7)}` : `del Año ${fechaVal.substring(0, 4)}`;
+        const dispName = machineName.startsWith('Banda') ? machineName : `Máquina ${machineName}`;
 
         if (title) {
           title.textContent = filterType === 'carga' 
-            ? `📊 Pruebas de Carga en Máquina ${machineName} (${periodLabel})`
-            : `📊 Inspecciones en Máquina ${machineName} (${periodLabel})`;
+            ? `📊 Pruebas de Carga en ${dispName} (${periodLabel})`
+            : `📊 Inspecciones en ${dispName} (${periodLabel})`;
         }
 
         const approvedCount = machineInsps.filter(i => i.resultado === 'Aprobado' || i.carga_resultado === 'Pasa').length;
         const rejectedCount = machineInsps.filter(i => i.resultado === 'Rechazado' || i.carga_resultado === 'Falla').length;
 
         if (subtitle) {
-          subtitle.textContent = `Total: ${machineInsps.length} inspecciones | ✅ ${approvedCount} Conformes | 🔴 ${rejectedCount} Defectos`;
+          subtitle.textContent = `Total: ${machineInsps.length} registros | ✅ ${approvedCount} Conformes | 🔴 ${rejectedCount} Defectos`;
         }
 
         if (machineInsps.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="9" style="padding: 20px; text-align: center; color: #64748b; font-style: italic; background: #f8fafc;">No hay inspecciones registradas para la Máquina ${machineName}.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="9" style="padding: 20px; text-align: center; color: #64748b; font-style: italic; background: #f8fafc;">No hay registros para ${dispName} en este periodo.</td></tr>`;
         } else {
           let html = '';
           machineInsps.forEach(ins => {
@@ -4412,7 +4418,13 @@
 
             let obs = ins.descripcion_defecto || ins.observaciones || '';
             if (ins.es_prueba_carga === 1) {
-              obs = `Prueba Carga (${ins.carga_tipo_prueba === 'estatica' ? 'Estática' : 'Dinámica'} - ${ins.carga_peso_kg || 0} kg). ` + obs;
+              const rawT = String(ins.carga_tipo_prueba || ins.tipo_prueba_carga || '');
+              const tLabel = (rawT === 'estatica' || rawT.toLowerCase().includes('est')) ? 'Estática' : 'Dinámica';
+              const pesoVal = ins.carga_peso_kg || ins.peso_colocado_kg || 0;
+              const hIni = ins.carga_hora_inicial || ins.hora_inicial || '';
+              const hFin = ins.carga_hora_final || ins.hora_final || '';
+              const durTxt = ins.duracion_calculada ? ` (${ins.duracion_calculada})` : (hIni && hFin ? ` (${hIni} - ${hFin})` : '');
+              obs = `Prueba Carga (${tLabel} - ${pesoVal} kg)${durTxt}. ` + obs;
             } else if (ins.area === 'Flexo') {
               obs = `Impresión: ${ins.impresion_correcta === 1 ? 'OK' : 'Fallo'}. Tintas: ${ins.numero_tintas || 1}. ` + obs;
             } else if (ins.area === 'Nanjang' || ins.area === 'Con Asa') {
@@ -9085,35 +9097,87 @@
         const wrapper = document.getElementById('wrapper-frias-stat-carga-pie');
         if (!wrapper) return;
 
-        const cargaInspections = inspections.filter(i => i.es_prueba_carga === 1);
-        const total = cargaInspections.length;
+        const bandas = ['Banda 1', 'Banda 2', 'Banda 3', 'Banda 4'];
+        let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; width: 100%;">`;
 
-        if (total === 0) {
-          wrapper.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 1.5rem; font-style: italic;">No se han realizado pruebas de carga en Frías para este periodo.</div>`;
-          return;
-        }
+        bandas.forEach(m => {
+          const mCarga = inspections.filter(i => (i.maquina === m || i.banda === m) && i.es_prueba_carga === 1);
+          const totalM = mCarga.length;
 
-        const pasa = cargaInspections.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
-        const falla = cargaInspections.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length;
-        const pctPasa = Math.round((pasa / total) * 100);
-        const pctFalla = Math.round((falla / total) * 100);
+          const getTipoNormalized = (i) => {
+            const raw = String(i.carga_tipo_prueba || i.tipo_prueba_carga || '').toLowerCase();
+            if (raw.includes('estatica') || raw.includes('estática')) return 'estatica';
+            if (raw.includes('dinamica') || raw.includes('dinámica')) return 'dinamica';
+            return raw;
+          };
 
-        wrapper.innerHTML = `
-          <div style="display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 20px; padding: 10px;">
-            <div style="display: flex; align-items: center; gap: 15px;">
-              <div style="position: relative; width: 80px; height: 80px; border-radius: 50%; background: conic-gradient(#16a34a 0% ${pctPasa}%, #dc2626 ${pctPasa}% 100%); display: flex; align-items: center; justify-content: center;">
-                <div style="width: 50px; height: 50px; background: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
-                  ${pctPasa}%
+          const estList = mCarga.filter(i => getTipoNormalized(i) === 'estatica');
+          const estTotal = estList.length;
+          const estPass = estList.filter(i => i.carga_resultado !== 'Falla' && i.resultado !== 'Rechazado').length;
+          const estFail = estTotal - estPass;
+          const estPctPass = estTotal > 0 ? Math.round((estPass / estTotal) * 100) : 0;
+          const estDegPass = Math.round((estPctPass / 100) * 360);
+
+          const dinList = mCarga.filter(i => getTipoNormalized(i) === 'dinamica');
+          const dinTotal = dinList.length;
+          const dinPass = dinList.filter(i => i.carga_resultado !== 'Falla' && i.resultado !== 'Rechazado').length;
+          const dinFail = dinTotal - dinPass;
+          const dinPctPass = dinTotal > 0 ? Math.round((dinPass / dinTotal) * 100) : 0;
+          const dinDegPass = Math.round((dinPctPass / 100) * 360);
+
+          const renderSubPie = (title, subtitle, total, pass, fail, pctPass, degPass, tipoKey) => {
+            if (total === 0) {
+              return `
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0.5rem; background: #ffffff; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                  <div style="font-size: 0.75rem; font-weight: 800; color: #475569;">${title}</div>
+                  <div style="font-size: 0.65rem; color: #94a3b8; margin-bottom: 6px;">${subtitle}</div>
+                  <div style="width: 65px; height: 65px; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.65rem; font-weight: 600;">
+                    Sin datos
+                  </div>
+                  <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 6px;">0 pruebas</div>
                 </div>
+              `;
+            }
+
+            const clickAttr = fail > 0 
+              ? `onclick="showCargaDefectsModal('${m}', '${tipoKey}')" style="cursor: pointer; transition: transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'" title="Haz clic para ver detalles de los defectos"` 
+              : `onclick="showMachineInspectionsModal('${m}', 'carga')" style="cursor: pointer; transition: transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'" title="Haz clic para ver las pruebas de carga"`;
+
+            return `
+              <div ${clickAttr} style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0.5rem; background: #ffffff; border-radius: 8px; border: 1px solid ${fail > 0 ? '#fca5a5' : '#e2e8f0'}; box-shadow: ${fail > 0 ? '0 2px 5px rgba(220,38,38,0.1)' : 'none'}; cursor: pointer;">
+                <div style="font-size: 0.75rem; font-weight: 800; color: #1e293b;">${title}</div>
+                <div style="font-size: 0.65rem; color: #64748b; margin-bottom: 6px;">${subtitle}</div>
+                <div style="width: 65px; height: 65px; border-radius: 50%; background: conic-gradient(#16a34a 0deg ${degPass}deg, #dc2626 ${degPass}deg 360deg); position: relative; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+                  <div style="width: 40px; height: 40px; border-radius: 50%; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">
+                    <span style="font-size: 0.75rem; font-weight: 900; color: ${pctPass === 100 ? '#15803d' : (pctPass >= 80 ? '#d97706' : '#dc2626')}; line-height: 1;">${pctPass}%</span>
+                  </div>
+                </div>
+                <div style="font-size: 0.7rem; font-weight: 700; color: #334155; margin-top: 6px;">${total} prueba${total === 1 ? '' : 's'}</div>
+                <div style="display: flex; gap: 6px; font-size: 0.65rem; margin-top: 2px;">
+                  <span style="color: #15803d; font-weight: 800;">✔ ${pass}</span>
+                  <span style="color: #dc2626; font-weight: 800; ${fail > 0 ? 'text-decoration: underline;' : ''}">✖ ${fail}</span>
+                </div>
+                ${fail > 0 ? `<div style="font-size: 0.6rem; color: #dc2626; font-weight: 700; margin-top: 3px; background: #fef2f2; padding: 1px 5px; border-radius: 4px;">🔍 Ver fallo</div>` : `<div style="font-size: 0.6rem; color: #0284c7; font-weight: 700; margin-top: 3px; background: #f0f9ff; padding: 1px 5px; border-radius: 4px;">🔍 Ver detalle</div>`}
               </div>
-              <div>
-                <div style="font-weight: 800; font-size: 1.1rem; color: #0284c7;">${total} Pruebas de Carga</div>
-                <div style="font-size: 0.85rem; color: #16a34a; font-weight: 700;">🟢 ${pasa} Aprobadas (${pctPasa}%)</div>
-                <div style="font-size: 0.85rem; color: #dc2626; font-weight: 700;">🔴 ${falla} Falladas (${pctFalla}%)</div>
+            `;
+          };
+
+          html += `
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.85rem; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+                <span style="font-weight: 800; font-size: 0.95rem; color: #1e293b;">${m} <span style="font-size: 0.75rem; font-weight: 600; color: #64748b;">(${totalM} total)</span></span>
+                <button type="button" onclick="showMachineInspectionsModal('${m}', 'carga')" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; border-radius: 6px; padding: 2px 8px; font-size: 0.7rem; font-weight: 800; cursor: pointer;">🔍 Ver todas</button>
+              </div>
+              <div style="display: flex; gap: 0.6rem; width: 100%;">
+                ${renderSubPie('Estática', '(30 min)', estTotal, estPass, estFail, estPctPass, estDegPass, 'estatica')}
+                ${renderSubPie('Dinámica', '(15 min)', dinTotal, dinPass, dinFail, dinPctPass, dinDegPass, 'dinamica')}
               </div>
             </div>
-          </div>
-        `;
+          `;
+        });
+
+        html += `</div>`;
+        wrapper.innerHTML = html;
       }
 
       function renderFriasInconformidadesTable(inspections) {
@@ -9487,7 +9551,8 @@
                 <div><span style="color:#64748b; font-size:0.85rem;">Máquina:</span> <strong style="display:block;">${insp.maquina || insp.banda || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Marca:</span> <strong style="display:block; color:#0284c7;">${insp.marca_especificaciones || insp.marca_cliente || insp.marca || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Operador:</span> <strong style="display:block;">${insp.operador || '-'}</strong></div>
-                <div><span style="color:#64748b; font-size:0.85rem;">Registró:</span> <strong style="display:block;">${insp.editado_por || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">Registró:</span> <strong style="display:block;">${insp.editado_por || insp.carga_realizado_por || '-'}</strong></div>
+                <div><span style="color:#64748b; font-size:0.85rem;">No. Rollo:</span> <strong style="display:block;">${insp.bobina_id || '-'}</strong></div>
                 <div><span style="color:#64748b; font-size:0.85rem;">Resultado:</span> <strong style="display:block; color:${(insp.resultado==='Rechazado' || insp.carga_resultado==='Falla') ? '#dc2626':'#15803d'}">${insp.resultado || insp.carga_resultado || '-'}</strong></div>
             </div>
          </div>`;
@@ -9499,7 +9564,7 @@
             'id', 'area', 'maquina', 'banda', 'hora_inspeccion', 'fecha_registro', 
             'operador', 'editado_por', 'resultado', 'carga_resultado', 'foto_url',
             'es_prueba_carga', 'bobina_id', 'marca', 'marca_cliente', 'marca_especificaciones',
-            'timestamp', 'carga_tipo_prueba', 'carga_peso_kg', 'carga_tiempo_seg'
+            'timestamp'
          ];
          
          for (const key in insp) {
