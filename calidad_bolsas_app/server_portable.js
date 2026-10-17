@@ -194,14 +194,63 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/bobinas') {
     if (method === 'GET') {
       let list = await supabaseRequest('bobinas?select=*&order=id.desc&limit=800');
+      let inspList = await supabaseRequest('inspecciones?select=area,maquina,datos&order=id.desc&limit=800');
       if (!list) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Database timeout or failure' }));
         return;
       }
+
+      // Inferir estado por inspecciones para rollos existentes que aún tenían area="Flexo"
+      const usedRollos = new Set();
+      const printedRollos = new Set();
+      if (Array.isArray(inspList)) {
+        inspList.forEach(item => {
+          const d = item.datos || {};
+          const rNum = String(d.numero_rollo || '').trim().toLowerCase();
+          const bId = String(d.bobina_id || '').trim();
+          const area = item.area || d.area || '';
+          if (area === 'Nanjang' || area === 'Con Asa') {
+            if (rNum) usedRollos.add(rNum);
+            if (bId) usedRollos.add('id:' + bId);
+          } else if (area === 'Flexo') {
+            if (rNum) printedRollos.add(rNum);
+            if (bId) printedRollos.add('id:' + bId);
+          }
+        });
+      }
       
       let mapped = list.map(b => {
         const num = b.numero_rollo || b.numero_bobina || '';
+        const numLow = String(num).trim().toLowerCase();
+        const idKey = 'id:' + String(b.id).trim();
+        
+        // Recuperar datos extra si se guardaron en el campo metros (formato "1000|humedad|estado")
+        let humedad = b.porcentaje_humedad;
+        let estadoGuardado = b.estado_bobina;
+        if (b.area === 'Sin Imprimir' || b.area === 'Impreso' || b.area === 'Utilizado') {
+          estadoGuardado = b.area;
+        }
+        if (typeof b.metros === 'string' && b.metros.includes('|')) {
+          const parts = b.metros.split('|');
+          if (parts[1] !== undefined && parts[1] !== '') humedad = parseFloat(parts[1]);
+          if (parts[2]) estadoGuardado = parts[2];
+        }
+
+        // Si no tiene un estado explícito guardado o se quedó en 'Flexo', inferir de las inspecciones
+        if (!estadoGuardado) {
+          if (usedRollos.has(numLow) || usedRollos.has(idKey)) {
+            estadoGuardado = 'Utilizado';
+          } else if (printedRollos.has(numLow) || printedRollos.has(idKey)) {
+            estadoGuardado = 'Impreso';
+          } else {
+            estadoGuardado = 'Sin Imprimir';
+          }
+        } else if (estadoGuardado !== 'Utilizado' && (usedRollos.has(numLow) || usedRollos.has(idKey))) {
+          // Si ya fue usado en Nanjang o Con Asa, debe aparecer como Utilizado
+          estadoGuardado = 'Utilizado';
+        }
+
         return {
           ...b,
           id: b.id,
@@ -210,32 +259,15 @@ const server = http.createServer(async (req, res) => {
           ancho_bobina: b.ancho_bobina || b.ancho || 80,
           marca_especificaciones: b.marca_especificaciones || b.proveedor || '',
           gramaje: b.gramaje || 90,
-          porcentaje_humedad: b.porcentaje_humedad || 5.0,
-          fecha_produccion_bobina: b.fecha_produccion_bobina || b.fecha || new Date().toISOString().split('T')[0]
+          porcentaje_humedad: (humedad !== undefined && humedad !== null && !isNaN(humedad)) ? humedad : 5.0,
+          fecha_produccion_bobina: b.fecha_produccion_bobina || b.fecha || new Date().toISOString().split('T')[0],
+          estado_bobina: estadoGuardado
         };
       });
 
       if (role === 'cliente') {
-        // Para filtrar tarimas (que no tienen marca directamente), necesitamos cruzar con bobinas
-        let bobinasList = await supabaseRequest('bobinas?select=*&order=id.desc&limit=1000');
-        let bobinasMap = {};
-        if (bobinasList) {
-          bobinasList.forEach(item => {
-             const bd = item.datos || {};
-             const m = (bd.marca_especificaciones || bd.proveedor || '').toLowerCase();
-             bobinasMap[bd.id || item.id] = m;
-          });
-        }
-        
         mapped = mapped.filter(b => {
-           // Si es una bolsa/producción normal que tiene marca
            let marca = (b.marca_especificaciones || b.proveedor || b.marca || '').toLowerCase();
-           
-           // Si es una tarima, heredar la marca de su bobina vinculada
-           if (!marca && b.codigo_liberacion && b.bobina_id) {
-             marca = bobinasMap[b.bobina_id] || '';
-           }
-           
            return marca.includes('mcdonalds') || marca.includes('mc donalds');
         });
         mapped = mapped.map(b => {
@@ -251,30 +283,46 @@ const server = http.createServer(async (req, res) => {
     } else if (method === 'POST') {
       getBody(req, async (newBobina) => {
         const num = (newBobina.numero_rollo || newBobina.numero_bobina || '').trim();
+        const idStr = String(newBobina.id || Date.now());
+        const estado = newBobina.estado_bobina || 'Sin Imprimir';
+        const hum = (newBobina.porcentaje_humedad !== undefined && newBobina.porcentaje_humedad !== null) ? newBobina.porcentaje_humedad : '';
+        
         const itemToSave = {
-          id: String(newBobina.id || Date.now()),
+          id: idStr,
           numero_bobina: num,
           proveedor: newBobina.marca_especificaciones || newBobina.proveedor || '',
           ancho: String(newBobina.ancho_bobina || newBobina.ancho || '80'),
           gramaje: String(newBobina.gramaje || '90'),
-          metros: String(newBobina.metros || '1000'),
-          area: newBobina.area || 'Flexo',
+          metros: `1000|${hum}|${estado}`,
+          area: estado,
           fecha: newBobina.fecha_produccion_bobina || new Date().toISOString().split('T')[0],
           usuario: newBobina.usuario || 'Inspector'
         };
 
-        await supabaseRequest('bobinas', 'POST', itemToSave);
+        // Intentar actualizar si ya existe ese id o numero_bobina, o insertar si es nuevo
+        const existing = await supabaseRequest(`bobinas?select=id&or=(id.eq.${encodeURIComponent(idStr)},numero_bobina.eq.${encodeURIComponent(num)})&limit=1`);
+        if (existing && existing.length > 0) {
+          const targetId = existing[0].id;
+          delete itemToSave.id;
+          await supabaseRequest(`bobinas?id=eq.${encodeURIComponent(targetId)}`, 'PATCH', itemToSave);
+          itemToSave.id = targetId;
+        } else {
+          await supabaseRequest('bobinas', 'POST', itemToSave);
+        }
 
         const responseItem = {
           ...newBobina,
           id: itemToSave.id,
           numero_rollo: num,
-          numero_bobina: num
+          numero_bobina: num,
+          estado_bobina: estado
         };
 
         // Respaldo local
         const db = readDb();
-        db.bobinas.unshift(responseItem);
+        const idx = db.bobinas.findIndex(x => String(x.id) === String(responseItem.id) || String(x.numero_rollo).toLowerCase() === num.toLowerCase());
+        if (idx >= 0) db.bobinas[idx] = responseItem;
+        else db.bobinas.unshift(responseItem);
         writeDb(db);
 
         res.writeHead(201, { 'Content-Type': 'application/json' });
@@ -365,7 +413,7 @@ const server = http.createServer(async (req, res) => {
       });
     } else if (method === 'PUT' || method === 'PATCH') {
       const id = parsedUrl.searchParams.get('id');
-      parseBody(req, async (parsedBody) => {
+      getBody(req, async (parsedBody) => {
         if (!id) {
           res.writeHead(400); res.end(JSON.stringify({ error: 'Falta ID' }));
           return;
@@ -419,36 +467,15 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: 'Database timeout or failure' }));
         return;
       }
-      const mapped = list.map(item => item.datos || item);
-      if (role === 'cliente') {
-        // Para filtrar tarimas (que no tienen marca directamente), necesitamos cruzar con bobinas
-        let bobinasList = await supabaseRequest('bobinas?select=*&order=id.desc&limit=1000');
-        let bobinasMap = {};
-        if (bobinasList) {
-          bobinasList.forEach(item => {
-             const bd = item.datos || {};
-             const m = (bd.marca_especificaciones || bd.proveedor || '').toLowerCase();
-             bobinasMap[bd.id || item.id] = m;
-          });
+      let mapped = list.map(item => {
+        if (item.datos) return item.datos;
+        if (item.puesto && typeof item.puesto === 'string' && item.puesto.startsWith('{')) {
+          try { return JSON.parse(item.puesto); } catch (_) {}
         }
-        
-        mapped = mapped.filter(b => {
-           // Si es una bolsa/producción normal que tiene marca
-           let marca = (b.marca_especificaciones || b.proveedor || b.marca || '').toLowerCase();
-           
-           // Si es una tarima, heredar la marca de su bobina vinculada
-           if (!marca && b.codigo_liberacion && b.bobina_id) {
-             marca = bobinasMap[b.bobina_id] || '';
-           }
-           
-           return marca.includes('mcdonalds') || marca.includes('mc donalds');
-        });
-        mapped = mapped.map(b => {
-           delete b.operador;
-           delete b.editado_por;
-           delete b.usuario;
-           return b;
-        });
+        return item;
+      });
+      if (role === 'cliente') {
+        mapped = [];
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -456,8 +483,22 @@ const server = http.createServer(async (req, res) => {
     } else if (method === 'POST') {
       getBody(req, async (newItem) => {
         const id = String(newItem.id || Date.now());
-        const itemToSave = { id, datos: newItem, fecha: new Date().toISOString() };
-        await supabaseRequest('personal', 'POST', itemToSave);
+        // La tabla 'personal' en Supabase tiene columnas: id, nombre, puesto, turno, fecha
+        const itemToSave = {
+          id,
+          nombre: newItem.operador || newItem.nombre || '',
+          puesto: JSON.stringify(newItem),
+          turno: newItem.turno || 'Dia',
+          fecha: newItem.fecha || new Date().toISOString().split('T')[0]
+        };
+        const existing = await supabaseRequest(`personal?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
+        if (existing && existing.length > 0) {
+          const patchData = { ...itemToSave };
+          delete patchData.id;
+          await supabaseRequest(`personal?id=eq.${encodeURIComponent(id)}`, 'PATCH', patchData);
+        } else {
+          await supabaseRequest('personal', 'POST', itemToSave);
+        }
 
         const db = readDb();
         db.produccion_personal.unshift(newItem);
@@ -466,6 +507,19 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(201, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(newItem));
       });
+    } else if (method === 'DELETE') {
+      const id = parsedUrl.searchParams.get('id');
+      if (id) {
+        await supabaseRequest(`personal?id=eq.${encodeURIComponent(id)}`, 'DELETE');
+        const db = readDb();
+        db.produccion_personal = db.produccion_personal.filter(p => String(p.id) !== String(id));
+        writeDb(db);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } else {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Falta ID' }));
+      }
     }
     return;
   }
@@ -479,26 +533,38 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: 'Database timeout or failure' }));
         return;
       }
-      const mapped = list.map(item => item.datos || item);
+      let mapped = list.map(item => {
+        if (item.datos) return item.datos;
+        if (item.tipo_bolsa && typeof item.tipo_bolsa === 'string' && item.tipo_bolsa.startsWith('{')) {
+          try { return JSON.parse(item.tipo_bolsa); } catch (_) {}
+        }
+        return item;
+      });
       if (role === 'cliente') {
         // Para filtrar tarimas (que no tienen marca directamente), necesitamos cruzar con bobinas
         let bobinasList = await supabaseRequest('bobinas?select=*&order=id.desc&limit=1000');
         let bobinasMap = {};
         if (bobinasList) {
           bobinasList.forEach(item => {
-             const bd = item.datos || {};
+             const bd = item.datos || item || {};
              const m = (bd.marca_especificaciones || bd.proveedor || '').toLowerCase();
              bobinasMap[bd.id || item.id] = m;
+             const rNum = (bd.numero_rollo || bd.numero_bobina || '').toLowerCase();
+             if (rNum) bobinasMap['rollo:' + rNum] = m;
           });
         }
         
         mapped = mapped.filter(b => {
-           // Si es una bolsa/producción normal que tiene marca
+           // Si es una bolsa/producción normal o tarima que ya tiene marca
            let marca = (b.marca_especificaciones || b.proveedor || b.marca || '').toLowerCase();
            
-           // Si es una tarima, heredar la marca de su bobina vinculada
-           if (!marca && b.codigo_liberacion && b.bobina_id) {
-             marca = bobinasMap[b.bobina_id] || '';
+           // Si es una tarima sin marca directa, heredar la marca de su bobina vinculada
+           if (!marca && (b.codigo_liberacion || b.codigo_tarima)) {
+             if (b.bobina_id && bobinasMap[b.bobina_id]) {
+               marca = bobinasMap[b.bobina_id];
+             } else if (b.numero_rollo && bobinasMap['rollo:' + String(b.numero_rollo).toLowerCase()]) {
+               marca = bobinasMap['rollo:' + String(b.numero_rollo).toLowerCase()];
+             }
            }
            
            return marca.includes('mcdonalds') || marca.includes('mc donalds');
@@ -516,8 +582,23 @@ const server = http.createServer(async (req, res) => {
     } else if (method === 'POST') {
       getBody(req, async (newItem) => {
         const id = String(newItem.id || Date.now());
-        const itemToSave = { id, datos: newItem, fecha: new Date().toISOString() };
-        await supabaseRequest('bolsas', 'POST', itemToSave);
+        // La tabla 'bolsas' en Supabase tiene columnas: id, maquina, tipo_bolsa, cantidad, operador, fecha
+        const itemToSave = {
+          id,
+          maquina: newItem.maquina || newItem.banda || '',
+          tipo_bolsa: JSON.stringify(newItem),
+          cantidad: String(newItem.numero_tarima_dia || newItem.bolsas_producidas || 1),
+          operador: newItem.operador || '',
+          fecha: newItem.fecha_registro || new Date().toISOString()
+        };
+        const existing = await supabaseRequest(`bolsas?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
+        if (existing && existing.length > 0) {
+          const patchData = { ...itemToSave };
+          delete patchData.id;
+          await supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'PATCH', patchData);
+        } else {
+          await supabaseRequest('bolsas', 'POST', itemToSave);
+        }
 
         const db = readDb();
         db.tarimas.unshift(newItem);
@@ -526,6 +607,19 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(201, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(newItem));
       });
+    } else if (method === 'DELETE') {
+      const id = parsedUrl.searchParams.get('id');
+      if (id) {
+        await supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'DELETE');
+        const db = readDb();
+        db.tarimas = db.tarimas.filter(t => String(t.id) !== String(id));
+        writeDb(db);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } else {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Falta ID' }));
+      }
     }
     return;
   }

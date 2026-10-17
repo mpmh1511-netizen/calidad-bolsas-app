@@ -686,6 +686,32 @@
             </div>
           </div>
 
+                    <!-- Resumen de Tarimas Liberadas -->
+          <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <div class="card-title" style="margin-bottom: 1rem;">
+              <h3 style="margin: 0; font-size: 1.15rem; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
+                📦 Resumen de Tarimas Liberadas por Máquina
+              </h3>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Conteo total de tarimas liberadas en el periodo seleccionado (Omitiendo Frías)</span>
+            </div>
+            <div class="table-container" style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead>
+                  <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                    <th style="padding: 10px;">Máquina</th>
+                    <th style="padding: 10px;">Aprobadas</th>
+                    <th style="padding: 10px;">Condicionadas</th>
+                    <th style="padding: 10px;">Rechazadas</th>
+                    <th style="padding: 10px; font-weight: bold;">Total Tarimas</th>
+                  </tr>
+                </thead>
+                <tbody id="table-tarimas-stats-body">
+                  <tr><td colspan="5" style="padding: 10px; text-align: center;">Cargando estadísticas de tarimas...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
           <!-- Registro de Inconformidades y Defectos Detectados (Sin Imágenes) -->
           <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
             <div class="card-title" style="margin-bottom: 1rem;">
@@ -1918,6 +1944,23 @@
                 </div>
 
                 <div class="form-group" style="grid-column: 1 / -1;">
+                  <label>Marca de la Tarima *</label>
+                  <select id="tarima-marca-principal" class="form-control" required>
+                    <option value="">Selecciona la marca...</option>
+                    <option value="KOHLS">KOHLS</option>
+                    <option value="MENARDS">MENARDS</option>
+                    <option value="KROGER">KROGER</option>
+                    <option value="SUBWAY">SUBWAY</option>
+                    <option value="TARGET">TARGET</option>
+                    <option value="WALMART">WALMART</option>
+                    <option value="BSK">BSK</option>
+                    <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
+                    <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                    <option value="OTRO">OTRO (Especificar en Rollo Manual)</option>
+                  </select>
+                </div>
+
+                <div class="form-group" style="grid-column: 1 / -1;">
                   <label>Número de Rollo (Bobina Activa)</label>
                   <input type="text" id="tarima-rollo" class="form-control" placeholder="Ej: R-1002" list="bobinas-datalist" oninput="onTarimaRolloInput()" required />
                 </div>
@@ -1945,7 +1988,20 @@
                 <div class="form-grid">
                   <div class="form-group">
                     <label>Marca / Especificaciones *</label>
-                    <input type="text" id="tarima-manual-marca" class="form-control" placeholder="Ej. Starbucks Kraft M" />
+                    <select id="tarima-manual-marca-select" class="form-control" onchange="toggleTarimaManualMarcaOtro()">
+                      <option value="">Selecciona la marca...</option>
+                      <option value="KOHLS">KOHLS</option>
+                      <option value="MENARDS">MENARDS</option>
+                      <option value="KROGER">KROGER</option>
+                      <option value="SUBWAY">SUBWAY</option>
+                      <option value="TARGET">TARGET</option>
+                      <option value="WALMART">WALMART</option>
+                      <option value="BSK">BSK</option>
+                      <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
+                      <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                      <option value="OTRO">OTRO (Escribir manual)</option>
+                    </select>
+                    <input type="text" id="tarima-manual-marca-otro" class="form-control" placeholder="Escribe la marca..." style="display: none; margin-top: 5px;" />
                   </div>
                   <div class="form-group">
                     <label>Ancho de bobina (cm) *</label>
@@ -3217,6 +3273,18 @@
         }
       }
 
+            function toggleTarimaManualMarcaOtro() {
+        const select = document.getElementById('tarima-manual-marca-select');
+        const inputOtro = document.getElementById('tarima-manual-marca-otro');
+        if (select && inputOtro) {
+          if (select.value === 'OTRO') {
+            inputOtro.style.display = 'block';
+          } else {
+            inputOtro.style.display = 'none';
+          }
+        }
+      }
+
       function toggleTarimaManualHumedad(checked) {
         const input = document.getElementById('tarima-manual-humedad');
         if (checked) {
@@ -3973,6 +4041,83 @@
         });
 
         updateFriasStatsView(periodFriasInspections);
+
+        // CALCULAR TARIMAS LIBERADAS POR MÁQUINA
+        const tarimasTbody = document.getElementById('table-tarimas-stats-body');
+        if (tarimasTbody) {
+          let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+          let serverTarimas = [];
+          if (isOnline) {
+            serverTarimas = await apiFetch('/api/tarimas') || [];
+          }
+          const tarimaMap = new Map();
+          localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+          serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+          let globalTarimas = Array.from(tarimaMap.values());
+
+          // Solo tarimas reales de Nanjang / Con Asa (tienen codigo_liberacion)
+          let validTarimas = globalTarimas.filter(t => t && t.codigo_liberacion);
+
+          // Filtrar por marca si hay filtro activo
+          if (marcaFilter) {
+            validTarimas = validTarimas.filter(t => {
+              let m = (t.marca || t.marca_especificaciones || '').trim().toUpperCase();
+              if (!m && t.bobina_id) {
+                const bObj = state.bobinas.find(b => String(b.id) === String(t.bobina_id));
+                if (bObj) m = (bObj.marca_especificaciones || '').trim().toUpperCase();
+              }
+              return m === marcaFilter;
+            });
+          }
+
+          // Filtrar por fecha de la vista actual
+          const selectedDate = fechaVal;
+          const periodo = statIndepPeriodo;
+          validTarimas = validTarimas.filter(t => {
+            const rowDateStr = (t.fecha_registro || t.fecha_iso || '').substring(0, 10);
+            if (!rowDateStr) return false;
+            if (periodo === 'dia') return rowDateStr === selectedDate;
+            if (periodo === 'semana') return getWeekNumber(rowDateStr) === getWeekNumber(selectedDate);
+            if (periodo === 'mes') return rowDateStr.substring(0, 7) === selectedDate.substring(0, 7);
+            if (periodo === 'ano') return rowDateStr.substring(0, 4) === selectedDate.substring(0, 4);
+            return false;
+          });
+
+          // Aplicar filtro de máquina si existe
+          if (machineFilter) {
+            const soloMaq = machineFilter.includes('-') ? machineFilter.split('-')[1] : machineFilter;
+            validTarimas = validTarimas.filter(t => t.maquina === soloMaq);
+          }
+
+          const statsTarimas = {};
+          validTarimas.forEach(t => {
+            const maq = t.maquina || 'Desconocida';
+            if (!statsTarimas[maq]) statsTarimas[maq] = { aprobada: 0, condicionada: 0, rechazada: 0 };
+            if (t.estado_liberacion === 'Condicionado') statsTarimas[maq].condicionada++;
+            else if (t.estado_liberacion === 'Rechazado') statsTarimas[maq].rechazada++;
+            else statsTarimas[maq].aprobada++;
+          });
+
+          tarimasTbody.innerHTML = '';
+          const mqKeys = Object.keys(statsTarimas).sort();
+          if (mqKeys.length === 0) {
+            tarimasTbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted);">Sin tarimas liberadas en el periodo seleccionado.</td></tr>`;
+          } else {
+            mqKeys.forEach(m => {
+              const st = statsTarimas[m];
+              const totalT = st.aprobada + st.condicionada + st.rechazada;
+              tarimasTbody.innerHTML += `
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                  <td style="padding: 10px; font-weight: bold;">${m}</td>
+                  <td style="padding: 10px; color: #16a34a; font-weight: 600;">${st.aprobada}</td>
+                  <td style="padding: 10px; color: #f59e0b; font-weight: 600;">${st.condicionada}</td>
+                  <td style="padding: 10px; color: #dc2626; font-weight: 600;">${st.rechazada}</td>
+                  <td style="padding: 10px; font-weight: 800;">${totalT}</td>
+                </tr>
+              `;
+            });
+          }
+        }
       }
 
       function renderConformidadSVGChart(inspections) {
@@ -4504,6 +4649,7 @@
 
           viewReg.style.display = 'none';
           viewCons.style.display = 'block';
+          searchTarima(null, true);
         }
       }
 
@@ -4537,6 +4683,12 @@
             </div>
           `;
           document.getElementById('tarima-manual-bobina-section').style.display = 'none';
+          const mainMarca = document.getElementById('tarima-marca-principal');
+          if (mainMarca && b.marca_especificaciones) {
+             const foundMarca = Array.from(mainMarca.options).find(opt => opt.value === b.marca_especificaciones.toUpperCase());
+             if (foundMarca) mainMarca.value = foundMarca.value;
+             else mainMarca.value = 'OTRO';
+          }
         } else {
           document.getElementById('tarima-manual-bobina-section').style.display = 'block';
           if (!document.getElementById('tarima-manual-fecha-prod').value) {
@@ -4623,6 +4775,7 @@
         
         const maquina = document.getElementById('tarima-maquina').value;
         const operador = document.getElementById('tarima-operador').value;
+        const marcaPrincipal = document.getElementById('tarima-marca-principal').value;
         const numeroRollo = document.getElementById('tarima-rollo').value;
         const tarimaOk = document.getElementById('check-tarima-ok').checked ? 1 : 0;
         const etiquetadoOk = document.getElementById('check-etiquetado-ok').checked ? 1 : 0;
@@ -4648,7 +4801,12 @@
         if (!b) {
           const manualSec = document.getElementById('tarima-manual-bobina-section');
           if (manualSec && manualSec.style.display === 'block') {
-            const marca = document.getElementById('tarima-manual-marca').value.trim();
+            let marca = document.getElementById('tarima-manual-marca-select').value;
+            if (marca === 'OTRO') {
+              marca = document.getElementById('tarima-manual-marca-otro').value.trim();
+            } else {
+              marca = marca.trim();
+            }
             const ancho = parseFloat(document.getElementById('tarima-manual-ancho').value);
             const gramaje = parseInt(document.getElementById('tarima-manual-gramaje').value);
             const humedadVal = document.getElementById('tarima-manual-humedad').value;
@@ -4666,7 +4824,7 @@
               return;
             }
 
-            // 1. Guardar bobina
+            // 1. Guardar bobina con estado Utilizado
             const newBobina = {
               id: Date.now(),
               numero_rollo: numeroRollo.trim(),
@@ -4674,7 +4832,8 @@
               ancho_bobina: ancho,
               gramaje: gramaje,
               fecha_produccion_bobina: noFechaProd ? '' : fechaProd,
-              porcentaje_humedad: noHumedad ? null : humedad
+              porcentaje_humedad: noHumedad ? null : humedad,
+              estado_bobina: 'Utilizado'
             };
             await saveBobina(newBobina);
 
@@ -4708,19 +4867,22 @@
           }
         }
 
-        // Cargar tarimas liberadas de localStorage
-        let tarimas = [];
+        // Cargar tarimas liberadas combinando localStorage y servidor
+        let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+        let serverTarimas = [];
         if (isOnline) {
-          tarimas = await apiFetch('/api/tarimas') || [];
-        } else {
-          tarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+          serverTarimas = await apiFetch('/api/tarimas') || [];
         }
+        const tarimaMap = new Map();
+        localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+        serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+        let tarimas = Array.from(tarimaMap.values());
 
         // Calcular número de tarima del día
         const now = new Date();
         const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
         
-        const machTests = tarimas.filter(t => t.maquina === maquina && t.fecha_registro.startsWith(dateStr));
+        const machTests = tarimas.filter(t => t.maquina === maquina && (t.fecha_registro || '').startsWith(dateStr));
         const num = machTests.length + 1;
 
         const dd = String(now.getDate()).padStart(2, '0');
@@ -4731,6 +4893,7 @@
           id: Date.now(),
           codigo_liberacion: codigo,
           maquina,
+          marca: marcaPrincipal,
           numero_rollo: numeroRollo,
           bobina_id: bobinaId,
           tarima_correcta: tarimaOk,
@@ -4767,7 +4930,11 @@
         document.getElementById('tarima-bobina-info').style.borderColor = 'var(--border-color)';
         document.getElementById('tarima-bobina-info').style.background = '#fafafa';
 
-        document.getElementById('tarima-manual-marca').value = '';
+        if (document.getElementById('tarima-manual-marca-select')) document.getElementById('tarima-manual-marca-select').value = '';
+        if (document.getElementById('tarima-manual-marca-otro')) {
+          document.getElementById('tarima-manual-marca-otro').value = '';
+          document.getElementById('tarima-manual-marca-otro').style.display = 'none';
+        }
         document.getElementById('tarima-manual-ancho').value = '';
         document.getElementById('tarima-manual-gramaje').value = '';
         document.getElementById('tarima-manual-humedad').value = '';
@@ -4793,10 +4960,10 @@
         showToast('Código copiado al portapapeles 📋', 'success');
       }
 
-      async function searchTarima(e) {
+      async function searchTarima(e, showAllIfEmpty = false) {
         if (e) e.preventDefault();
-        const codeInput = document.getElementById('tarima-search-code').value.trim().toLowerCase();
-        const dateInput = document.getElementById('tarima-search-date').value;
+        const codeInput = (document.getElementById('tarima-search-code')?.value || '').trim().toLowerCase();
+        const dateInput = document.getElementById('tarima-search-date')?.value || '';
         const errorBox = document.getElementById('tarima-search-error');
         const resultsList = document.getElementById('tarima-search-results-list');
         const resultsTbody = document.getElementById('tarima-search-results-tbody');
@@ -4806,40 +4973,41 @@
         resultsList.style.display = 'none';
         resultCard.style.display = 'none';
 
-        if (!codeInput && !dateInput) {
-          showToast('Introduce al menos un criterio de búsqueda (código o fecha).', 'danger');
-          return;
-        }
-
-        let tarimas = [];
+        let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+        let serverTarimas = [];
         if (isOnline) {
-          tarimas = await apiFetch('/api/tarimas') || [];
-        } else {
-          tarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+          serverTarimas = await apiFetch('/api/tarimas') || [];
         }
+        const tarimaMap = new Map();
+        localTarimas.forEach(t => { if (t && t.id && t.codigo_liberacion) tarimaMap.set(String(t.id), t); });
+        serverTarimas.forEach(t => { if (t && t.id && t.codigo_liberacion) tarimaMap.set(String(t.id), t); });
+        let tarimas = Array.from(tarimaMap.values()).sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
 
         // Filtrar tarimas que coincidan con el código y/o la fecha
         const filtered = tarimas.filter(t => {
+          if (!t.codigo_liberacion) return false;
           let matchCode = true;
           let matchDate = true;
 
           if (codeInput) {
-            matchCode = t.codigo_liberacion.toLowerCase().includes(codeInput);
+            matchCode = (t.codigo_liberacion || '').toLowerCase().includes(codeInput) || (t.numero_rollo || '').toLowerCase().includes(codeInput) || (t.maquina || '').toLowerCase().includes(codeInput);
           }
           if (dateInput) {
-            matchDate = t.fecha_registro.startsWith(dateInput);
+            matchDate = (t.fecha_registro || '').startsWith(dateInput);
           }
 
           return matchCode && matchDate;
         });
 
         if (filtered.length === 0) {
-          errorBox.textContent = 'No se encontró ninguna tarima liberada con los criterios de búsqueda especificados.';
+          errorBox.textContent = (!codeInput && !dateInput) 
+            ? 'Aún no hay tarimas liberadas registradas.'
+            : 'No se encontró ninguna tarima liberada con los criterios de búsqueda especificados.';
           errorBox.style.display = 'block';
           return;
         }
 
-        if (filtered.length === 1) {
+        if (filtered.length === 1 && (codeInput || dateInput)) {
           showTarimaDetails(filtered[0]);
         } else {
           // Mostrar lista de resultados
@@ -4859,7 +5027,7 @@
 
             tr.innerHTML = `
               <td style="padding: 10px 8px; font-weight: 700; color: var(--color-primary-light);">${t.codigo_liberacion}</td>
-              <td style="padding: 10px 8px; font-weight: 600;">${t.maquina}</td>
+              <td style="padding: 10px 8px; font-weight: 600;">${t.maquina} ${t.marca ? `<span style="font-size:0.75rem; color:var(--text-muted);">(${t.marca})</span>` : ''}</td>
               <td style="padding: 10px 8px; font-size: 0.8rem; color: var(--text-muted);">${t.fecha_registro}</td>
               <td style="padding: 10px 8px;">
                 <span class="badge" style="padding: 2px 6px; border-radius: 4px; font-weight: 700; ${dictStyle}">
@@ -4989,6 +5157,7 @@
         document.getElementById('tarima-search-error').style.display = 'none';
         document.getElementById('tarima-search-results-list').style.display = 'none';
         document.getElementById('tarima-search-result').style.display = 'none';
+        searchTarima(null, true);
       }
 
       // --- MÓDULO DE PRODUCCIÓN (REGISTRO DE PERSONAL Y BOLSAS SEPARADOS) ---
@@ -7485,10 +7654,13 @@
               ancho_bobina: ancho,
               gramaje: gramaje,
               fecha_produccion_bobina: fecha,
-              porcentaje_humedad: humedad
+              porcentaje_humedad: humedad,
+              estado_bobina: 'Impreso'
             };
-            await saveBobina(bobinaObj);
+          } else {
+            bobinaObj.estado_bobina = 'Impreso';
           }
+          await saveBobina(bobinaObj);
         } else {
           const rolloVal = document.getElementById('bolsas-bobina-rollo').value.trim();
           if (!rolloVal) {
@@ -7506,7 +7678,8 @@
                 marca_especificaciones: inspMatch.marca_especificaciones || 'General',
                 ancho_bobina: inspMatch.ancho_bobina || 0,
                 gramaje: inspMatch.gramaje || 0,
-                porcentaje_humedad: inspMatch.porcentaje_humedad || null
+                porcentaje_humedad: inspMatch.porcentaje_humedad || null,
+                estado_bobina: 'Utilizado'
               };
             }
           }
@@ -7534,7 +7707,7 @@
                 return;
               }
 
-              // 1. Guardar bobina
+              // 1. Guardar bobina con estado Utilizado
               bobinaObj = {
                 id: Date.now(),
                 numero_rollo: rolloVal,
@@ -7542,7 +7715,8 @@
                 ancho_bobina: ancho,
                 gramaje: gramaje,
                 fecha_produccion_bobina: noFechaProd ? '' : fechaProd,
-                porcentaje_humedad: noHumedad ? null : humedad
+                porcentaje_humedad: noHumedad ? null : humedad,
+                estado_bobina: 'Utilizado'
               };
               await saveBobina(bobinaObj);
 
@@ -7579,7 +7753,8 @@
                 ancho_bobina: 0,
                 gramaje: 0,
                 fecha_produccion_bobina: new Date().toISOString().split('T')[0],
-                porcentaje_humedad: null
+                porcentaje_humedad: null,
+                estado_bobina: 'Utilizado'
               };
               await saveBobina(bobinaObj);
             }

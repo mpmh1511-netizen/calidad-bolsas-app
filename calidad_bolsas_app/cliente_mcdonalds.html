@@ -3972,6 +3972,69 @@
         });
 
         updateFriasStatsView(periodFriasInspections);
+
+        // CALCULAR TARIMAS LIBERADAS POR MÁQUINA
+        const tarimasTbody = document.getElementById('table-tarimas-stats-body');
+        if (tarimasTbody) {
+          let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+          let serverTarimas = [];
+          if (isOnline) {
+            serverTarimas = await apiFetch('/api/tarimas') || [];
+          }
+          const tarimaMap = new Map();
+          localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+          serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+          let globalTarimas = Array.from(tarimaMap.values());
+
+          let validTarimas = globalTarimas.filter(t => t && t.codigo_liberacion);
+
+          // Filtrar por fecha de la vista actual
+          const selectedDate = fechaVal;
+          const periodo = statIndepPeriodo;
+          validTarimas = validTarimas.filter(t => {
+            const rowDateStr = (t.fecha_registro || t.fecha_iso || '').substring(0, 10);
+            if (!rowDateStr) return false;
+            if (periodo === 'dia') return rowDateStr === selectedDate;
+            if (periodo === 'semana') return getWeekNumber(rowDateStr) === getWeekNumber(selectedDate);
+            if (periodo === 'mes') return rowDateStr.substring(0, 7) === selectedDate.substring(0, 7);
+            if (periodo === 'ano') return rowDateStr.substring(0, 4) === selectedDate.substring(0, 4);
+            return false;
+          });
+
+          if (machineFilter) {
+            const soloMaq = machineFilter.includes('-') ? machineFilter.split('-')[1] : machineFilter;
+            validTarimas = validTarimas.filter(t => t.maquina === soloMaq);
+          }
+
+          const statsTarimas = {};
+          validTarimas.forEach(t => {
+            const maq = t.maquina || 'Desconocida';
+            if (!statsTarimas[maq]) statsTarimas[maq] = { aprobada: 0, condicionada: 0, rechazada: 0 };
+            if (t.estado_liberacion === 'Condicionado') statsTarimas[maq].condicionada++;
+            else if (t.estado_liberacion === 'Rechazado') statsTarimas[maq].rechazada++;
+            else statsTarimas[maq].aprobada++;
+          });
+
+          tarimasTbody.innerHTML = '';
+          const mqKeys = Object.keys(statsTarimas).sort();
+          if (mqKeys.length === 0) {
+            tarimasTbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted);">Sin tarimas liberadas en el periodo seleccionado.</td></tr>`;
+          } else {
+            mqKeys.forEach(m => {
+              const st = statsTarimas[m];
+              const totalT = st.aprobada + st.condicionada + st.rechazada;
+              tarimasTbody.innerHTML += `
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                  <td style="padding: 10px; font-weight: bold;">${m}</td>
+                  <td style="padding: 10px; color: #16a34a; font-weight: 600;">${st.aprobada}</td>
+                  <td style="padding: 10px; color: #f59e0b; font-weight: 600;">${st.condicionada}</td>
+                  <td style="padding: 10px; color: #dc2626; font-weight: 600;">${st.rechazada}</td>
+                  <td style="padding: 10px; font-weight: 800;">${totalT}</td>
+                </tr>
+              `;
+            });
+          }
+        }
       }
 
       function renderConformidadSVGChart(inspections) {
@@ -7859,7 +7922,7 @@
             <td style="padding: 12px 8px;">${impresorHtml}</td>
             <td style="padding: 12px 8px; font-size: 0.8rem; color: var(--text-muted);">${b.fecha_produccion_bobina || 'Desconocida'}</td>
             <td style="padding: 12px 8px;">
-              <select onchange="updateRolloEstado(${b.id}, this.value)" style="padding: 6px 12px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.85rem; cursor: pointer; ${selectStyle}">
+              <select disabled style="padding: 6px 12px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.85rem; ${selectStyle}">
                 <option value="Sin Imprimir" ${estado === 'Sin Imprimir' ? 'selected' : ''}>Sin Imprimir 📄</option>
                 <option value="Impreso" ${estado === 'Impreso' ? 'selected' : ''}>Impreso 🎨</option>
                 <option value="Utilizado" ${estado === 'Utilizado' ? 'selected' : ''}>Utilizado 📉</option>
