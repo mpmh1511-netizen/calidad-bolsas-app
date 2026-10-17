@@ -4055,13 +4055,13 @@
           serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
           let globalTarimas = Array.from(tarimaMap.values());
 
-          // Solo tarimas reales de Nanjang / Con Asa (tienen codigo_liberacion)
-          let validTarimas = globalTarimas.filter(t => t && t.codigo_liberacion);
+          // Tarimas reales de Nanjang / Con Asa (codigo_liberacion) y Frías (codigo_tarima)
+          let validTarimas = globalTarimas.filter(t => t && (t.codigo_liberacion || t.codigo_tarima));
 
           // Filtrar por marca si hay filtro activo
           if (marcaFilter) {
             validTarimas = validTarimas.filter(t => {
-              let m = (t.marca || t.marca_especificaciones || '').trim().toUpperCase();
+              let m = (t.marca || t.marca_especificaciones || t.marca_cliente || '').trim().toUpperCase();
               if (!m && t.bobina_id) {
                 const bObj = state.bobinas.find(b => String(b.id) === String(t.bobina_id));
                 if (bObj) m = (bObj.marca_especificaciones || '').trim().toUpperCase();
@@ -4083,18 +4083,19 @@
             return false;
           });
 
-          // Aplicar filtro de máquina si existe
+          // Aplicar filtro de máquina/banda si existe
           if (machineFilter) {
-            const soloMaq = machineFilter.includes('-') ? machineFilter.split('-')[1] : machineFilter;
-            validTarimas = validTarimas.filter(t => t.maquina === soloMaq);
+            const soloMaq = machineFilter.includes('-') ? machineFilter.split('-').slice(1).join('-') : machineFilter;
+            validTarimas = validTarimas.filter(t => t.maquina === soloMaq || t.banda === soloMaq);
           }
 
           const statsTarimas = {};
           validTarimas.forEach(t => {
-            const maq = t.maquina || 'Desconocida';
+            const maq = t.banda || t.maquina || 'Desconocida';
             if (!statsTarimas[maq]) statsTarimas[maq] = { aprobada: 0, condicionada: 0, rechazada: 0 };
-            if (t.estado_liberacion === 'Condicionado') statsTarimas[maq].condicionada++;
-            else if (t.estado_liberacion === 'Rechazado') statsTarimas[maq].rechazada++;
+            const est = String(t.estado_liberacion || '').toLowerCase();
+            if (est.includes('condicion')) statsTarimas[maq].condicionada++;
+            else if (est.includes('rechaz')) statsTarimas[maq].rechazada++;
             else statsTarimas[maq].aprobada++;
           });
 

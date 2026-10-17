@@ -557,45 +557,34 @@
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: flex-end;">
               <div>
-                <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Filtrar por Área:</label>
-                <select id="stat-indep-area-select" class="form-control" onchange="onStatIndepFilterChange()" style="width: 100%; padding: 8px; font-weight: 600;">
-                  <option value="">Todas las Áreas</option>
-                  <option value="Flexo">Sección 1: Flexo (Impresión)</option>
-                  <option value="Nanjang">Sección 2: Nanjang (M1 a M5)</option>
-                  <option value="Con Asa">Sección 3: Con Asa (M6 a M13)</option>
-                  <option value="Frías">Sección 4: Frías (Banda 1 a Banda 4)</option>
-                </select>
-              </div>
-
-              <div>
-                <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Filtrar por Marca:</label>
+                <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Marca:</label>
                 <select id="stat-indep-marca-select" class="form-control" disabled style="width: 100%; padding: 8px; font-weight: 600; background-color: #f1f5f9; color: #16a34a;">
                   <option value="">McDonalds (Filtro Exclusivo)</option>
                 </select>
               </div>
 
               <div>
-                <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Filtrar por Máquina Específica:</label>
+                <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Filtrar por Máquina / Banda:</label>
                 <select id="stat-indep-maquina-select" class="form-control" onchange="onStatIndepFilterChange()" style="width: 100%; padding: 8px; font-weight: 600;">
-                  <option value="">Todas las Máquinas</option>
+                  <option value="">Todas las Máquinas y Bandas</option>
                   <option value="Flexo-Flexo">Impresora Flexo</option>
-                  <option value="Armado-M1">Máquina M1 (Nanjang)</option>
-                  <option value="Armado-M2">Máquina M2 (Nanjang)</option>
-                  <option value="Armado-M3">Máquina M3 (Nanjang)</option>
-                  <option value="Armado-M4">Máquina M4 (Nanjang)</option>
-                  <option value="Armado-M5">Máquina M5 (Nanjang)</option>
-                  <option value="Armado-M6">Máquina M6 (Con Asa)</option>
-                  <option value="Armado-M7">Máquina M7 (Con Asa)</option>
-                  <option value="Armado-M8">Máquina M8 (Con Asa)</option>
-                  <option value="Armado-M9">Máquina M9 (Con Asa)</option>
-                  <option value="Armado-M10">Máquina M10 (Con Asa)</option>
-                  <option value="Armado-M11">Máquina M11 (Con Asa)</option>
-                  <option value="Armado-M12">Máquina M12 (Con Asa)</option>
-                  <option value="Armado-M13">Máquina M13 (Con Asa)</option>
-                  <option value="Frias-Banda 1">Banda 1 (Frías)</option>
-                  <option value="Frias-Banda 2">Banda 2 (Frías)</option>
-                  <option value="Frias-Banda 3">Banda 3 (Frías)</option>
-                  <option value="Frias-Banda 4">Banda 4 (Frías)</option>
+                  <option value="Armado-M1">Máquina M1</option>
+                  <option value="Armado-M2">Máquina M2</option>
+                  <option value="Armado-M3">Máquina M3</option>
+                  <option value="Armado-M4">Máquina M4</option>
+                  <option value="Armado-M5">Máquina M5</option>
+                  <option value="Armado-M6">Máquina M6</option>
+                  <option value="Armado-M7">Máquina M7</option>
+                  <option value="Armado-M8">Máquina M8</option>
+                  <option value="Armado-M9">Máquina M9</option>
+                  <option value="Armado-M10">Máquina M10</option>
+                  <option value="Armado-M11">Máquina M11</option>
+                  <option value="Armado-M12">Máquina M12</option>
+                  <option value="Armado-M13">Máquina M13</option>
+                  <option value="Frias-Banda 1">Banda 1</option>
+                  <option value="Frias-Banda 2">Banda 2</option>
+                  <option value="Frias-Banda 3">Banda 3</option>
+                  <option value="Frias-Banda 4">Banda 4</option>
                 </select>
               </div>
 
@@ -616,8 +605,8 @@
             </div>
           </div>
 
-          <!-- Tarjetas KPI de Resumen Global -->
-          <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+          <!-- Tarjetas KPI de Resumen Global (Sin Porcentaje de Conformidad) -->
+          <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
             <div class="kpi-card" style="border-left: 4px solid var(--color-primary);">
               <label>Auditorías Totales</label>
               <div id="stat-kpi-total" class="kpi-val" style="color: var(--color-primary);">0</div>
@@ -632,42 +621,37 @@
               <label>No Conformidades (Rechazadas)</label>
               <div id="stat-kpi-noconformes" class="kpi-val" style="color: #dc2626;">0</div>
             </div>
-
-            <div class="kpi-card" style="border-left: 4px solid #2563eb;">
-              <label>% Índice de Conformidad</label>
-              <div id="stat-kpi-pct-conformidad" class="kpi-val" style="color: #2563eb;">0%</div>
-            </div>
           </div>
 
-          <!-- Gráfica de Conformidad vs No Conformidad -->
+          <!-- Resumen de Inspecciones de Calidad por Máquina / Banda -->
           <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
-            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-              <h3 style="margin: 0; font-size: 1.15rem; color: var(--color-primary);">📈 Gráfica de Conformidad vs. No Conformidad por Máquina (Solo Inspecciones de Calidad)</h3>
-              <span style="font-size: 0.8rem; color: var(--text-muted);">Porcentaje de Aprobados (Verde) vs Rechazados (Rojo) - Excluye Pruebas de Carga</span>
+            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+              <h3 style="margin: 0; font-size: 1.15rem; color: var(--color-primary);">📈 Inspecciones de Calidad por Máquina / Banda</h3>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Toca cualquier máquina o banda para ver el detalle de sus inspecciones</span>
             </div>
             <div id="wrapper-stat-conformidad-svg" style="width: 100%; overflow-x: auto; padding: 10px 0;">
               <!-- Se renderizará por JS -->
             </div>
           </div>
 
-          <!-- Sección Específica de Pruebas de Carga con Gráficos Pastel (M6 a M13) -->
+          <!-- Sección Unificada de Pruebas de Carga y Resistencia de Asas -->
           <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
             <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
               <h3 style="margin: 0; font-size: 1.15rem; color: #15803d; display: flex; align-items: center; gap: 8px;">
-                🏋️‍♂️ Pruebas de Carga y Resistencia de Asas (Máquinas Con Asa M6 a M13)
+                🏋️‍♂️ Pruebas de Carga y Resistencia de Asas
               </h3>
-              <span style="font-size: 0.8rem; color: var(--text-muted);">Toca la rebanada roja (🔴 No Conforme) para ver el detalle de fallas</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Toca cualquier gráfica o el botón "🔍 Ver todas" para ver el detalle de las pruebas</span>
             </div>
             <div id="wrapper-carga-pie-charts" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 20px;">
-              <!-- Se generará dinámicamente por JS con los gráficos pastel -->
+              <!-- Se generará dinámicamente por JS -->
             </div>
           </div>
 
-                    <!-- Resumen de Tarimas Liberadas -->
+          <!-- Resumen de Tarimas Liberadas -->
           <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
             <div class="card-title" style="margin-bottom: 1rem;">
               <h3 style="margin: 0; font-size: 1.15rem; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
-                📦 Resumen de Tarimas Liberadas por Máquina
+                📦 Resumen de Tarimas Liberadas por Máquina / Banda
               </h3>
               <span style="font-size: 0.8rem; color: var(--text-muted);">Conteo total de tarimas liberadas de su marca en el periodo seleccionado</span>
             </div>
@@ -675,7 +659,7 @@
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
                 <thead>
                   <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
-                    <th style="padding: 10px;">Máquina</th>
+                    <th style="padding: 10px;">Máquina / Banda</th>
                     <th style="padding: 10px;">Aprobadas</th>
                     <th style="padding: 10px;">Condicionadas</th>
                     <th style="padding: 10px;">Rechazadas</th>
@@ -689,26 +673,23 @@
             </div>
           </div>
           
-          <!-- Registro de Inconformidades y Defectos Detectados (Sin Imágenes) -->
+          <!-- Registro Unificado de Inconformidades y Defectos Detectados -->
           <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
             <div class="card-title" style="margin-bottom: 1rem;">
               <h3 style="margin: 0; font-size: 1.15rem; color: #dc2626; display: flex; align-items: center; gap: 8px;">
-                ⚠️ Registro de Inconformidades y Defectos Detectados en Máquinas
+                ⚠️ Registro de Inconformidades y Defectos Detectados
               </h3>
-              <span style="font-size: 0.8rem; color: var(--text-muted);">Listado detallado de defectos con fotografía de evidencia fotográfica incluida</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Listado detallado de defectos con evidencia fotográfica incluida</span>
             </div>
             <div class="table-container" style="overflow-x: auto;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
                 <thead>
                   <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
                     <th style="padding: 10px;">Fecha / Hora</th>
-                    <th style="padding: 10px;">Área</th>
-                    <th style="padding: 10px;">Máquina</th>
-                    <th style="padding: 10px;">Operador</th>
-                    <th style="padding: 10px;">Registrado Por</th>
+                    <th style="padding: 10px;">Máquina / Banda</th>
                     <th style="padding: 10px;">Nº Rollo / Ficha</th>
                     <th style="padding: 10px;">Defecto / Inconformidad</th>
-                                        <th style="padding: 10px;">Acción Correctiva</th>
+                    <th style="padding: 10px;">Acción Correctiva</th>
                     <th style="padding: 10px;">Evidencia Fotográfica</th>
                   </tr>
                 </thead>
@@ -716,99 +697,6 @@
                   <!-- Se inyectará por JS -->
                 </tbody>
               </table>
-            </div>
-          </div>
-
-          <div style="margin-top: 2rem; padding: 1.5rem; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <h4 style="margin: 0; color: #d97706; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
-                🧹 Optimización de Espacio (Supabase/Render)
-              </h4>
-              <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #92400e;">
-                Elimina las fotografías de inspecciones con más de 30 días de antigüedad para liberar espacio, conservando las estadísticas intactas.
-              </p>
-            </div>
-            <button onclick="optimizarEspacio()" class="btn-primary" style="background: #d97706; border: none; padding: 10px 15px; border-radius: 6px; color: white; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-              Liberar Espacio
-            </button>
-          </div>
-
-          <!-- SECCIÓN DEDICADA ESTADÍSTICAS FRÍAS -->
-          <div style="margin-top: 3rem; border-top: 3px solid #0284c7; padding-top: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-              <h3 style="font-size: 1.4rem; color: #0284c7; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                ❄️ Estadísticas General - Módulo Frías
-              </h3>
-              <span style="font-size: 0.85rem; color: var(--text-muted); background: #e0f2fe; padding: 4px 10px; border-radius: 6px; font-weight: 700;">
-                Bandas 1 a 4
-              </span>
-            </div>
-
-            <!-- Tarjetas KPI Frías -->
-            <div class="kpi-grid" style="margin-bottom: 2rem;">
-              <div class="kpi-card primary" style="border-left: 4px solid #0284c7;">
-                <label>Auditorías Totales (Frías)</label>
-                <div id="frias-stat-kpi-total" class="kpi-val" style="color: #0284c7;">0</div>
-              </div>
-              <div class="kpi-card success">
-                <label>Auditorías Conformes (Frías)</label>
-                <div id="frias-stat-kpi-conformes" class="kpi-val">0</div>
-              </div>
-              <div class="kpi-card danger">
-                <label>No Conformidades (Frías)</label>
-                <div id="frias-stat-kpi-noconformes" class="kpi-val">0</div>
-              </div>
-              <div class="kpi-card warning">
-                <label>% Índice de Conformidad (Frías)</label>
-                <div id="frias-stat-kpi-pct-conformidad" class="kpi-val">0%</div>
-              </div>
-            </div>
-
-            <!-- Gráfica Conformidad vs No Conformidades por Banda -->
-            <div class="card" style="margin-bottom: 2rem;">
-              <div class="card-title">
-                <h3 style="color: #0284c7; font-size: 1.15rem;">📊 Conformidad vs No Conformidades por Banda (Frías)</h3>
-              </div>
-              <div id="wrapper-frias-stat-conformidad-svg" style="min-height: 160px;">
-                <!-- SVG / HTML Bars -->
-              </div>
-            </div>
-
-            <!-- Pruebas de Carga Frías -->
-            <div class="card" style="margin-bottom: 2rem;">
-              <div class="card-title">
-                <h3 style="color: #0284c7; font-size: 1.15rem;">💪 Pruebas de Carga de Asas (Frías - Bandas 1 a 4)</h3>
-              </div>
-              <div id="wrapper-frias-stat-carga-pie" style="min-height: 120px;">
-                <!-- Carga stats -->
-              </div>
-            </div>
-
-            <!-- Tabla No Conformidades Frías -->
-            <div class="card">
-              <div class="card-title">
-                <h3 style="color: var(--color-danger); font-size: 1.15rem;">⚠️ Reporte de No Conformidades y Defectos (Frías)</h3>
-              </div>
-              <div class="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Fecha</th>
-                      <th>Área</th>
-                      <th>Banda</th>
-                      <th>Operador</th>
-                      <th>Registrado por</th>
-                      <th>Marca / Cliente</th>
-                      <th>Defecto</th>
-                                            <th>Acción Correctiva</th>
-                      <th style="text-align: center;">Evidencia</th>
-                    </tr>
-                  </thead>
-                  <tbody id="frias-table-inconformidades-body">
-                    <!-- Dinámico -->
-                  </tbody>
-                </table>
-              </div>
             </div>
           </div>
         </div>
@@ -3880,31 +3768,20 @@
       }
 
       async function renderStatIndepView() {
-        const areaFilter = document.getElementById('stat-indep-area-select')?.value || '';
         const machineFilter = document.getElementById('stat-indep-maquina-select')?.value || '';
         const marcaFilter = document.getElementById('stat-indep-marca-select')?.value || '';
         const fechaVal = document.getElementById('stat-indep-fecha-input')?.value || new Date().toISOString().split('T')[0];
 
         const allInspections = (state && state.inspecciones) ? state.inspecciones : [];
 
-
-
-        // Filtrar por Área, Máquina, Periodo y Fecha (EXCLUYE Frías / Bandas del panel superior)
+        // Filtrar todas las inspecciones de McDonald's (General + Frías unificadas) por Máquina/Banda, Periodo y Fecha
         const filteredInspections = allInspections.filter(insp => {
-          if (insp.maquina === 'Desconocida') return false; // Ocultar registros simulados de las gráficas
+          if (insp.maquina === 'Desconocida') return false;
 
           const inspDate = getInspIsoDate(insp);
 
-          // Excluir ÚNICAMENTE registros de Frías / Bandas del panel superior
-          const isFrias = (insp.area === 'Frías') || 
-                          String(insp.maquina || insp.banda || '').toLowerCase().startsWith('banda');
-          if (isFrias) return false;
-
-          if (areaFilter && insp.area !== areaFilter) return false;
-
           if (machineFilter) {
-            if (machineFilter.startsWith('Frias-')) return false;
-            const [tipo, maq] = machineFilter.split('-');
+            const maq = machineFilter.includes('-') ? machineFilter.split('-').slice(1).join('-') : machineFilter;
             if (insp.maquina !== maq && insp.banda !== maq) return false;
           }
 
@@ -3921,59 +3798,25 @@
           return true;
         });
 
-        // KPIs (excluyendo pruebas de carga de las estadísticas generales de calidad)
+        // KPIs unificados (sin porcentaje de conformidad)
         const qualityOnly = filteredInspections.filter(i => i.es_prueba_carga !== 1);
         const total = qualityOnly.length;
         const conformes = qualityOnly.filter(i => i.resultado === 'Aprobado').length;
         const noConformes = qualityOnly.filter(i => i.resultado === 'Rechazado').length;
-        const pctConformidad = total > 0 ? ((conformes / total) * 100).toFixed(1) : '0';
 
         const kpiTotal = document.getElementById('stat-kpi-total');
         const kpiConf = document.getElementById('stat-kpi-conformes');
         const kpiNoConf = document.getElementById('stat-kpi-noconformes');
-        const kpiPct = document.getElementById('stat-kpi-pct-conformidad');
 
         if (kpiTotal) kpiTotal.textContent = total;
         if (kpiConf) kpiConf.textContent = conformes;
         if (kpiNoConf) kpiNoConf.textContent = noConformes;
-        if (kpiPct) kpiPct.textContent = pctConformidad + '%';
 
         renderConformidadSVGChart(filteredInspections);
         renderInconformidadesTable(filteredInspections);
         renderCargaPieCharts(filteredInspections);
-        // Obtener inspecciones de Frías (Banda 1 a Banda 4) para el periodo/fecha seleccionados
-        const periodFriasInspections = allInspections.filter(insp => {
-          const inspDate = getInspIsoDate(insp);
 
-          const isFrias = (insp.area === 'Frías') || 
-                          String(insp.maquina || insp.banda || '').toLowerCase().startsWith('banda');
-          if (!isFrias) return false;
-
-          if (machineFilter) {
-            if (machineFilter.startsWith('Frias-')) {
-              const maq = machineFilter.replace('Frias-', '');
-              if (insp.maquina !== maq && insp.banda !== maq) return false;
-            } else {
-              return false;
-            }
-          }
-
-          if (marcaFilter) {
-            const m = (insp.marca_especificaciones || insp.marca_cliente || insp.marca || '').trim().toUpperCase();
-            if (m !== marcaFilter) return false;
-          }
-
-          if (statIndepPeriodo === 'dia') return inspDate === fechaVal;
-          if (statIndepPeriodo === 'semana') return getWeekNumber(inspDate) === getWeekNumber(fechaVal);
-          if (statIndepPeriodo === 'mes') return inspDate.substring(0, 7) === fechaVal.substring(0, 7);
-          if (statIndepPeriodo === 'ano') return inspDate.substring(0, 4) === fechaVal.substring(0, 4);
-
-          return true;
-        });
-
-        updateFriasStatsView(periodFriasInspections);
-
-        // CALCULAR TARIMAS LIBERADAS POR MÁQUINA
+        // CALCULAR TARIMAS LIBERADAS POR MÁQUINA / BANDA
         const tarimasTbody = document.getElementById('table-tarimas-stats-body');
         if (tarimasTbody) {
           let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
@@ -3986,9 +3829,8 @@
           serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
           let globalTarimas = Array.from(tarimaMap.values());
 
-          let validTarimas = globalTarimas.filter(t => t && t.codigo_liberacion);
+          let validTarimas = globalTarimas.filter(t => t && (t.codigo_liberacion || t.codigo_tarima));
 
-          // Filtrar por fecha de la vista actual
           const selectedDate = fechaVal;
           const periodo = statIndepPeriodo;
           validTarimas = validTarimas.filter(t => {
@@ -4002,16 +3844,17 @@
           });
 
           if (machineFilter) {
-            const soloMaq = machineFilter.includes('-') ? machineFilter.split('-')[1] : machineFilter;
-            validTarimas = validTarimas.filter(t => t.maquina === soloMaq);
+            const soloMaq = machineFilter.includes('-') ? machineFilter.split('-').slice(1).join('-') : machineFilter;
+            validTarimas = validTarimas.filter(t => (t.maquina === soloMaq || t.banda === soloMaq));
           }
 
           const statsTarimas = {};
           validTarimas.forEach(t => {
-            const maq = t.maquina || 'Desconocida';
+            const maq = t.banda || t.maquina || 'Desconocida';
             if (!statsTarimas[maq]) statsTarimas[maq] = { aprobada: 0, condicionada: 0, rechazada: 0 };
-            if (t.estado_liberacion === 'Condicionado') statsTarimas[maq].condicionada++;
-            else if (t.estado_liberacion === 'Rechazado') statsTarimas[maq].rechazada++;
+            const est = String(t.estado_liberacion || '').toLowerCase();
+            if (est.includes('condicion')) statsTarimas[maq].condicionada++;
+            else if (est.includes('rechaz')) statsTarimas[maq].rechazada++;
             else statsTarimas[maq].aprobada++;
           });
 
@@ -4041,18 +3884,12 @@
         const wrapper = document.getElementById('wrapper-stat-conformidad-svg');
         if (!wrapper) return;
 
-        // Filtrar EXCLUSIVAMENTE inspecciones de calidad de máquinas estándar (sin pruebas de carga y sin Frías)
-        const qualityInspections = inspections.filter(i => {
-          if (i.es_prueba_carga === 1) return false;
-          if (i.area === 'Frías') return false;
-          const m = String(i.maquina || i.banda || '').toLowerCase();
-          if (m.startsWith('banda')) return false;
-          return true;
-        });
+        // Incluir todas las máquinas y bandas (sin pruebas de carga)
+        const qualityInspections = inspections.filter(i => i.es_prueba_carga !== 1);
 
         const machineMap = {};
         qualityInspections.forEach(i => {
-          const maq = i.maquina || 'Desconocida';
+          const maq = i.banda || i.maquina || 'Desconocida';
           if (!machineMap[maq]) {
             machineMap[maq] = { total: 0, conformes: 0, noConformes: 0 };
           }
@@ -4069,8 +3906,9 @@
             if (!str) return 999;
             const s = String(str).trim();
             if (s.toLowerCase().includes('flexo')) return 0;
+            const isBanda = s.toLowerCase().startsWith('banda');
             const match = s.match(/(\d+)/);
-            if (match) return parseInt(match[1], 10);
+            if (match) return (isBanda ? 100 : 0) + parseInt(match[1], 10);
             return 998;
           };
           return getSortKey(a) - getSortKey(b);
@@ -4086,7 +3924,8 @@
         machines.forEach(maq => {
           const item = machineMap[maq];
           const pctConf = item.total > 0 ? Math.round((item.conformes / item.total) * 100) : 0;
-          const pctNoConf = item.total > 0 ? Math.round((item.noConformes / item.total) * 100) : 0;
+          const pctNoConf = item.total > 0 ? (100 - pctConf) : 0;
+          const labelMaq = maq.toLowerCase().startsWith('banda') ? `❄️ ${maq}` : `Máquina ${maq}`;
 
           svgHtml += `
             <div 
@@ -4094,21 +3933,21 @@
               style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;"
               onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.08)'"
               onmouseout="this.style.transform='none'; this.style.boxShadow='none'"
-              title="Toca para ver todas las inspecciones de Máquina ${maq}"
+              title="Toca para ver todas las inspecciones de ${labelMaq}"
             >
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                 <span style="font-weight: 800; color: var(--color-primary); font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
-                  <span>Máquina ${maq}</span>
+                  <span>${labelMaq}</span>
                   <span style="font-size: 0.75rem; background: #e2e8f0; color: #334155; padding: 2px 6px; border-radius: 4px; font-weight: 600;">🔍 Ver inspecciones</span>
                 </span>
                 <span style="font-weight: 700; font-size: 0.85rem; color: #475569;">${item.total} Inspecciones (${item.conformes} Conformes / ${item.noConformes} Defectos)</span>
               </div>
               <div style="height: 24px; width: 100%; background: #e2e8f0; border-radius: 12px; overflow: hidden; display: flex;">
-                <div style="width: ${pctConf}%; background: #16a34a; height: 100%; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 0.75rem; font-weight: 800;" title="${pctConf}% Conforme">
-                  ${pctConf > 10 ? pctConf + '%' : ''}
+                <div style="width: ${pctConf}%; background: #16a34a; height: 100%; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 0.75rem; font-weight: 800;" title="${item.conformes} Conformes">
+                  ${item.conformes > 0 && pctConf > 12 ? item.conformes + ' OK' : ''}
                 </div>
-                <div style="width: ${pctNoConf}%; background: #dc2626; height: 100%; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 0.75rem; font-weight: 800;" title="${pctNoConf}% No Conforme">
-                  ${pctNoConf > 10 ? pctNoConf + '%' : ''}
+                <div style="width: ${pctNoConf}%; background: #dc2626; height: 100%; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 0.75rem; font-weight: 800;" title="${item.noConformes} No Conformes">
+                  ${item.noConformes > 0 && pctNoConf > 12 ? item.noConformes : ''}
                 </div>
               </div>
             </div>
@@ -4129,11 +3968,17 @@
           (i.descripcion_defecto && i.descripcion_defecto.trim() !== '') ||
           i.impresion_correcta === 0 ||
           i.registro_correcto === 0 ||
-          i.medidas_dentro_parametro === 0
+          i.medidas_dentro_parametro === 0 ||
+          i.integridad_bolsa === 0 ||
+          i.pva_suficiente === 0 ||
+          i.hotmelt_suficiente === 0 ||
+          i.posicion_asa_correcta === 0 ||
+          i.pegado_correcto === 0 ||
+          i.posicion_parche_correcta === 0
         );
 
         if (defectsList.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="9" style="padding: 20px; text-align: center; color: #16a34a; font-weight: 700; background: #f0fdf4;">🎉 Sin inconformidades registradas para los filtros seleccionados.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: #16a34a; font-weight: 700; background: #f0fdf4;">🎉 Sin inconformidades registradas para los filtros seleccionados.</td></tr>`;
           return;
         }
 
@@ -4146,20 +3991,26 @@
             const u = i.medidas_unidad === 'cm' ? 'cm' : 'in';
             defectoTexto = `Medidas Fuera de Rango [A: ${i.medida_ancho||'-'}${u}, L: ${i.medida_largo||'-'}${u}, F: ${i.medida_fuelle||'-'}${u}]. ` + defectoTexto;
           }
+          if (i.integridad_bolsa === 0) defectoTexto = 'Fallo Integridad de Bolsa. ' + defectoTexto;
+          if (i.pva_suficiente === 0) defectoTexto = 'Fallo PVA. ' + defectoTexto;
+          if (i.hotmelt_suficiente === 0) defectoTexto = 'Fallo Hotmelt. ' + defectoTexto;
+          if (i.posicion_asa_correcta === 0 || i.pegado_correcto === 0 || i.posicion_parche_correcta === 0) {
+            defectoTexto = 'Fallo Posición/Pegado de Asa o Parche. ' + defectoTexto;
+          }
           if (i.carga_resultado === 'Falla') defectoTexto = 'Falla en Resistencia de Asas. ' + defectoTexto;
 
           const fotoCell = i.foto_url
             ? `<a href="${i.foto_url}" target="_blank" rel="noopener noreferrer" title="Toca para ver foto completa"><img src="${i.foto_url}" style="width: 55px; height: 55px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" /></a>`
             : `<span style="color: #94a3b8; font-size: 0.75rem;">Sin foto</span>`;
 
+          const maqDisplay = i.banda || i.maquina || '-';
+          const rolloDisplay = i.numero_rollo || i.bobina_id || '-';
+
           html += `
             <tr onclick="if(!event.target.closest('a') && !event.target.closest('button')) viewInspectionDetail('${i.id}')" style="cursor:pointer; border-bottom: 1px solid #e2e8f0;" onmouseover="this.style.backgroundColor='#f1f5f9'" onmouseout="this.style.backgroundColor='transparent'" title="Haz clic para ver detalles">
               <td style="padding: 10px; font-weight: 600; color:#0284c7;">${i.fecha_registro} 🔍</td>
-              <td style="padding: 10px;">${i.area}</td>
-              <td style="padding: 10px; font-weight: 800; color: var(--color-primary);">${i.maquina}</td>
-              <td style="padding: 10px;">${i.operador || '-'}</td>
-              <td style="padding: 10px; font-weight: 600; color: #475569;">${i.editado_por || 'Desconocido'}</td>
-              <td style="padding: 10px;">${i.numero_rollo || '-'}</td>
+              <td style="padding: 10px; font-weight: 800; color: var(--color-primary);">${maqDisplay}</td>
+              <td style="padding: 10px;">${rolloDisplay}</td>
               <td style="padding: 10px; color: #dc2626; font-weight: 600;">${defectoTexto}</td>
               <td style="padding: 10px; color: #15803d; font-weight: 600;">${i.accion_correctiva || 'Ajuste de máquina requerido'}</td>
               <td style="padding: 10px; text-align: center;">${fotoCell}</td>
@@ -4185,7 +4036,6 @@
           `;
         }
 
-        const pConf = (conf / total) * 100;
         const R = 40;
         const cx = 50;
         const cy = 50;
@@ -4195,13 +4045,13 @@
           svgContent = `
             <circle cx="${cx}" cy="${cy}" r="${R}" fill="#16a34a" />
             <circle cx="${cx}" cy="${cy}" r="22" fill="#ffffff" />
-            <text x="${cx}" y="54" text-anchor="middle" font-size="11" font-weight="800" fill="#16a34a">100%</text>
+            <text x="${cx}" y="54" text-anchor="middle" font-size="11" font-weight="800" fill="#16a34a">${conf}</text>
           `;
         } else if (conf === 0) {
           svgContent = `
             <circle cx="${cx}" cy="${cy}" r="${R}" fill="#dc2626" style="cursor: pointer;" onclick="showCargaDefectsModal('${machine}', '${type}')" />
             <circle cx="${cx}" cy="${cy}" r="22" fill="#ffffff" />
-            <text x="${cx}" y="54" text-anchor="middle" font-size="11" font-weight="800" fill="#dc2626" style="cursor: pointer;" onclick="showCargaDefectsModal('${machine}', '${type}')">0%</text>
+            <text x="${cx}" y="54" text-anchor="middle" font-size="11" font-weight="800" fill="#dc2626" style="cursor: pointer;" onclick="showCargaDefectsModal('${machine}', '${type}')">${noConf}</text>
           `;
         } else {
           const angleConf = (conf / total) * 2 * Math.PI;
@@ -4226,7 +4076,7 @@
               <title>Toca para ver ${noConf} falla(s) en ${machine}</title>
             </path>
             <circle cx="${cx}" cy="${cy}" r="22" fill="#ffffff" />
-            <text x="${cx}" y="54" text-anchor="middle" font-size="10" font-weight="800" fill="#1e293b">${Math.round(pConf)}%</text>
+            <text x="${cx}" y="54" text-anchor="middle" font-size="10" font-weight="800" fill="#1e293b">${conf}/${total}</text>
           `;
         }
 
@@ -4247,19 +4097,25 @@
         const container = document.getElementById('wrapper-carga-pie-charts');
         if (!container) return;
 
-        const machines = ['M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12', 'M13'];
+        const machines = ['M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12', 'M13', 'Banda 1', 'Banda 2', 'Banda 3', 'Banda 4'];
         const cargaInspections = inspections.filter(i => i.es_prueba_carga === 1);
 
         let html = '';
 
         machines.forEach(m => {
-          const mInsps = cargaInspections.filter(i => i.maquina === m);
+          const mInsps = cargaInspections.filter(i => i.maquina === m || i.banda === m);
 
-          const estaticas = mInsps.filter(i => i.carga_tipo_prueba === 'estatica');
+          const estaticas = mInsps.filter(i => {
+            const raw = String(i.carga_tipo_prueba || i.tipo_prueba_carga || '').toLowerCase();
+            return raw === 'estatica' || raw.includes('estática') || raw.includes('estatica');
+          });
           const estConf = estaticas.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
           const estNoConf = estaticas.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length;
 
-          const dinamicas = mInsps.filter(i => i.carga_tipo_prueba === 'dinamica');
+          const dinamicas = mInsps.filter(i => {
+            const raw = String(i.carga_tipo_prueba || i.tipo_prueba_carga || '').toLowerCase();
+            return raw === 'dinamica' || raw.includes('dinámica') || raw.includes('dinamica');
+          });
           const dinConf = dinamicas.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
           const dinNoConf = dinamicas.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length;
 
@@ -4268,6 +4124,7 @@
 
           const totalFallas = estNoConf + dinNoConf;
           const cardBorder = totalFallas > 0 ? 'border: 2px solid #fca5a5; background: #fff5f5;' : 'border: 1px solid #e2e8f0; background: #ffffff;';
+          const titleLabel = m.startsWith('Banda') ? `❄️ ${m}` : `🤖 Máquina ${m}`;
 
           html += `
             <div class="card" style="padding: 1rem; border-radius: 12px; box-shadow: 0 3px 6px rgba(0,0,0,0.05); ${cardBorder}">
@@ -4275,13 +4132,15 @@
                 <h4 
                   onclick="showMachineInspectionsModal('${m}', 'carga')"
                   style="margin: 0; font-weight: 800; color: var(--color-primary); font-size: 0.95rem; display: flex; align-items: center; gap: 6px; cursor: pointer;"
-                  title="Toca para ver todas las pruebas de carga de Máquina ${m}"
+                  title="Toca para ver todas las pruebas de carga de ${m}"
                 >
-                  🤖 Máquina ${m} <span style="font-size:0.7rem; font-weight:600; background:#e2e8f0; color:#334155; padding:1px 5px; border-radius:4px;">🔍 Ver todas</span>
+                  ${titleLabel} <span style="font-size:0.7rem; font-weight:600; background:#e2e8f0; color:#334155; padding:1px 5px; border-radius:4px;">🔍 Ver todas</span>
                 </h4>
                 ${totalFallas > 0 
                   ? `<span style="background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 800;">⚠️ ${totalFallas} Defecto(s)</span>`
-                  : `<span style="background: #dcfce7; color: #16a34a; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 800;">✅ 100% OK</span>`
+                  : mInsps.length > 0
+                    ? `<span style="background: #dcfce7; color: #16a34a; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 800;">✅ Conforme</span>`
+                    : `<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">⚪ Sin pruebas</span>`
                 }
               </div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: center;">
@@ -6407,8 +6266,8 @@
             if (m !== marcaExportFilter) return false;
           }
           if (machineFilter) {
-            const [tipo, maq] = machineFilter.split('-');
-            if (insp.maquina !== maq) return false;
+            const maq = machineFilter.includes('-') ? machineFilter.split('-').slice(1).join('-') : machineFilter;
+            if (insp.maquina !== maq && insp.banda !== maq) return false;
           }
           if (personaFilter && insp.operador !== personaFilter) return false;
 
@@ -6419,7 +6278,7 @@
           return false;
         });
 
-        // 3. Separar por las 4 Secciones
+        // 3. Separar por las Secciones (incluyendo Frías)
         const flexoProd = scopedProduction.filter(r => r.tipo_maquina === 'Flexo');
         const flexoInsp = scopedInspections.filter(i => i.area === 'Flexo');
 
@@ -6428,6 +6287,8 @@
 
         const asaProd = scopedProduction.filter(r => ['M6','M7','M8','M9','M10','M11','M12','M13'].includes(r.maquina));
         const asaInsp = scopedInspections.filter(i => i.area === 'Con Asa' && i.es_prueba_carga !== 1);
+
+        const friasInsp = scopedInspections.filter(i => (i.area === 'Frías' || String(i.banda || i.maquina || '').toLowerCase().startsWith('banda')) && i.es_prueba_carga !== 1);
 
         const cargaInsp = scopedInspections.filter(i => i.es_prueba_carga === 1);
 
@@ -6442,6 +6303,7 @@
           flexo: { prod: flexoProd, insp: flexoInsp },
           nanjang: { prod: nanjangProd, insp: nanjangInsp },
           asa: { prod: asaProd, insp: asaInsp },
+          frias: { insp: friasInsp },
           carga: { insp: cargaInsp }
         };
       }
@@ -6864,8 +6726,8 @@
                     <div style="font-size: 16px; font-weight: 800; color: #2563eb; margin-top: 4px;">${totalInsp}</div>
                   </div>
                   <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; text-align: center;">
-                    <div style="font-size: 9px; color: #64748b; font-weight: 700;">% CONFORMIDAD GLOBAL</div>
-                    <div style="font-size: 16px; font-weight: 800; color: #15803d; margin-top: 4px;">${pctConformidad}</div>
+                    <div style="font-size: 9px; color: #64748b; font-weight: 700;">AUDITORÍAS CONFORMES</div>
+                    <div style="font-size: 16px; font-weight: 800; color: #15803d; margin-top: 4px;">${conformes}</div>
                   </div>
                 </div>
 
@@ -6879,7 +6741,6 @@
                       <th style="padding: 7px; text-align: center;">Auditorías Totales</th>
                       <th style="padding: 7px; text-align: center;">Conformes (Aprobadas)</th>
                       <th style="padding: 7px; text-align: center;">No Conformes (Rechazadas)</th>
-                      <th style="padding: 7px; text-align: right;">% Índice Calidad</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -6888,28 +6749,30 @@
                       <td style="padding: 7px; text-align: center;">${data.flexo.insp.length}</td>
                       <td style="padding: 7px; text-align: center; color: #16a34a; font-weight: 700;">${data.flexo.insp.filter(i => i.resultado === 'Aprobado').length}</td>
                       <td style="padding: 7px; text-align: center; color: #dc2626; font-weight: 700;">${data.flexo.insp.filter(i => i.resultado === 'Rechazado').length}</td>
-                      <td style="padding: 7px; text-align: right; font-weight: 800;">${data.flexo.insp.length > 0 ? ((data.flexo.insp.filter(i => i.resultado === 'Aprobado').length / data.flexo.insp.length)*100).toFixed(1) + '%' : 'N/A'}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
                       <td style="padding: 7px; font-weight: 700;">2. Nanjang (Confección M1-M5)</td>
                       <td style="padding: 7px; text-align: center;">${data.nanjang.insp.length}</td>
                       <td style="padding: 7px; text-align: center; color: #16a34a; font-weight: 700;">${data.nanjang.insp.filter(i => i.resultado === 'Aprobado').length}</td>
                       <td style="padding: 7px; text-align: center; color: #dc2626; font-weight: 700;">${data.nanjang.insp.filter(i => i.resultado === 'Rechazado').length}</td>
-                      <td style="padding: 7px; text-align: right; font-weight: 800;">${data.nanjang.insp.length > 0 ? ((data.nanjang.insp.filter(i => i.resultado === 'Aprobado').length / data.nanjang.insp.length)*100).toFixed(1) + '%' : 'N/A'}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0;">
                       <td style="padding: 7px; font-weight: 700;">3. Con Asa (Confección M6-M13)</td>
                       <td style="padding: 7px; text-align: center;">${data.asa.insp.length}</td>
                       <td style="padding: 7px; text-align: center; color: #16a34a; font-weight: 700;">${data.asa.insp.filter(i => i.resultado === 'Aprobado').length}</td>
                       <td style="padding: 7px; text-align: center; color: #dc2626; font-weight: 700;">${data.asa.insp.filter(i => i.resultado === 'Rechazado').length}</td>
-                      <td style="padding: 7px; text-align: right; font-weight: 800;">${data.asa.insp.length > 0 ? ((data.asa.insp.filter(i => i.resultado === 'Aprobado').length / data.asa.insp.length)*100).toFixed(1) + '%' : 'N/A'}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
-                      <td style="padding: 7px; font-weight: 700;">4. Pruebas de Carga (Resistencia)</td>
+                      <td style="padding: 7px; font-weight: 700;">4. Frías (Banda 1 - Banda 4)</td>
+                      <td style="padding: 7px; text-align: center;">${(data.frias?.insp || []).length}</td>
+                      <td style="padding: 7px; text-align: center; color: #16a34a; font-weight: 700;">${(data.frias?.insp || []).filter(i => i.resultado === 'Aprobado').length}</td>
+                      <td style="padding: 7px; text-align: center; color: #dc2626; font-weight: 700;">${(data.frias?.insp || []).filter(i => i.resultado === 'Rechazado').length}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 7px; font-weight: 700;">5. Pruebas de Carga (Resistencia)</td>
                       <td style="padding: 7px; text-align: center;">${data.carga.insp.length}</td>
                       <td style="padding: 7px; text-align: center; color: #16a34a; font-weight: 700;">${data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length}</td>
                       <td style="padding: 7px; text-align: center; color: #dc2626; font-weight: 700;">${data.carga.insp.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length}</td>
-                      <td style="padding: 7px; text-align: right; font-weight: 800;">${data.carga.insp.length > 0 ? ((data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length / data.carga.insp.length)*100).toFixed(1) + '%' : 'N/A'}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -6925,7 +6788,7 @@
                       <th style="padding: 5px;">Operador</th>
                       <th style="padding: 5px;">Registrado Por</th>
                       <th style="padding: 5px;">Defecto / Inconformidad</th>
-                                            <th style="padding: 5px;">Acción Correctiva</th>
+                      <th style="padding: 5px;">Acción Correctiva</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -6946,7 +6809,7 @@
 
                 reportHtml += `<tr style="border-bottom: 1px solid #e2e8f0;">
                   <td style="padding: 5px;">${i.fecha_registro}</td>
-                  <td style="padding: 5px;"><strong>${i.area} - ${i.maquina}</strong></td>
+                  <td style="padding: 5px;"><strong>${i.area} - ${i.banda || i.maquina}</strong></td>
                   <td style="padding: 5px;">${i.operador || '-'}</td>
                   <td style="padding: 5px;">${i.editado_por || 'Desconocido'}</td>
                   <td style="padding: 5px; color:#dc2626; font-weight:600;">${defectoTexto}</td>
@@ -7020,7 +6883,7 @@
             { label: 'Bolsas Producidas', val: bolsasProducidas.toLocaleString() },
             { label: 'Bolsas en Tarima', val: bolsasTarima.toLocaleString() },
             { label: 'Total Auditorías', val: totalInsp.toString() },
-            { label: '% Conformidad', val: pctConformidad }
+            { label: 'Auditorías Conformes', val: conformes.toString() }
           ];
 
           const boxW = 42;
@@ -7054,41 +6917,44 @@
 
           y += 3;
 
+          const friasInspList = data.frias?.insp || [];
           const areaBody = [
             [
               '1. Flexo (Impresión)',
               data.flexo.insp.length.toString(),
               data.flexo.insp.filter(i => i.resultado === 'Aprobado').length.toString(),
-              data.flexo.insp.filter(i => i.resultado === 'Rechazado').length.toString(),
-              data.flexo.insp.length > 0 ? ((data.flexo.insp.filter(i => i.resultado === 'Aprobado').length / data.flexo.insp.length)*100).toFixed(1) + '%' : 'N/A'
+              data.flexo.insp.filter(i => i.resultado === 'Rechazado').length.toString()
             ],
             [
               '2. Nanjang (M1-M5)',
               data.nanjang.insp.length.toString(),
               data.nanjang.insp.filter(i => i.resultado === 'Aprobado').length.toString(),
-              data.nanjang.insp.filter(i => i.resultado === 'Rechazado').length.toString(),
-              data.nanjang.insp.length > 0 ? ((data.nanjang.insp.filter(i => i.resultado === 'Aprobado').length / data.nanjang.insp.length)*100).toFixed(1) + '%' : 'N/A'
+              data.nanjang.insp.filter(i => i.resultado === 'Rechazado').length.toString()
             ],
             [
               '3. Con Asa (M6-M13)',
               data.asa.insp.length.toString(),
               data.asa.insp.filter(i => i.resultado === 'Aprobado').length.toString(),
-              data.asa.insp.filter(i => i.resultado === 'Rechazado').length.toString(),
-              data.asa.insp.length > 0 ? ((data.asa.insp.filter(i => i.resultado === 'Aprobado').length / data.asa.insp.length)*100).toFixed(1) + '%' : 'N/A'
+              data.asa.insp.filter(i => i.resultado === 'Rechazado').length.toString()
             ],
             [
-              '4. Pruebas de Carga',
+              '4. Frías (Banda 1 - Banda 4)',
+              friasInspList.length.toString(),
+              friasInspList.filter(i => i.resultado === 'Aprobado').length.toString(),
+              friasInspList.filter(i => i.resultado === 'Rechazado').length.toString()
+            ],
+            [
+              '5. Pruebas de Carga',
               data.carga.insp.length.toString(),
               data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length.toString(),
-              data.carga.insp.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length.toString(),
-              data.carga.insp.length > 0 ? ((data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length / data.carga.insp.length)*100).toFixed(1) + '%' : 'N/A'
+              data.carga.insp.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length.toString()
             ]
           ];
 
           if (typeof doc.autoTable === 'function') {
             doc.autoTable({
               startY: y,
-              head: [['Área / Sección', 'Auditorías', 'Conformes', 'No Conformes', '% Calidad']],
+              head: [['Área / Sección', 'Auditorías', 'Conformes', 'No Conformes']],
               body: areaBody,
               theme: 'striped',
               headStyles: { fillColor: greenPrimary, textColor: 255, fontSize: 8.5, fontStyle: 'bold' },

@@ -556,7 +556,7 @@ const server = http.createServer(async (req, res) => {
         
         mapped = mapped.filter(b => {
            // Si es una bolsa/producción normal o tarima que ya tiene marca
-           let marca = (b.marca_especificaciones || b.proveedor || b.marca || '').toLowerCase();
+           let marca = (b.marca_especificaciones || b.marca_cliente || b.proveedor || b.marca || '').toLowerCase();
            
            // Si es una tarima sin marca directa, heredar la marca de su bobina vinculada
            if (!marca && (b.codigo_liberacion || b.codigo_tarima)) {
@@ -564,6 +564,8 @@ const server = http.createServer(async (req, res) => {
                marca = bobinasMap[b.bobina_id];
              } else if (b.numero_rollo && bobinasMap['rollo:' + String(b.numero_rollo).toLowerCase()]) {
                marca = bobinasMap['rollo:' + String(b.numero_rollo).toLowerCase()];
+             } else if (b.bobina && bobinasMap['rollo:' + String(b.bobina).toLowerCase()]) {
+               marca = bobinasMap['rollo:' + String(b.bobina).toLowerCase()];
              }
            }
            
