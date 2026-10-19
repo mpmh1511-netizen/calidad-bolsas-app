@@ -595,31 +595,47 @@ const server = http.createServer(async (req, res) => {
         return item;
       });
       if (role === 'cliente' || role === 'cliente_walmart') {
-        // Para filtrar tarimas (que no tienen marca directamente), necesitamos cruzar con bobinas
+        // Para filtrar tarimas (que no tienen marca directamente), cruzamos con bobinas e inspecciones
         let bobinasList = await supabaseRequest('bobinas?select=*&order=id.desc&limit=1000');
+        let inspList = await supabaseRequest('inspecciones?select=datos&order=id.desc&limit=1000');
         let bobinasMap = {};
         if (bobinasList) {
           bobinasList.forEach(item => {
              const bd = item.datos || item || {};
-             const m = (bd.marca_especificaciones || bd.proveedor || '').toLowerCase();
-             bobinasMap[bd.id || item.id] = m;
-             const rNum = (bd.numero_rollo || bd.numero_bobina || '').toLowerCase();
-             if (rNum) bobinasMap['rollo:' + rNum] = m;
+             const m = (bd.marca_especificaciones || bd.proveedor || bd.marca || '').toLowerCase();
+             if (m) {
+               bobinasMap[bd.id || item.id] = m;
+               const rNum = String(bd.numero_rollo || bd.numero_bobina || '').trim().toLowerCase();
+               if (rNum) bobinasMap['rollo:' + rNum] = m;
+             }
+          });
+        }
+        if (Array.isArray(inspList)) {
+          inspList.forEach(item => {
+            const d = item.datos || {};
+            const m = String(d.marca_especificaciones || d.marca_cliente || d.marca || '').trim().toLowerCase();
+            const rNum = String(d.numero_rollo || '').trim().toLowerCase();
+            if (m && rNum && !bobinasMap['rollo:' + rNum]) {
+              bobinasMap['rollo:' + rNum] = m;
+            }
           });
         }
         
         mapped = mapped.filter(b => {
+           if (!b || (!b.codigo_liberacion && !b.codigo_tarima && !b.bolsas_producidas)) return false;
            // Si es una bolsa/producción normal o tarima que ya tiene marca
-           let marca = (b.marca_especificaciones || b.marca_cliente || b.proveedor || b.marca || '').toLowerCase();
+           let marca = String(b.marca || b.marca_especificaciones || b.marca_cliente || b.proveedor || '').toLowerCase();
            
-           // Si es una tarima sin marca directa, heredar la marca de su bobina vinculada
+           // Si es una tarima sin marca directa, heredar la marca de su bobina o inspección vinculada
            if (!marca && (b.codigo_liberacion || b.codigo_tarima)) {
+             const r1 = String(b.numero_rollo || '').trim().toLowerCase();
+             const r2 = String(b.bobina || '').trim().toLowerCase();
              if (b.bobina_id && bobinasMap[b.bobina_id]) {
                marca = bobinasMap[b.bobina_id];
-             } else if (b.numero_rollo && bobinasMap['rollo:' + String(b.numero_rollo).toLowerCase()]) {
-               marca = bobinasMap['rollo:' + String(b.numero_rollo).toLowerCase()];
-             } else if (b.bobina && bobinasMap['rollo:' + String(b.bobina).toLowerCase()]) {
-               marca = bobinasMap['rollo:' + String(b.bobina).toLowerCase()];
+             } else if (r1 && bobinasMap['rollo:' + r1]) {
+               marca = bobinasMap['rollo:' + r1];
+             } else if (r2 && bobinasMap['rollo:' + r2]) {
+               marca = bobinasMap['rollo:' + r2];
              }
            }
            
@@ -629,16 +645,17 @@ const server = http.createServer(async (req, res) => {
            return marca.includes('mcdonalds') || marca.includes('mc donalds');
         });
         mapped = mapped.map(b => {
-           delete b.operador;
-           delete b.editado_por;
-           delete b.usuario;
-           delete b.carga_realizado_por;
-           delete b.realizado_por;
+           const copy = { ...b };
+           delete copy.operador;
+           delete copy.editado_por;
+           delete copy.usuario;
+           delete copy.carga_realizado_por;
+           delete copy.realizado_por;
            if (role === 'cliente_walmart') {
-             delete b.maquina;
-             delete b.banda;
+             delete copy.maquina;
+             delete copy.banda;
            }
-           return b;
+           return copy;
         });
       }
 

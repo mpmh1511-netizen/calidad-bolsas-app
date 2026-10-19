@@ -285,14 +285,20 @@
       <h1 class="landing-title">Dipapel</h1>
       <h2 class="landing-subtitle">Planta Lechugueros &bull; Sistema de Gestión Industrial</h2>
 
-      <!-- Selección de Módulo (Solo Auditorías y Estadísticas para Walmart, sin Inventario de Rollos) -->
+      <!-- Selección de Módulo (Auditorías/Estadísticas y Tarimas Liberadas para Walmart, sin Inventario de Rollos) -->
       <div id="step-section" style="width: 100%; display: block;">
         <h3 style="margin-bottom: 2rem; font-size: 1.3rem; color: var(--text-muted);">Bienvenido a su Panel de Cliente — Walmart</h3>
-        <div class="role-grid" style="grid-template-columns: minmax(260px, 420px); justify-content: center; gap: 1.5rem;">
+        <div class="role-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 360px)); justify-content: center; gap: 1.5rem;">
           <div class="role-card" onclick="openIndependentEstadisticas()" style="padding: 2.5rem 1.5rem; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid #16a34a;">
             <h3 class="role-card-title" style="font-size: 1.3rem; margin-bottom: 1rem; color: #16a34a;">📊 Auditorías y Estadísticas</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">Consulta de porcentajes generales de calidad, inspecciones, fotos y pruebas de carga de su marca</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">Consulta de porcentajes generales de calidad, inspecciones, fotos, pruebas de carga y tarimas liberadas</p>
             <button class="btn-primary" style="margin-top: auto; width: 100%; justify-content: center; background-color: #16a34a; border-color: #15803d;">Ver Reportes</button>
+          </div>
+
+          <div class="role-card" onclick="openTarimasConsultaView()" style="padding: 2.5rem 1.5rem; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid #f59e0b;">
+            <h3 class="role-card-title" style="font-size: 1.3rem; margin-bottom: 1rem; color: #d97706;">📦 Tarimas Liberadas</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">Consulta de tarimas liberadas de su marca, búsqueda por código o fecha, checklist y fotografías de acomodo</p>
+            <button class="btn-primary" style="margin-top: auto; width: 100%; justify-content: center; background-color: #f59e0b; border-color: #d97706;">Ver Tarimas Liberadas</button>
           </div>
         </div>
       </div>
@@ -311,6 +317,12 @@
         </div>
         <div class="nav-controls" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">👤 Usuario: <span id="current-user-label">Walmart</span></span>
+          <button class="btn-secondary" onclick="openIndependentEstadisticas()" style="padding: 6px 14px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
+            📊 Estadísticas
+          </button>
+          <button class="btn-secondary" onclick="openTarimasConsultaView()" style="padding: 6px 14px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
+            📦 Tarimas Liberadas
+          </button>
           <button class="btn-secondary" onclick="exitToLanding()" style="padding: 6px 14px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
             ◀ Menú Principal
           </button>
@@ -365,7 +377,7 @@
           </div>
 
           <!-- Tarjetas KPI de Resumen Global en Porcentajes Generales -->
-          <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+          <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
             <div class="kpi-card" onclick="showAllWalmartInspectionsModal('general')" style="border-left: 4px solid #16a34a; cursor: pointer;">
               <label>% Conformidad en Inspecciones</label>
               <div id="stat-kpi-conformes" class="kpi-val" style="color: #16a34a;">0%</div>
@@ -379,6 +391,11 @@
             <div class="kpi-card" onclick="showAllWalmartInspectionsModal('noconformes')" style="border-left: 4px solid #dc2626; cursor: pointer;">
               <label>% No Conformidades</label>
               <div id="stat-kpi-noconformes" class="kpi-val" style="color: #dc2626;">0%</div>
+            </div>
+
+            <div class="kpi-card" onclick="openTarimasConsultaView()" style="border-left: 4px solid #f59e0b; cursor: pointer;" title="Toca para consultar las tarimas liberadas">
+              <label>📦 % Tarimas Liberadas</label>
+              <div id="stat-kpi-tarimas-pct" class="kpi-val" style="color: #d97706;">0%</div>
             </div>
           </div>
 
@@ -406,6 +423,57 @@
             </div>
           </div>
 
+          <!-- Resumen y Listado de Tarimas Liberadas (Sin dividir por máquina) -->
+          <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="margin: 0; font-size: 1.15rem; color: #d97706; display: flex; align-items: center; gap: 8px;">
+                  📦 Resumen y Detalle de Tarimas Liberadas — Walmart
+                </h3>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Porcentajes generales y listado de tarimas liberadas de su marca en el periodo seleccionado</span>
+              </div>
+              <button type="button" class="btn-secondary" onclick="openTarimasConsultaView()" style="padding: 6px 12px; font-size: 0.8rem; font-weight: 700; color: #d97706; border-color: #fcd34d; background: #fffbeb;">
+                🔍 Buscador de Tarimas Liberadas
+              </button>
+            </div>
+
+            <div class="table-container" style="overflow-x: auto; margin-bottom: 1.25rem;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead>
+                  <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                    <th style="padding: 10px;">Marca</th>
+                    <th style="padding: 10px;">% Liberadas (Aprobadas)</th>
+                    <th style="padding: 10px;">% Condicionadas</th>
+                    <th style="padding: 10px;">% Rechazadas</th>
+                    <th style="padding: 10px; font-weight: bold;">Total Tarimas</th>
+                  </tr>
+                </thead>
+                <tbody id="table-tarimas-stats-body">
+                  <tr><td colspan="5" style="padding: 10px; text-align: center;">Cargando estadísticas de tarimas...</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="table-container" style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead>
+                  <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                    <th style="padding: 10px;">Código de Tarima</th>
+                    <th style="padding: 10px;">Fecha / Hora</th>
+                    <th style="padding: 10px;">Nº Rollo</th>
+                    <th style="padding: 10px;">Checklist Verificado</th>
+                    <th style="padding: 10px;">Dictamen</th>
+                    <th style="padding: 10px;">Evidencia Fotográfica</th>
+                    <th style="padding: 10px;">Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="table-tarimas-periodo-body">
+                  <tr><td colspan="7" style="padding: 15px; text-align: center; color: var(--text-muted);">Cargando tarimas liberadas...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- Registro Unificado de Inconformidades y Defectos Detectados (Sin Máquina ni Operador) -->
           <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
             <div class="card-title" style="margin-bottom: 1rem;">
@@ -429,6 +497,68 @@
                   <!-- Se inyectará por JS -->
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- VISTA DE CONSULTA DE TARIMAS LIBERADAS (Formato idéntico a la App Normal) -->
+        <div id="view-tarimas" style="display: none; margin-bottom: 2rem;">
+          <div class="card" style="padding: 2rem;">
+            <div class="card-title" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+              <h2 style="color: var(--color-primary);">📦 Consultar Tarimas Liberadas — Walmart</h2>
+              <span style="font-size: 0.85rem; color: var(--text-muted);">Búsqueda por código de tarima, rollo o fecha de liberación</span>
+            </div>
+
+            <form onsubmit="searchTarima(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 2rem; background: #fafafa; padding: 1.25rem; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); align-items: end;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-weight: 700; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; display: block;">Buscar por Código o Nº Rollo</label>
+                <input type="text" id="tarima-search-code" class="form-control" placeholder="Ej: 19_10 o R-1002" oninput="searchTarima(null, true)" />
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-weight: 700; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; display: block;">Buscar por Fecha</label>
+                <input type="date" id="tarima-search-date" class="form-control" onchange="searchTarima(null, true)" />
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn-primary" style="height: 38px;">🔍 Buscar</button>
+                <button type="button" class="btn-secondary" onclick="clearTarimaSearch()" style="height: 38px;">Limpiar</button>
+              </div>
+            </form>
+
+            <div id="tarima-search-error" style="display: none; color: var(--color-danger); background: var(--color-danger-bg); padding: 1rem; border-radius: var(--border-radius-md); border: 1px solid var(--color-danger); margin-bottom: 2rem; font-size: 0.9rem;">
+              <!-- Mensaje dinámico -->
+            </div>
+
+            <!-- Contenedor de Resultados (Lista) -->
+            <div id="tarima-search-results-list" style="display: block; margin-bottom: 2rem; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); padding: 1.5rem; background: #fff;">
+              <h3 style="margin-bottom: 1rem; color: var(--color-primary-light); font-weight: 700; font-size: 1.1rem;">Tarimas Liberadas Encontradas</h3>
+              <div class="table-container">
+                <table class="table" style="width: 100%; border-collapse: collapse;">
+                  <thead>
+                    <tr style="text-align: left; border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 0.85rem;">
+                      <th style="padding: 10px 8px;">Código de Tarima</th>
+                      <th style="padding: 10px 8px;">Nº Rollo</th>
+                      <th style="padding: 10px 8px;">Fecha Registro</th>
+                      <th style="padding: 10px 8px;">Dictamen</th>
+                      <th style="padding: 10px 8px;">Evidencia</th>
+                      <th style="padding: 10px 8px;">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tarima-search-results-tbody">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Ficha resultado de búsqueda -->
+            <div id="tarima-search-result" style="display: none; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); overflow: hidden;">
+              <div style="background: var(--color-primary-light); padding: 1rem; color: #fff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <span id="res-tarima-code" style="font-weight: 800; font-size: 1.2rem; font-family: monospace;">Código: -</span>
+                <span id="res-tarima-date" style="font-size: 0.85rem;">F. Registro: -</span>
+              </div>
+              <div id="res-tarima-body" style="padding: 1.5rem; background: #ffffff;">
+                <!-- Se llena por JS -->
+              </div>
             </div>
           </div>
         </div>
@@ -617,6 +747,7 @@
         role: 'estadisticas_globales',
         bobinas: [],
         inspecciones: [],
+        tarimas: [],
         activeDate: '',
         periodo: 'dia',
         usuarioActual: 'Walmart'
@@ -634,6 +765,7 @@
         if (!m) {
           if (item.bobina_id && bobinasMap[item.bobina_id]) m = bobinasMap[item.bobina_id];
           else if (item.numero_rollo && bobinasMap['rollo:' + String(item.numero_rollo).toLowerCase()]) m = bobinasMap['rollo:' + String(item.numero_rollo).toLowerCase()];
+          else if (item.bobina && bobinasMap['rollo:' + String(item.bobina).toLowerCase()]) m = bobinasMap['rollo:' + String(item.bobina).toLowerCase()];
         }
         return m.includes('walmart') || m.includes('wal-mart');
       }
@@ -684,7 +816,11 @@
 
       async function syncDataWithServer() {
         try {
-          const i = await apiFetch('/api/inspecciones');
+          const [i, t] = await Promise.all([
+            apiFetch('/api/inspecciones'),
+            apiFetch('/api/tarimas')
+          ]);
+
           let rawInsps = [];
           if (i && Array.isArray(i)) {
             rawInsps = i;
@@ -692,7 +828,14 @@
             rawInsps = JSON.parse(localStorage.getItem('calidad_inspecciones')) || [];
           }
 
-          // Construir mapa de bobinas locales por si se abrió en modo local
+          let rawTarimas = [];
+          if (t && Array.isArray(t)) {
+            rawTarimas = t;
+          } else {
+            rawTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+          }
+
+          // Construir mapa de bobinas e inspecciones para asociar rollos de Walmart en modo local
           const localBobinas = JSON.parse(localStorage.getItem('calidad_bobinas')) || [];
           const bobinasMap = {};
           localBobinas.forEach(b => {
@@ -700,8 +843,18 @@
             if (b.id) bobinasMap[b.id] = m;
             if (b.numero_rollo) bobinasMap['rollo:' + String(b.numero_rollo).toLowerCase()] = m;
           });
+          rawInsps.forEach(insp => {
+            const m = String(insp.marca_especificaciones || insp.marca_cliente || insp.marca || '').toLowerCase();
+            if (m && insp.numero_rollo && !bobinasMap['rollo:' + String(insp.numero_rollo).toLowerCase()]) {
+              bobinasMap['rollo:' + String(insp.numero_rollo).toLowerCase()] = m;
+            }
+          });
 
           state.inspecciones = rawInsps
+            .filter(item => isWalmartRecord(item, bobinasMap))
+            .map(stripSensitiveFields);
+
+          state.tarimas = rawTarimas
             .filter(item => isWalmartRecord(item, bobinasMap))
             .map(stripSensitiveFields);
 
@@ -718,14 +871,12 @@
 
         const now = new Date();
         let defaultDate = now.toISOString().split('T')[0];
-        if (state.inspecciones.length > 0) {
-          const dates = state.inspecciones
-            .map(i => getInspIsoDate(i))
-            .filter(Boolean)
-            .sort()
-            .reverse();
-          if (dates[0]) defaultDate = dates[0];
-        }
+        const allDates = [
+          ...state.inspecciones.map(i => getInspIsoDate(i)),
+          ...state.tarimas.map(t => getInspIsoDate(t))
+        ].filter(Boolean).sort().reverse();
+        if (allDates[0]) defaultDate = allDates[0];
+
         const inputFecha = document.getElementById('stat-indep-fecha-input');
         if (inputFecha) inputFecha.value = defaultDate;
 
@@ -736,12 +887,23 @@
         document.getElementById('landing-screen').style.display = 'none';
         document.getElementById('app-screen').style.display = 'block';
         document.getElementById('view-estadisticas-independiente').style.display = 'block';
+        const viewTarimas = document.getElementById('view-tarimas');
+        if (viewTarimas) viewTarimas.style.display = 'none';
 
         const inputFecha = document.getElementById('stat-indep-fecha-input');
         if (inputFecha && !inputFecha.value) {
           inputFecha.value = new Date().toISOString().split('T')[0];
         }
         renderStatIndepView();
+      }
+
+      function openTarimasConsultaView() {
+        document.getElementById('landing-screen').style.display = 'none';
+        document.getElementById('app-screen').style.display = 'block';
+        document.getElementById('view-estadisticas-independiente').style.display = 'none';
+        const viewTarimas = document.getElementById('view-tarimas');
+        if (viewTarimas) viewTarimas.style.display = 'block';
+        searchTarima(null, true);
       }
 
       function exitToLanding() {
@@ -806,8 +968,24 @@
         });
       }
 
+      function getFilteredPeriodTarimas() {
+        const fechaVal = document.getElementById('stat-indep-fecha-input')?.value || new Date().toISOString().split('T')[0];
+        const allTarimas = (state && state.tarimas) ? state.tarimas : [];
+
+        return allTarimas.filter(t => {
+          const tDate = getInspIsoDate(t);
+          if (!tDate) return false;
+          if (statIndepPeriodo === 'dia') return tDate === fechaVal;
+          if (statIndepPeriodo === 'semana') return getWeekNumber(tDate) === getWeekNumber(fechaVal);
+          if (statIndepPeriodo === 'mes') return tDate.substring(0, 7) === fechaVal.substring(0, 7);
+          if (statIndepPeriodo === 'ano') return tDate.substring(0, 4) === fechaVal.substring(0, 4);
+          return true;
+        });
+      }
+
       async function renderStatIndepView() {
         const filteredInspections = getFilteredPeriodInspections();
+        const filteredTarimas = getFilteredPeriodTarimas();
 
         // 1. Porcentajes Generales en Tarjetas KPI
         const qualityOnly = filteredInspections.filter(i => i.es_prueba_carga !== 1);
@@ -823,17 +1001,24 @@
         const passCarga = cargaOnly.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
         const pctPassCarga = totalCarga > 0 ? Math.round((passCarga / totalCarga) * 100) : 0;
 
+        const totalTarimas = filteredTarimas.length;
+        const liberadasTarimas = filteredTarimas.filter(t => t.estado_liberacion === 'Liberado' || t.estado_liberacion === 'Liberada').length;
+        const pctLiberadasTarimas = totalTarimas > 0 ? Math.round((liberadasTarimas / totalTarimas) * 100) : 0;
+
         const kpiConf = document.getElementById('stat-kpi-conformes');
         const kpiCarga = document.getElementById('stat-kpi-carga-pct');
+        const kpiTarimas = document.getElementById('stat-kpi-tarimas-pct');
         const kpiNoConf = document.getElementById('stat-kpi-noconformes');
 
         if (kpiConf) kpiConf.textContent = totalQual > 0 ? `${pctConfQual}%` : '0%';
         if (kpiCarga) kpiCarga.textContent = totalCarga > 0 ? `${pctPassCarga}%` : '0%';
+        if (kpiTarimas) kpiTarimas.textContent = totalTarimas > 0 ? `${pctLiberadasTarimas}%` : '0%';
         if (kpiNoConf) kpiNoConf.textContent = totalQual > 0 ? `${pctNoConfQual}%` : '0%';
 
         renderConformidadSVGChart(filteredInspections);
         renderInconformidadesTable(filteredInspections);
         renderCargaPieCharts(filteredInspections);
+        renderTarimasStatsAndTable(filteredTarimas);
       }
 
       // Barra General de Porcentaje de Inspecciones de Calidad (Sin dividir por máquina)
@@ -1286,6 +1471,219 @@
         document.getElementById('full-inspection-detail-modal').style.display = 'flex';
       }
 
+      // =========================================================
+      // TARIMAS LIBERADAS (Resumen en Estadísticas + Consulta)
+      // =========================================================
+      function getTarimaCheckBadge(val) {
+        const isOk = val === 1 || val === true || val === '1' || val === 'Sí' || val === 'Si';
+        return isOk
+          ? '<span style="color: #16a34a; font-weight: bold;">✅ Sí</span>'
+          : '<span style="color: #dc2626; font-weight: bold;">❌ No</span>';
+      }
+
+      function getTarimaEstadoBadge(estadoRaw) {
+        const est = String(estadoRaw || 'Liberado');
+        if (est === 'Liberado' || est === 'Liberada') {
+          return `<span class="badge badge-success">✅ ${est}</span>`;
+        }
+        if (est === 'Condicionado' || est === 'Condicionada') {
+          return `<span class="badge" style="background: #fef08a; color: #854d0e;">⚠️ ${est}</span>`;
+        }
+        return `<span class="badge badge-danger">❌ ${est}</span>`;
+      }
+
+      function renderTarimasStatsAndTable(filteredTarimas) {
+        const statsBody = document.getElementById('table-tarimas-stats-body');
+        const periodoBody = document.getElementById('table-tarimas-periodo-body');
+        if (!statsBody || !periodoBody) return;
+
+        const total = filteredTarimas.length;
+        if (total === 0) {
+          statsBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 1.5rem; font-style: italic;">No hay tarimas liberadas de Walmart en este periodo.</td></tr>`;
+          periodoBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 1.5rem; font-style: italic;">Sin registros de tarimas en el periodo seleccionado.</td></tr>`;
+          return;
+        }
+
+        const lib = filteredTarimas.filter(t => t.estado_liberacion === 'Liberado' || t.estado_liberacion === 'Liberada').length;
+        const cond = filteredTarimas.filter(t => t.estado_liberacion === 'Condicionado' || t.estado_liberacion === 'Condicionada').length;
+        const rech = filteredTarimas.filter(t => t.estado_liberacion === 'Rechazado' || t.estado_liberacion === 'Rechazada').length;
+
+        const pctLib = Math.round((lib / total) * 100);
+        const pctCond = Math.round((cond / total) * 100);
+        const pctRech = Math.max(0, 100 - pctLib - pctCond);
+
+        statsBody.innerHTML = `
+          <tr>
+            <td style="text-align: center; font-weight: 800; color: #16a34a; font-size: 1.05rem;">${pctLib}%</td>
+            <td style="text-align: center; font-weight: 800; color: #ca8a04; font-size: 1.05rem;">${pctCond}%</td>
+            <td style="text-align: center; font-weight: 800; color: #dc2626; font-size: 1.05rem;">${pctRech}%</td>
+            <td style="text-align: center; font-weight: 800; color: #1e293b;">${total}</td>
+          </tr>
+        `;
+
+        periodoBody.innerHTML = filteredTarimas.map(t => {
+          const codigo = t.codigo_liberacion || t.codigo_tarima || '-';
+          const rollo = t.numero_rollo || t.bobina || '-';
+          const fecha = t.fecha_registro || t.fecha_iso || '-';
+          const fotoUrl = t.evidencia_acomodo_url || t.foto_url || '';
+
+          const chkTarima = (t.tarima_correcta !== undefined) ? getTarimaCheckBadge(t.tarima_correcta) : '<span style="color:#64748b;">N/A</span>';
+          const chkEtiq = getTarimaCheckBadge(t.etiquetado_correcto);
+          const chkBolsas = getTarimaCheckBadge(t.bolsas_cumplen !== undefined ? t.bolsas_cumplen : t.bolsas_cumplen_condiciones);
+          const chkCinta = getTarimaCheckBadge(t.cinta_correcta !== undefined ? t.cinta_correcta : t.cinta_correctamente_pegada);
+
+          return `
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="font-weight: 800; color: var(--color-primary);">${codigo}</td>
+              <td style="font-size: 0.85rem; color: #475569;">${fecha}</td>
+              <td style="font-weight: 600;">${rollo}</td>
+              <td style="font-size: 0.78rem; line-height: 1.4;">
+                Tarima: ${chkTarima} &bull; Etiq: ${chkEtiq}<br/>
+                Bolsas: ${chkBolsas} &bull; Cinta: ${chkCinta}
+              </td>
+              <td>${getTarimaEstadoBadge(t.estado_liberacion)}</td>
+              <td style="text-align: center;">
+                ${fotoUrl ? `<img src="${fotoUrl}" onclick="openPhotoLightbox('${fotoUrl}')" style="height: 42px; width: 42px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #cbd5e1;" title="Click para ampliar evidencia">` : '<span style="color:#94a3b8; font-size:0.75rem;">Sin foto</span>'}
+              </td>
+              <td style="text-align: center;">
+                <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.75rem; width: auto;" onclick="openTarimasConsultaView(); showTarimaDetailsById('${t.id || codigo}')">👁️ Ver Ficha</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function clearTarimaSearch() {
+        const codeInput = document.getElementById('tarima-search-code');
+        const dateInput = document.getElementById('tarima-search-date');
+        if (codeInput) codeInput.value = '';
+        if (dateInput) dateInput.value = '';
+        const resCard = document.getElementById('tarima-search-result');
+        if (resCard) resCard.style.display = 'none';
+        searchTarima(null, true);
+      }
+
+      async function searchTarima(e, showAllIfEmpty = false) {
+        if (e && e.preventDefault) e.preventDefault();
+        const codeQuery = (document.getElementById('tarima-search-code')?.value || '').trim().toUpperCase();
+        const dateQuery = document.getElementById('tarima-search-date')?.value || '';
+
+        const listContainer = document.getElementById('tarima-search-results-list');
+        const tbody = document.getElementById('tarima-search-results-tbody');
+        const detailContainer = document.getElementById('tarima-search-result');
+
+        if (!state.tarimas || state.tarimas.length === 0) {
+          await syncDataWithServer();
+        }
+
+        let results = [...(state.tarimas || [])];
+        if (codeQuery) {
+          results = results.filter(t => {
+            const c = String(t.codigo_liberacion || t.codigo_tarima || '').toUpperCase();
+            const r = String(t.numero_rollo || t.bobina || '').toUpperCase();
+            return c.includes(codeQuery) || r.includes(codeQuery);
+          });
+        }
+        if (dateQuery) {
+          results = results.filter(t => getInspIsoDate(t) === dateQuery);
+        }
+
+        window._lastTarimaSearchResults = results;
+
+        if (listContainer && tbody) {
+          listContainer.style.display = 'block';
+          if (results.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem; font-style: italic;">No se encontraron tarimas liberadas de Walmart con esos filtros.</td></tr>`;
+            if (detailContainer) detailContainer.style.display = 'none';
+            return;
+          }
+
+          tbody.innerHTML = results.map((t, idx) => {
+            const codigo = t.codigo_liberacion || t.codigo_tarima || '-';
+            const rollo = t.numero_rollo || t.bobina || '-';
+            const fecha = t.fecha_registro || t.fecha_iso || '-';
+            return `
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="font-weight: 800; color: var(--color-primary);">${codigo}</td>
+                <td style="font-size: 0.85rem;">${fecha}</td>
+                <td style="font-weight: 600;">${rollo}</td>
+                <td>${getTarimaEstadoBadge(t.estado_liberacion)}</td>
+                <td>
+                  <button class="btn btn-primary" style="padding: 5px 12px; font-size: 0.78rem; width: auto;" onclick="showTarimaDetailsByIndex(${idx})">👁️ Ver Detalle</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          if (results.length === 1 && !showAllIfEmpty) {
+            showTarimaDetails(results[0]);
+          }
+        }
+      }
+
+      function showTarimaDetailsByIndex(idx) {
+        const list = window._lastTarimaSearchResults || state.tarimas || [];
+        if (list[idx]) showTarimaDetails(list[idx]);
+      }
+
+      function showTarimaDetailsById(idOrCode) {
+        const list = state.tarimas || [];
+        const found = list.find(t => String(t.id) === String(idOrCode) || String(t.codigo_liberacion || t.codigo_tarima) === String(idOrCode));
+        if (found) showTarimaDetails(found);
+      }
+
+      function showTarimaDetails(t) {
+        const resContainer = document.getElementById('tarima-search-result');
+        if (!resContainer || !t) return;
+
+        const codigo = t.codigo_liberacion || t.codigo_tarima || '-';
+        const rollo = t.numero_rollo || t.bobina || '-';
+        const fecha = t.fecha_registro || t.fecha_iso || '-';
+        const fotoUrl = t.evidencia_acomodo_url || t.foto_url || '';
+
+        document.getElementById('res-tarima-code').textContent = codigo;
+        document.getElementById('res-tarima-rollo').textContent = rollo;
+        document.getElementById('res-tarima-fecha').textContent = fecha;
+
+        const badgeEl = document.getElementById('res-tarima-status-badge');
+        if (badgeEl) {
+          badgeEl.outerHTML = `<span id="res-tarima-status-badge">${getTarimaEstadoBadge(t.estado_liberacion)}</span>`;
+        }
+
+        const motivoWrap = document.getElementById('res-tarima-motivo-container');
+        const motivoText = document.getElementById('res-tarima-motivo');
+        if (t.motivo_condicionado && motivoWrap && motivoText) {
+          motivoText.textContent = t.motivo_condicionado;
+          motivoWrap.style.display = 'block';
+        } else if (motivoWrap) {
+          motivoWrap.style.display = 'none';
+        }
+
+        const c1 = document.getElementById('res-tarima-c1');
+        const c2 = document.getElementById('res-tarima-c2');
+        const c3 = document.getElementById('res-tarima-c3');
+        const c4 = document.getElementById('res-tarima-c4');
+        if (c1) c1.innerHTML = (t.tarima_correcta !== undefined) ? getTarimaCheckBadge(t.tarima_correcta) : '<span style="color:#64748b;">N/A</span>';
+        if (c2) c2.innerHTML = getTarimaCheckBadge(t.etiquetado_correcto);
+        if (c3) c3.innerHTML = getTarimaCheckBadge(t.bolsas_cumplen !== undefined ? t.bolsas_cumplen : t.bolsas_cumplen_condiciones);
+        if (c4) c4.innerHTML = getTarimaCheckBadge(t.cinta_correcta !== undefined ? t.cinta_correcta : t.cinta_correctamente_pegada);
+
+        const imgEl = document.getElementById('res-tarima-img');
+        const noImgEl = document.getElementById('res-tarima-no-img');
+        if (fotoUrl && imgEl) {
+          imgEl.src = fotoUrl;
+          imgEl.style.display = 'inline-block';
+          imgEl.onclick = () => openPhotoLightbox(fotoUrl);
+          if (noImgEl) noImgEl.style.display = 'none';
+        } else {
+          if (imgEl) imgEl.style.display = 'none';
+          if (noImgEl) noImgEl.style.display = 'block';
+        }
+
+        resContainer.style.display = 'block';
+        resContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
       // Exportación Excel y PDF en Porcentajes Generales (Sin Máquina ni Operador)
       function triggerBlobDownload(blob, filename) {
         try {
@@ -1326,6 +1724,7 @@
       async function exportStatsToExcel() {
         showToast('Generando reporte Excel de Walmart...', 'info');
         const scopedInspections = getFilteredPeriodInspections();
+        const scopedTarimas = getFilteredPeriodTarimas();
         const selectedDate = document.getElementById('stat-indep-fecha-input')?.value || new Date().toISOString().split('T')[0];
         const periodoName = statIndepPeriodo === 'dia' ? 'Día' : statIndepPeriodo === 'semana' ? 'Semana' : statIndepPeriodo === 'mes' ? 'Mes' : 'Año';
         const fileName = `Estadisticas_Walmart_${periodoName}_${selectedDate}.xlsx`;
@@ -1343,15 +1742,21 @@
         const cPctOk = cTot > 0 ? ((cOk / cTot) * 100).toFixed(1) + '%' : '0%';
         const cPctFail = cTot > 0 ? (((cTot - cOk) / cTot) * 100).toFixed(1) + '%' : '0%';
 
+        const tTot = scopedTarimas.length;
+        const tOk = scopedTarimas.filter(t => t.estado_liberacion === 'Liberado' || t.estado_liberacion === 'Liberada').length;
+        const tPctOk = tTot > 0 ? ((tOk / tTot) * 100).toFixed(1) + '%' : '0%';
+        const tPctFail = tTot > 0 ? (((tTot - tOk) / tTot) * 100).toFixed(1) + '%' : '0%';
+
         const summaryData = [
           ["CONTROL DE CALIDAD DIPAPEL - REPORTE GENERAL WALMART"],
           ["Periodo de Consulta:", periodoName, "Fecha:", selectedDate],
           ["Generado el:", new Date().toLocaleString()],
           [],
           ["PORCENTAJES GENERALES DE CALIDAD (WALMART)"],
-          ["Rubro", "% Conforme / Aprobado", "% No Conforme / Rechazado"],
+          ["Rubro", "% Conforme / Liberado", "% No Conforme / Condicionado-Rechazado"],
           ["Inspecciones de Calidad", qPctOk, qPctFail],
-          ["Pruebas de Carga y Resistencia de Asas", cPctOk, cPctFail]
+          ["Pruebas de Carga y Resistencia de Asas", cPctOk, cPctFail],
+          ["Tarimas Liberadas", tPctOk, tPctFail]
         ];
 
         const detailRows = [
@@ -1368,11 +1773,26 @@
           ]);
         });
 
+        const tarimaRows = [
+          ["DETALLE DE TARIMAS LIBERADAS — WALMART"],
+          ["Código Liberación", "Fecha/Hora", "Nº Rollo", "Dictamen", "Motivo / Observaciones"]
+        ];
+        scopedTarimas.forEach(t => {
+          tarimaRows.push([
+            t.codigo_liberacion || t.codigo_tarima || '-',
+            t.fecha_registro || t.fecha_iso || '-',
+            t.numero_rollo || t.bobina || '-',
+            t.estado_liberacion || 'Liberado',
+            t.motivo_condicionado || '-'
+          ]);
+        });
+
         try {
           if (typeof XLSX !== 'undefined') {
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), "Porcentajes Generales");
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detailRows), "Detalle Walmart");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detailRows), "Inspecciones Walmart");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tarimaRows), "Tarimas Liberadas");
 
             const b64 = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
             const xlsxDataUrl = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + b64;
@@ -1391,6 +1811,7 @@
         let tsvContent = "";
         summaryData.forEach(r => tsvContent += r.join('\t') + '\n');
         detailRows.forEach(r => tsvContent += r.join('\t') + '\n');
+        tarimaRows.forEach(r => tsvContent += r.join('\t') + '\n');
         currentRawExcelData = tsvContent;
 
         const modal = document.getElementById('excel-download-modal');
@@ -1399,6 +1820,7 @@
 
       async function exportStatsToPDF() {
         const scopedInspections = getFilteredPeriodInspections();
+        const scopedTarimas = getFilteredPeriodTarimas();
         const selectedDate = document.getElementById('stat-indep-fecha-input')?.value || new Date().toISOString().split('T')[0];
         const periodoName = statIndepPeriodo === 'dia' ? 'Día' : statIndepPeriodo === 'semana' ? 'Semana' : statIndepPeriodo === 'mes' ? 'Mes' : 'Año';
 
@@ -1413,6 +1835,10 @@
         const cTot = carga.length;
         const cOk = carga.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
         const cPctOk = cTot > 0 ? ((cOk / cTot) * 100).toFixed(1) + '%' : '0%';
+
+        const tTot = scopedTarimas.length;
+        const tOk = scopedTarimas.filter(t => t.estado_liberacion === 'Liberado' || t.estado_liberacion === 'Liberada').length;
+        const tPctOk = tTot > 0 ? ((tOk / tTot) * 100).toFixed(1) + '%' : '0%';
 
         const bodyContainer = document.getElementById('pdf-report-modal-body');
         if (bodyContainer) {
@@ -1429,7 +1855,7 @@
                 </div>
               </div>
 
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
                 <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; text-align: center;">
                   <div style="font-size: 10px; color: #64748b; font-weight: 700;">% CONFORMIDAD INSPECCIONES</div>
                   <div style="font-size: 18px; font-weight: 800; color: #16a34a; margin-top: 4px;">${qPctOk}</div>
@@ -1437,6 +1863,10 @@
                 <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; text-align: center;">
                   <div style="font-size: 10px; color: #64748b; font-weight: 700;">% APROBACIÓN PRUEBAS DE CARGA</div>
                   <div style="font-size: 18px; font-weight: 800; color: #15803d; margin-top: 4px;">${cPctOk}</div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; text-align: center;">
+                  <div style="font-size: 10px; color: #64748b; font-weight: 700;">% TARIMAS LIBERADAS</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #0284c7; margin-top: 4px;">${tPctOk}</div>
                 </div>
                 <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; text-align: center;">
                   <div style="font-size: 10px; color: #64748b; font-weight: 700;">% NO CONFORMIDAD</div>
