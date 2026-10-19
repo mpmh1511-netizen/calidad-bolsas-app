@@ -1,1572 +1,1455 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Portal de Calidad - Walmart | Dipapel</title>
-  <meta name="description"
-    content="Portal exclusivo de consulta de calidad, inspecciones, pruebas de carga y evidencia fotográfica para Walmart." />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
-    rel="stylesheet">
-  <style>
-    :root {
-      --bg-primary: #0a1628;
-      --bg-secondary: #0f213c;
-      --bg-card: rgba(16, 36, 64, 0.88);
-      --bg-card-hover: rgba(24, 52, 92, 0.92);
-      --bg-glass: rgba(255, 255, 255, 0.04);
-      --bg-input: rgba(10, 22, 40, 0.9);
-
-      --accent-primary: #0071ce;
-      --accent-secondary: #ffc220;
-      --accent-gradient: linear-gradient(135deg, #0071ce 0%, #004c91 100%);
-      --accent-glow: rgba(0, 113, 206, 0.25);
-
-      --success: #10b981;
-      --success-bg: rgba(16, 185, 129, 0.12);
-      --success-border: rgba(16, 185, 129, 0.3);
-      --warning: #ffc220;
-      --warning-bg: rgba(255, 194, 32, 0.12);
-      --warning-border: rgba(255, 194, 32, 0.3);
-      --danger: #ef4444;
-      --danger-bg: rgba(239, 68, 68, 0.12);
-      --danger-border: rgba(239, 68, 68, 0.3);
-
-      --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-
-      --border-color: rgba(148, 163, 184, 0.15);
-      --border-focus: rgba(0, 113, 206, 0.6);
-
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-
-      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-      --shadow-glow: 0 0 30px var(--accent-glow);
-
-      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html {
-      font-size: 15px;
-      scroll-behavior: smooth;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      min-height: 100vh;
-      line-height: 1.6;
-      background-image:
-        radial-gradient(ellipse at 15% 0%, rgba(0, 113, 206, 0.18) 0%, transparent 55%),
-        radial-gradient(ellipse at 85% 100%, rgba(255, 194, 32, 0.08) 0%, transparent 55%);
-    }
-
-    .navbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.85rem 2rem;
-      background: rgba(10, 22, 40, 0.92);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border-color);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .nav-brand {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-    }
-
-    .brand-icon {
-      font-size: 2rem;
-      filter: drop-shadow(0 0 8px rgba(255, 194, 32, 0.4));
-    }
-
-    .brand-title {
-      font-size: 1.2rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #fff 30%, #ffc220 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .brand-sub {
-      font-size: 0.78rem;
-      color: var(--text-secondary);
-      display: block;
-    }
-
-    .nav-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: rgba(0, 113, 206, 0.2);
-      border: 1px solid rgba(255, 194, 32, 0.4);
-      color: #ffc220;
-      padding: 0.4rem 0.9rem;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 700;
-    }
-
-    .main-container {
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 1.5rem 2rem 3rem;
-    }
-
-    .page-header {
-      margin-bottom: 1.5rem;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .page-header h2 {
-      font-size: 1.6rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, var(--text-primary) 0%, #93c5fd 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .page-desc {
-      color: var(--text-secondary);
-      font-size: 0.92rem;
-      margin-top: 0.2rem;
-    }
-
-    .card {
-      background: var(--bg-card);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      box-shadow: var(--shadow-md);
-      transition: var(--transition);
-    }
-
-    .card:hover {
-      border-color: rgba(148, 163, 184, 0.25);
-    }
-
-    .card-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 1.1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: var(--text-primary);
-    }
-
-    .filters-bar {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      align-items: end;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
-
-    .form-group label {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .form-group input,
-    .form-group select {
-      background: var(--bg-input);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      padding: 0.65rem 0.85rem;
-      color: var(--text-primary);
-      font-family: inherit;
-      font-size: 0.92rem;
-      transition: var(--transition);
-      outline: none;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus {
-      border-color: var(--border-focus);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.45rem;
-      padding: 0.65rem 1.2rem;
-      border-radius: var(--radius-sm);
-      font-family: inherit;
-      font-size: 0.88rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-      border: 1px solid transparent;
-      text-decoration: none;
-    }
-
-    .btn-primary {
-      background: var(--accent-gradient);
-      color: #fff;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-glow);
-    }
-
-    .btn-outline {
-      background: rgba(255, 255, 255, 0.04);
-      color: var(--text-primary);
-      border-color: var(--border-color);
-    }
-
-    .btn-outline:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: var(--text-secondary);
-    }
-
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .kpi-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      padding: 1.35rem 1.5rem;
-      box-shadow: var(--shadow-md);
-      cursor: pointer;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .kpi-card:hover {
-      transform: translateY(-3px);
-      border-color: rgba(0, 113, 206, 0.5);
-      box-shadow: var(--shadow-glow);
-    }
-
-    .kpi-label {
-      font-size: 0.82rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-secondary);
-      margin-bottom: 0.4rem;
-    }
-
-    .kpi-value {
-      font-size: 2.3rem;
-      font-weight: 800;
-      font-family: 'JetBrains Mono', monospace;
-      line-height: 1.15;
-      margin-bottom: 0.4rem;
-    }
-
-    .kpi-sub {
-      font-size: 0.83rem;
-      color: var(--text-secondary);
-    }
-
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .pie-grid-3 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 1rem;
-      align-items: center;
-      justify-items: center;
-    }
-
-    .pie-box {
-      background: rgba(10, 22, 40, 0.55);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 1rem;
-      width: 100%;
-      text-align: center;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-
-    .pie-box:hover {
-      border-color: rgba(255, 194, 32, 0.5);
-      background: rgba(16, 36, 64, 0.8);
-    }
-
-    .pie-box h4 {
-      font-size: 0.9rem;
-      color: var(--text-primary);
-      margin-bottom: 0.6rem;
-    }
-
-    .progress-row {
-      margin-bottom: 1rem;
-    }
-
-    .progress-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.88rem;
-      font-weight: 600;
-      margin-bottom: 0.35rem;
-    }
-
-    .progress-track {
-      height: 14px;
-      background: rgba(255, 255, 255, 0.07);
-      border-radius: 999px;
-      overflow: hidden;
-      display: flex;
-    }
-
-    .progress-fill-ok {
-      background: linear-gradient(90deg, #10b981, #059669);
-      height: 100%;
-      transition: width 0.5s ease;
-    }
-
-    .progress-fill-bad {
-      background: linear-gradient(90deg, #ef4444, #dc2626);
-      height: 100%;
-      transition: width 0.5s ease;
-    }
-
-    .table-wrapper {
-      overflow-x: auto;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
-    }
-
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.86rem;
-    }
-
-    .data-table th {
-      background: rgba(10, 22, 40, 0.9);
-      color: var(--text-secondary);
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      font-size: 0.74rem;
-      padding: 0.8rem 0.9rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-      white-space: nowrap;
-    }
-
-    .data-table td {
-      padding: 0.75rem 0.9rem;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
-      color: var(--text-primary);
-      vertical-align: middle;
-    }
-
-    .data-table tbody tr {
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-
-    .data-table tbody tr:hover {
-      background: rgba(0, 113, 206, 0.12);
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      padding: 0.22rem 0.65rem;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    .status-badge.conforme {
-      background: var(--success-bg);
-      color: var(--success);
-      border: 1px solid var(--success-border);
-    }
-
-    .status-badge.no-conforme {
-      background: var(--danger-bg);
-      color: var(--danger);
-      border: 1px solid var(--danger-border);
-    }
-
-    .tabs-inline {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin-bottom: 1rem;
-    }
-
-    .tab-pill {
-      padding: 0.5rem 1rem;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border-color);
-      color: var(--text-secondary);
-      font-size: 0.84rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-
-    .tab-pill.active {
-      background: var(--accent-primary);
-      color: #fff;
-      border-color: var(--accent-secondary);
-    }
-
-    .photo-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 1rem;
-    }
-
-    .photo-card {
-      background: rgba(10, 22, 40, 0.75);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      cursor: pointer;
-      transition: var(--transition);
-    }
-
-    .photo-card:hover {
-      transform: translateY(-3px);
-      border-color: var(--accent-secondary);
-      box-shadow: var(--shadow-md);
-    }
-
-    .photo-card img {
-      width: 100%;
-      height: 170px;
-      object-fit: cover;
-      display: block;
-      background: #000;
-    }
-
-    .photo-card-body {
-      padding: 0.75rem 0.9rem;
-      font-size: 0.8rem;
-    }
-
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.78);
-      backdrop-filter: blur(6px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      padding: 1.25rem;
-    }
-
-    .modal-overlay.open {
-      display: flex;
-    }
-
-    .modal-content {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      max-width: 1100px;
-      width: 100%;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      box-shadow: var(--shadow-lg);
-      overflow: hidden;
-    }
-
-    .modal-header {
-      padding: 1.1rem 1.5rem;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(10, 22, 40, 0.85);
-    }
-
-    .modal-header h3 {
-      font-size: 1.1rem;
-      font-weight: 700;
-    }
-
-    .modal-body {
-      padding: 1.35rem 1.5rem;
-      overflow-y: auto;
-    }
-
-    .modal-close {
-      background: transparent;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 1.6rem;
-      cursor: pointer;
-      line-height: 1;
-    }
-
-    .modal-close:hover {
-      color: #fff;
-    }
-
-    @media (max-width: 768px) {
-      .navbar {
-        padding: 0.75rem 1rem;
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- iOS / PWA Meta Tags para experiencia de App independiente -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Calidad Dipapel">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%2315803d%22 rx=%2220%22/><text y=%22.75em%22 x=%2212%22 font-size=%2270%22>🛍️</text></svg>" />
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛍️</text></svg>" />
+    <title>Control de Calidad - Dipapel Planta Lechugueros</title>
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Libraries for Excel (.xlsx) and PDF Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+      /* Diseño Minimalista Premium en Modo Claro (Formato Original de la App) */
+      :root {
+        --font-heading: 'Outfit', sans-serif;
+        --font-body: 'Plus Jakarta Sans', sans-serif;
+        
+        --bg-main: #f8fafc;
+        --bg-card: #ffffff;
+        --bg-card-hover: #f1f5f9;
+        --bg-input: #ffffff;
+        --border-color: #e2e8f0;
+        --border-glow: rgba(79, 70, 229, 0.08);
+        
+        --color-primary: #15803d;
+        --color-primary-light: #16a34a;
+        --color-accent: #b91c1c;
+        --color-accent-light: #dc2626;
+        
+        --color-success: #16a34a;
+        --color-success-bg: rgba(22, 163, 74, 0.06);
+        --color-danger: #dc2626;
+        --color-danger-bg: rgba(220, 38, 38, 0.06);
+        --color-warning: #ea580c;
+        
+        --text-main: #0f172a;
+        --text-muted: #475569;
+        --text-dark: #94a3b8;
+        
+        --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        --border-radius-lg: 12px;
+        --border-radius-md: 8px;
+        --border-radius-sm: 4px;
+        --box-shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+        --box-shadow-md: 0 4px 12px -2px rgba(0,0,0,0.05);
       }
-      .main-container {
-        padding: 1rem;
+      
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        background-color: var(--bg-main);
+        color: var(--text-main);
+        font-family: var(--font-body);
+        line-height: 1.5;
+        padding-bottom: 4rem;
       }
-      .charts-grid {
-        grid-template-columns: 1fr;
+      h1, h2, h3, h4 { font-family: var(--font-heading); color: var(--text-main); }
+      
+      /* Pantalla de Selección de Rol (Landing) */
+      .landing-container {
+        max-width: 800px;
+        margin: 5% auto;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
       }
-    }
-  </style>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-</head>
+      
+      .landing-logo {
+        height: 70px;
+        width: auto;
+        object-fit: contain;
+        margin-bottom: 1.5rem;
+      }
+      
+      .landing-title {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        color: var(--text-main);
+      }
+      
+      .landing-subtitle {
+        font-size: 1.1rem;
+        color: var(--text-muted);
+        margin-bottom: 3rem;
+      }
+      
+      .role-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        width: 100%;
+      }
+      
+      .role-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: 3rem 2rem;
+        cursor: pointer;
+        transition: var(--transition-smooth);
+        box-shadow: var(--box-shadow-md);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+      }
+      
+      .role-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--color-primary);
+        box-shadow: 0 12px 20px -5px rgba(0,0,0,0.08);
+      }
+      
+      .role-card-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+      
+      .role-card-desc {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
+      
+      /* Header Minimalista */
+      .app-header {
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.8rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: var(--box-shadow-sm);
+      }
+      .header-brand { display: flex; align-items: center; gap: 1rem; }
+      .header-logo { height: 40px; width: auto; object-fit: contain; }
+      .header-title-container { display: flex; flex-direction: column; }
+      .header-title { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
+      .header-subtitle { font-size: 0.75rem; color: var(--text-muted); margin-top: -2px; }
+      
+      .header-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: #f1f5f9;
+        color: var(--text-muted);
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-left: 8px;
+        display: inline-block;
+        vertical-align: middle;
+      }
+      
+      /* Main content wrapper */
+      .main-content { max-width: 1100px; width: 100%; margin: 2rem auto; padding: 0 1.5rem; }
+      
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: 2rem;
+        box-shadow: var(--box-shadow-sm);
+        margin-bottom: 2rem;
+      }
+      .card-title { font-size: 1.3rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+      
+      .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem; }
+      .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+      label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+      
+      .form-control {
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
+        padding: 10px 14px;
+        font-size: 0.9rem;
+        color: var(--text-main);
+        transition: var(--transition-smooth);
+        width: 100%;
+      }
+      .form-control:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--border-glow); }
+      
+      .btn-primary {
+        background: var(--color-primary); color: white; border: none;
+        padding: 10px 20px; font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer;
+        display: inline-flex; align-items: center; gap: 6px; transition: var(--transition-smooth);
+        font-size: 0.9rem;
+      }
+      .btn-primary:hover { background: var(--color-primary-light); }
+      .btn-secondary {
+        background: white; color: var(--text-main); border: 1px solid var(--border-color);
+        padding: 10px 20px; font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer;
+        font-size: 0.9rem; transition: var(--transition-smooth);
+      }
+      .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+      .btn-secondary.active-tab {
+        background: var(--color-primary);
+        color: #ffffff;
+        border-color: var(--color-primary);
+      }
+      
+      /* Dashboard Estadísticas */
+      .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+      .kpi-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--box-shadow-sm); }
+      .kpi-val { font-size: 2rem; font-weight: 700; font-family: var(--font-heading); margin-top: 0.25rem; color: var(--text-main); }
+      
+      .table-container { overflow-x: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); }
+      table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+      th { background: #f8fafc; color: var(--text-muted); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; padding: 12px 16px; border-bottom: 1px solid var(--border-color); }
+      td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-card); }
+      tr:last-child td { border-bottom: none; }
+      tr:hover td { background: #fafafa; }
+      
+      .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+      .badge.aprobado { background: var(--color-success-bg); color: var(--color-success); }
+      .badge.rechazado { background: var(--color-danger-bg); color: var(--color-danger); }
+      .badge.area-flexo { background: rgba(79, 70, 229, 0.05); color: #4f46e5; }
+      .badge.area-nanjang { background: rgba(14, 165, 233, 0.05); color: #0ea5e9; }
+      .badge.area-asa { background: rgba(234, 88, 12, 0.05); color: #ea580c; }
+      
+      /* Modales */
+      .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1.5rem; }
+      .modal-content { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); max-width: 500px; width: 100%; padding: 2rem; position: relative; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+      .modal-close { position: absolute; top: 14px; right: 18px; background: transparent; border: none; font-size: 1.6rem; color: var(--text-muted); cursor: pointer; }
+      
+      .notification { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: var(--border-radius-md); color: white; font-weight: 600; z-index: 2000; display: none; align-items: center; gap: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-size: 0.85rem; }
+      .notification.success { background: var(--color-success); }
+      .notification.danger { background: var(--color-danger); }
+      .notification.info { background: #0284c7; }
+      
+      hr { border: none; height: 1px; background: var(--border-color); margin: 2rem 0; }
 
-<body>
-  <nav class="navbar">
-    <div class="nav-brand">
-      <span class="brand-icon">🌟</span>
-      <div>
-        <h1 class="brand-title">Portal de Calidad — WALMART</h1>
-        <span class="brand-sub">Resultados Generales de Inspección, Pruebas de Carga y Evidencia Fotográfica</span>
+      @media print {
+        body * { visibility: hidden !important; }
+        #pdf-report-modal, #pdf-report-modal * { visibility: visible !important; }
+        #pdf-report-modal {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          height: auto !important;
+          background: #ffffff !important;
+          display: block !important;
+          padding: 0 !important;
+        }
+        #pdf-report-modal .modal-content {
+          max-width: 100% !important;
+          max-height: none !important;
+          border: none !important;
+          box-shadow: none !important;
+        }
+        #pdf-report-modal button, #pdf-report-modal .no-print {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 1. PANTALLA DE BIENVENIDA -->
+    <div id="landing-screen" class="landing-container">
+      <div id="landing-session-info" style="position: absolute; top: 20px; right: 30px; display: flex; align-items: center; gap: 15px;">
+        <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-muted);">👤 Sesión: <span id="landing-user-label">Walmart</span></span>
       </div>
-    </div>
-    <div style="display:flex; align-items:center; gap:0.75rem;">
-      <span class="nav-badge">🔒 Acceso Exclusivo Walmart (Solo Lectura)</span>
-    </div>
-  </nav>
 
-  <main class="main-container" id="stats-export-container">
-    <div class="page-header">
-      <div>
-        <h2>📊 Resumen General de Calidad — Walmart</h2>
-        <p class="page-desc">Información concentrada en porcentajes generales, inspecciones de calidad, pruebas de carga y evidencia fotográfica.</p>
-      </div>
-      <div style="display:flex; gap:0.65rem; flex-wrap:wrap;" data-html2canvas-ignore="true">
-        <button type="button" class="btn btn-outline" onclick="syncFromCloud(true)">🔄 Actualizar Datos</button>
-        <button type="button" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#059669);" onclick="exportStatsToExcel()">📗 Exportar Excel</button>
-        <button type="button" class="btn btn-primary" style="background:linear-gradient(135deg,#ef4444,#dc2626);" onclick="exportStatsToPDF()">📕 Descargar PDF</button>
-      </div>
-    </div>
+      <img src="data:image/jpeg;base64,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" class="landing-logo" alt="Dipapel Logo" />
+      <h1 class="landing-title">Dipapel</h1>
+      <h2 class="landing-subtitle">Planta Lechugueros &bull; Sistema de Gestión Industrial</h2>
 
-    <!-- Barra de Filtros (Sin división por máquina ni inventario de rollos) -->
-    <div class="card" data-html2canvas-ignore="true">
-      <div class="filters-bar">
-        <div class="form-group">
-          <label for="filter-period">Periodo de Consulta</label>
-          <select id="filter-period" onchange="onPeriodChange()">
-            <option value="all" selected>Histórico Completo</option>
-            <option value="today">Hoy</option>
-            <option value="week">Últimos 7 días</option>
-            <option value="month">Este Mes</option>
-            <option value="custom">Rango de Fechas</option>
-          </select>
+      <!-- Selección de Módulo (Solo Auditorías y Estadísticas para Walmart, sin Inventario de Rollos) -->
+      <div id="step-section" style="width: 100%; display: block;">
+        <h3 style="margin-bottom: 2rem; font-size: 1.3rem; color: var(--text-muted);">Bienvenido a su Panel de Cliente — Walmart</h3>
+        <div class="role-grid" style="grid-template-columns: minmax(260px, 420px); justify-content: center; gap: 1.5rem;">
+          <div class="role-card" onclick="openIndependentEstadisticas()" style="padding: 2.5rem 1.5rem; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid #16a34a;">
+            <h3 class="role-card-title" style="font-size: 1.3rem; margin-bottom: 1rem; color: #16a34a;">📊 Auditorías y Estadísticas</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">Consulta de porcentajes generales de calidad, inspecciones, fotos y pruebas de carga de su marca</p>
+            <button class="btn-primary" style="margin-top: auto; width: 100%; justify-content: center; background-color: #16a34a; border-color: #15803d;">Ver Reportes</button>
+          </div>
         </div>
-        <div class="form-group" id="group-from" style="display:none;">
-          <label for="filter-from">Desde</label>
-          <input type="date" id="filter-from" onchange="renderPortal()" />
+      </div>
+    </div>
+
+    <!-- 2. PANTALLA PRINCIPAL DE LA APP -->
+    <div id="app-screen" style="display: none;" class="app-container">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-brand">
+          <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/2wBDAQMDAwQDBAgEBAgQCwkLEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBD/wAARCADIAMgDASIAAhEBAxEB/8QAHQABAAEFAQEBAAAAAAAAAAAAAAECBgcICQUDBP/EAEkQAAEDAwIDAwcGCgcJAAAAAAEAAgMEBQYHEQghMRJBUQkTN2FxgbQUIjJ1kbEVFkJSYnJ2gqGzIyYzQ1WjwSc1ZXOTlaKy0//EAB0BAQACAgMBAQAAAAAAAAAAAAABAgYHAwUIBAn/xAA1EQACAQMCAwQIBAcAAAAAAAAAAQIDBBEFBhIhMUFxgdEHIjNRYZGhsRMUMjUjNEJyweHx/9oADAMBAAIRAxEAPwDqmiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIipL+eyAqRQDupQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAUdkb7qUQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAUHoVKpf8ARPsQM1fy3yguiuG5TeMSutlyySsstbPb6h0FFA5jpIpCxxaTOCRuDtuAvLHlLdBv8CzL/t8H/wB1oFr16b9Qf2ounxUisVWNXV9239OtKCxhN9h3Yx69UmTWG3ZDQskbTXOkirIWyABwjkaHN3AJ2OxHevSPVWlpGf8AZbh/1FQfDsV3bclHQ2XRk501N9qKkRFBzBERAEREAREQBERAEREAREQBERAU8xyAU9RzUHl1cPtXl3bJ8asDPOXy/wBttzTz7VXVRwj/AMiEKSnGHOTPUPuUbFWhFrDpPPJ5mHU3FZJDy7LbzTE/Z21ctDdLbdIG1Nur6aqhd0khla9p94OynGCka1Ob9WSZ+1Uv+ifYp3Hiof8ARPsUI5X0OJ2vfpw1A/ai6fFSKxFfevfpw1A/ai6fFSKxFZGiLv8AmZ97+52/0k9FeH/UNB8OxXb4q0tJPRXh/wBQ0Hw7FdvioZvG29jDuRUiIoOcIiIAiIgCIoPQ7dUBKKB0UoAiIgCIqXvaxpe8gADck9yBvHNkE9nbktYte+OrTbSeeox3FmDLMjgLo5IaaXs0tK8d0s3Pcg/kMBPIglqwRxg8a9fklbXaW6P3d9NZoiae53qmfs+uPR0ULx0i6guHN3d836elO3crYMC1vdf4Unb2XVdZeXmZs1I4x9fdSZ5G1eb1NloX9rs0VkJpI2jwL2Hzjv3nlYYqquqrp31NbUy1E0h3dJK8uc4+snqohgmqZWU8EL5ZZHBjWMG7nE9AB3lZfxDhA4i81gZWWrTK40tO8biW5yR0PLx7EzmvI9gUmGOV9qc+L1pvxZhtenYskyLGa1twxu/3G01TDuJ6GqkgePewgrYGfye/EpFAZWWKzTOA/s2XaLtH7dh/FYwz3h41r0zifVZppzeKGkj+nVxxCop2e2WIuYPeUJnp+oWq45U5R+OGZX0p8oBrZgc0NJldVBmVqYQHR1/9HVhn6E7RuT65A9b6aIcTOl2vFB/VS6mlvEMfaqbPW7R1cQ7yBvtIz9JpPdvseS43r91mvV4xy60t8sNxqaC4UUglp6mmkLJY3joQRzCHaaZui8smoVXxw9z6+DLu16O2t+oP7UXT4qRWGvRyC93LJr3cMkvM/n6+6VUtZVS9gN85LI4uc7YchuSTsF5yGP1ZqrWdRdrZ2/0k9FeH/UNB8OxXb4q0tJPRXh/1DQfDsV2+Kqzelt7GHcipERQc4REQBERAEREAREQBERAU8x3LTnygfEPNg2NRaRYjXOhveRQGW5zRO+dS0B3HZB7nSkEfqB35wK27udxpLRbqu7V87YaWjhfPNI7oyNoJcT7ACuJ+r2otx1W1JyDP7m9/bu9Y+WFjjv5mnHzYo/3Yw0e5WRim69Tdja/g0360+Xh2+RZ/rWStCtBs318y5uPYpAIKWn2kuNzmafMUURPU+Lzz7LRzPqAJFlYnjF4zTJbXiWP0xqLld6qOkpox3yPOw38AOpPcASuyuh+kGNaI6f2/CMehaXQsEtdVluz6yqcB5yV3tPIDuaAO5SYbt3RHqtZzq/oj1+Pw8zwtEeGLSzQ6gjON2WOsvJZ2Z7zWsa+rkPf2T/dN/RZt69zzWXtgB0C+Us0VNE6aaRrI2DdznHYALWzU/jn03wqtmtGI0U+VVsJLXyQSCGkDh3CYg9r91pHrXzV7inQXFUeDdeg7avNUl+U0mg5Y7EuS730XizZgn7VS6Nj2ljwHAjYgjkVo9S+UXvgqd6vTCjdT78xHc3NeB7TGR/BZ+0d4otNdYpm2qgq5bVeeySbbXbMkft1MbgdpPYOffsF89DUba4fDCXMyHWNhbg0Si7i8tmoLq01JLv4W8eJj7iJ4F8C1RpKvI9PqSlxjKtnSN8wzzdFWu8JYwNmk/ntHfzDlzRyzE8hwXIa7E8stU9tutulMNRTzDYtPiO4gjYgjkQQRyXdPcePJarcdvDvSamYDPqLjtAPxoxeB0zjG351bQt3MkR8S0bvb7HD8pdgjTm4tu0q9KVzbLE1zaXb/AL+5y9REUmslyaO3+knorw/6hoPh2K7fFWlpJ6K8P+oaD4diu3xVWb6tvYw7kVIiKDnCIiAIiIAiIgCIiAIiIDB/GhlUuJcNmZVlPIWT11LHbGbdSKiVsUn+W565ArqL5R6aWLh6jjZv2Zr/AEbH/q9mU/eAuXSsjVu86jlfRj7or7s298mzp/BkOq94zmtgbJHi1vDICR9CpqSWh/8A02TD3rpdsOZWkvkvqWFmEZtWtA87LdaaJx9TISR/7lbtdxCjsMw2vQjS02DX9WW/maacdut9wthg0hxutfAaqAVN5kids4xOP9HBv3A7FzvEdkdCVpEsocTlxnuevWaVE7y50dyNONz0bGxrAPsaFi9YDqdxKvcSz2PB799HmiW+iaBbqivWqRU5P3uSz9Oi+CC+1HWVduq4a631MtNUwSCWGaJxa9jwdwQRzBBXxRdenw/pM1qU4VYuFRZizqDws6ySawabRVt2kab5aJPkVy25eccACyXbu7TeftDlmSRjZWOjkaHNeCCCNwQtGPJ1VtSzKMwoGuPyeahpZXt7u02RwH8HOW9ewHNZ/p1aVe2jOXU8P+kDRqOibhubO3WIZTS9yklLHhnC+BxW4gsDj0y1my7CKeLzdLb7jI+kZ+ZTSgSwj3RyMCx6tlPKFU0EHEncpYtu1UWyhll2/O7HZ+5gWtS7BHl3UqKoX1SnHopP7nb/AEk9FeH/AFDQfDsV2+KtLSQbaWYePCxUHw7FdvioZuu39jHuRUiIoOcIiIAiIgCIiAIiIAigdFKA1y4+bBJeuGi/zwsL5LVVUVfsPATNY4+5sjj7lyfXcnUXEaXPcFv+GVrgIb1bqihLi3fsmSMtDvcSD7lxCvdnuOPXiusN2pjT11uqZKSpid1jljcWuHuIKsjWu9bZxuKdfsax8v8Ap0K8mB6Pcy+uov5DVuqejlpV5MD0e5l9dRfyGrdU9HKDL9ufttLu/wAs5NcRPpxzb65n+9Y7WROIn05Ztv8A4zP96/Dh2jOo+oOP1mSYXjct3pKCo+T1LIJGmVruyHDZhO7hs7u3WvK9OVW5mqay8v7n6C6JqFrp2gWla7moR4Kay3hZcVjmyyUA3V80ehmsldViig0vybzrjt8+2zMaPa57QB9q2J0Q4Fb3UV9PkGsRipKKEte2zQyh8k5HdM9vJrfU0knxCtb6dcVp4UX4nz61vvQtFtncVLiMn2Ri05PuS+75fEv7gH01rsYwa551dKZ0M2TSRika8bH5LFv2X/vOc8+sNae9bUb7jc9F+eio6S3UkVBRQMgp4GCOKNjQ1rGgbAADoAFjniM1jt2h2lt1zGokjNeY3Utrgcec9Y8Hzbdu8Dm4+ppWc2tBW1JU12HjDdGvz1i+r6tc8uJ57kuSXgkkczeMvLafMeJDMq6kkD6eiqo7XGQdxvTxNik/zGyLDVJSzV1XDRU0RkmqJGRRtHUvJ2A+0qaqrqa+qmrayZ81RUSPllkedzI8nck+skrMXB5pzNqRr/jFA6Bz6Gzzi9Vzttw2KnIc0H1Ok80395fUefPW1LUMrrOX3Z1xxu1NseP2yyxkFtvo4aVu3hGwN/0XpjkNz3oOQAQnZUN3RjwxSQ7/AHKURCwREQBERAEREBB6J3+5D0UoAiIgKOg5Bc2vKHaEz4pmcesNhoj+CMkcIrl2G8oK4Dk4+AlaN/12O8QukpHXn1Xg5xhWP6h4rcsMyqgbWWy6QGCeJ3Xbuc09zgdiD3EAqTqdY02OqWzovr1T+JqT5MDlp7mR/wCNRfyGrdQnkR4Ba+cJOg1/0AizbFLrM2soKq8R1VqrRtvUU3mtgXj8l4I2cPHmORC2DI3BG/VBolCpbWNOjUWGs5+bOTfEV6cs2+uZ/vW1/k7h/UPJwdv97M/ksWqHEUNtcs2HheZ/vV8cNvFrinDzbLljuU4tdbjHdaltY2ooHxl0ezA3smOQt36b77rEdO/cpd8j1h6Q7mnaejqhUqvEeGjz8EdLOy0cw0b+Oynu3Wo8/lL9DGQF0GMZnJIR/Zmip2/x8+sV6geU2yKuglo9NMAp7aXghlbdajz7wPEQsAAPte4epZceSK+5NNoxy6ifdzN3dS9UcI0jxqoyzOb3Db6KEHsMLt5qiTblHEzq958B7TsNyuT3EdxDZJxCZmb1cGPorLQduK0W3t7iCMnm93cZXbDc+oAcgrJz7UnOdUL4/Is9yWtvNae0GuqHfMiH5scY2ZGPU0AK2VODAdc3HV1T+DSXDD6vv8guoXANoTNpnpw7Osho3RX3L2xztZI3Z9PQgbxMPgXbmQ+osB5tWu3BXwkV2o91pdUdQrc6LE6CUS0FLMzb8KytPI7H+5BHM/lnlzG66ZMa1rQ0DkOSM7zaWiSpv87XX9vn5FaIiqZ+EREAREQBERAEREARQBtupQBEUHogJRQOilAFDvon2KVBQHJriJBGuObA9fwvP96wplfKrg/5X+pXZnONHdMdSA78ccOt1wmc3s/KHRdicDwEjdnj7Vg7KvJ2aHZHN8po7plFmeB2WMpa6OSMD2SxvP8AFdLb6ZOheOvnKefqbF31vihurZC29QpONaPAubXC+DGefVZx0x4nLpSCO8Lo7F5MPTAS9qbULKXxj8lraZp+3zZ+5Xvink+uHXG5WT3C03bIJGHcfhO4Et39bYRG13sO67zJ5ip7P1GbxJJePkcxcTwzLM6vEViw3HbhebhL0go4DI4DxO30B6zsAt5+HXyeUNsqaXLddnQ1c0ZEsGP07+1C13d8okHKT9RvzfEkfNW52LYXiOEW1tpw/GbbZaMc/M0NMyFhPiQ0Dc+s817iZMp0zaVvZtVbh8cvp8u0+NNTU1DTx0lJBHDBC0RxxxtDWsaBsAAOgC/QiKplyWOSCIiEhERAEREAREQBEUHogIBA71J5jkqD2vFQwvB+d0U4KcXM+qgdEBB6KVBcIiIAiIgI2CKUQBERAEREAREQBERAEREAREQBERAERQeYQHzdK0FSD2wofC09VDGFoI7StyOL1s8+h9QNlKgDYDmpVTlI3CbhSiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAo7/ciICCd1I6IiAlERAEREAREQBERAEREAREQBERAEREAREQBERAf//Z" class="header-logo" alt="Dipapel Logo" />
+          <div class="header-title-container">
+            <h1 class="header-title">Dipapel <span id="app-badge" class="header-badge">Estadísticas</span></h1>
+            <span class="header-subtitle">Planta Lechugueros &bull; Control de Calidad</span>
+          </div>
         </div>
-        <div class="form-group" id="group-to" style="display:none;">
-          <label for="filter-to">Hasta</label>
-          <input type="date" id="filter-to" onchange="renderPortal()" />
+        <div class="nav-controls" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">👤 Usuario: <span id="current-user-label">Walmart</span></span>
+          <button class="btn-secondary" onclick="exitToLanding()" style="padding: 6px 14px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
+            ◀ Menú Principal
+          </button>
         </div>
-        <div class="form-group">
-          <label for="filter-search">Buscar Rollo / Observación</label>
-          <input type="text" id="filter-search" placeholder="Ej. número de rollo, observación..." oninput="renderPortal()" />
+      </header>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- VISTA INDEPENDIENTE DE ESTADÍSTICAS Y REPORTES EJECUTIVOS -->
+        <div id="view-estadisticas-independiente" style="display: block; margin-bottom: 2rem;">
+          <!-- Barra de Filtros Avanzados (Sin filtro por máquina) -->
+          <div class="card" style="padding: 1.5rem; margin-bottom: 2rem; background: #ffffff;">
+            <div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; align-items: center;">
+              <h2 style="font-size: 1.3rem; margin: 0; color: var(--color-primary); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                📊 Centro de Estadísticas, Conformidad y Reportes
+              </h2>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn-primary" onclick="exportStatsToExcel()" style="padding: 8px 16px; background: #16a34a; border-color: #15803d; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(22,163,74,0.2);">
+                  📊 Exportar a Excel
+                </button>
+                <button type="button" class="btn-primary" onclick="exportStatsToPDF()" style="padding: 8px 16px; background: #dc2626; border-color: #b91c1c; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(220,38,38,0.2);">
+                  📄 Generar Reporte PDF
+                </button>
+              </div>
+            </div>
+
+            <hr style="margin: 1.25rem 0; border: none; border-top: 1px solid var(--border-color);" />
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; align-items: flex-end;">
+              <div>
+                <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Marca:</label>
+                <select id="stat-indep-marca-select" class="form-control" disabled style="width: 100%; padding: 8px; font-weight: 600; background-color: #f1f5f9; color: #16a34a;">
+                  <option value="WALMART">Walmart (Filtro Exclusivo)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Periodo de Consulta:</label>
+                <div style="display: flex; gap: 4px;">
+                  <button type="button" id="btn-indep-periodo-dia" class="btn-secondary active-tab" onclick="setStatIndepPeriodo('dia')" style="flex: 1; padding: 7px 0; font-size: 0.8rem;">Día</button>
+                  <button type="button" id="btn-indep-periodo-semana" class="btn-secondary" onclick="setStatIndepPeriodo('semana')" style="flex: 1; padding: 7px 0; font-size: 0.8rem;">Semana</button>
+                  <button type="button" id="btn-indep-periodo-mes" class="btn-secondary" onclick="setStatIndepPeriodo('mes')" style="flex: 1; padding: 7px 0; font-size: 0.8rem;">Mes</button>
+                  <button type="button" id="btn-indep-periodo-ano" class="btn-secondary" onclick="setStatIndepPeriodo('ano')" style="flex: 1; padding: 7px 0; font-size: 0.8rem;">Año</button>
+                </div>
+              </div>
+
+              <div>
+                <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Fecha:</label>
+                <input type="date" id="stat-indep-fecha-input" class="form-control" onchange="renderStatIndepView()" style="width: 100%; padding: 7px; font-weight: 600;" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Tarjetas KPI de Resumen Global en Porcentajes Generales -->
+          <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+            <div class="kpi-card" onclick="showAllWalmartInspectionsModal('general')" style="border-left: 4px solid #16a34a; cursor: pointer;">
+              <label>% Conformidad en Inspecciones</label>
+              <div id="stat-kpi-conformes" class="kpi-val" style="color: #16a34a;">0%</div>
+            </div>
+
+            <div class="kpi-card" onclick="showAllWalmartInspectionsModal('carga')" style="border-left: 4px solid var(--color-primary); cursor: pointer;">
+              <label>% Aprobación Pruebas de Carga</label>
+              <div id="stat-kpi-carga-pct" class="kpi-val" style="color: var(--color-primary);">0%</div>
+            </div>
+
+            <div class="kpi-card" onclick="showAllWalmartInspectionsModal('noconformes')" style="border-left: 4px solid #dc2626; cursor: pointer;">
+              <label>% No Conformidades</label>
+              <div id="stat-kpi-noconformes" class="kpi-val" style="color: #dc2626;">0%</div>
+            </div>
+          </div>
+
+          <!-- Resumen General de Inspecciones de Calidad (Junto en Porcentajes Generales, sin dividir por máquina) -->
+          <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+              <h3 style="margin: 0; font-size: 1.15rem; color: var(--color-primary);">📈 Porcentaje General de Inspecciones de Calidad</h3>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Toca la barra para ver el listado de inspecciones y sus fotografías</span>
+            </div>
+            <div id="wrapper-stat-conformidad-svg" style="width: 100%; overflow-x: auto; padding: 10px 0;">
+              <!-- Se renderizará por JS -->
+            </div>
+          </div>
+
+          <!-- Sección Unificada de Pruebas de Carga y Resistencia de Asas (General sin dividir por máquina) -->
+          <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
+              <h3 style="margin: 0; font-size: 1.15rem; color: #15803d; display: flex; align-items: center; gap: 8px;">
+                🏋️‍♂️ Pruebas de Carga y Resistencia de Asas (Porcentaje General)
+              </h3>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Toca cualquier gráfica o el botón "🔍 Ver todas" para ver el detalle de las pruebas y fotos</span>
+            </div>
+            <div id="wrapper-carga-pie-charts" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+              <!-- Se generará dinámicamente por JS -->
+            </div>
+          </div>
+
+          <!-- Registro Unificado de Inconformidades y Defectos Detectados (Sin Máquina ni Operador) -->
+          <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <div class="card-title" style="margin-bottom: 1rem;">
+              <h3 style="margin: 0; font-size: 1.15rem; color: #dc2626; display: flex; align-items: center; gap: 8px;">
+                ⚠️ Registro de Inconformidades y Defectos Detectados
+              </h3>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Listado detallado de defectos con evidencia fotográfica incluida</span>
+            </div>
+            <div class="table-container" style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                <thead>
+                  <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                    <th style="padding: 10px;">Fecha / Hora</th>
+                    <th style="padding: 10px;">Nº Rollo / Ficha</th>
+                    <th style="padding: 10px;">Defecto / Inconformidad</th>
+                    <th style="padding: 10px;">Acción Correctiva</th>
+                    <th style="padding: 10px;">Evidencia Fotográfica</th>
+                  </tr>
+                </thead>
+                <tbody id="table-inconformidades-body">
+                  <!-- Se inyectará por JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Notificación Flotante -->
+    <div id="toast" class="notification">
+      <span id="toast-icon">✅</span>
+      <span id="toast-text">Notificación</span>
+    </div>
+
+    <!-- Modal de Vista Previa e Impresión de Reporte PDF -->
+    <div id="pdf-report-modal" class="modal-overlay" style="display: none; z-index: 9999;">
+      <div class="modal-content" style="max-width: 950px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: var(--border-radius-lg); background: #ffffff;">
+        <div style="background: var(--color-primary); color: #fff; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;" class="no-print">
+          <h3 style="margin: 0; font-size: 1.1rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+            📄 Reporte Estadístico de Calidad Dipapel — Walmart
+          </h3>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button type="button" class="btn-primary" onclick="window.print()" style="background: #ffffff; color: var(--color-primary); border: none; padding: 8px 14px; font-weight: 700; font-size: 0.85rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              🖨️ Imprimir / Guardar
+            </button>
+            <button type="button" onclick="closePdfReportModal()" style="background: transparent; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; padding: 0 5px;">✕</button>
+          </div>
+        </div>
+        <div id="pdf-report-modal-body" style="padding: 20px; overflow-y: auto; flex: 1; background: #ffffff; color: #1e293b;">
+          <!-- Se inyectará el reporte por JS -->
         </div>
       </div>
     </div>
 
-    <!-- Tarjetas de Porcentajes Generales -->
-    <div class="kpi-grid">
-      <div class="kpi-card" onclick="openDetailModal('inspecciones')" style="border-left: 4px solid #10b981;">
-        <div class="kpi-label">✅ % Conformidad en Inspecciones</div>
-        <div class="kpi-value" id="kpi-insp-pct" style="color:#10b981;">0.0%</div>
-        <div class="kpi-sub" id="kpi-insp-sub">0.0% Conforme · 0.0% No Conforme</div>
-        <div style="margin-top:0.55rem; font-size:0.75rem; color:#93c5fd; font-weight:600;">🔍 Clic para ver inspecciones y fotos</div>
-      </div>
+    <!-- Modal de Exportación Excel Directo -->
+    <div id="excel-download-modal" class="modal-overlay" style="display: none; z-index: 10000;">
+      <div class="modal-content" style="max-width: 520px; width: 92%; padding: 1.5rem; border-radius: var(--border-radius-lg); background: #ffffff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem;">
+          <h3 style="margin: 0; color: #16a34a; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+            📊 Exportar Reporte a Excel
+          </h3>
+          <button type="button" onclick="closeExcelDownloadModal()" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">✕</button>
+        </div>
 
-      <div class="kpi-card" onclick="openDetailModal('cargas')" style="border-left: 4px solid #ffc220;">
-        <div class="kpi-label">🏋️ % Aprobación Pruebas de Carga</div>
-        <div class="kpi-value" id="kpi-load-pct" style="color:#ffc220;">0.0%</div>
-        <div class="kpi-sub" id="kpi-load-sub">0.0% Aprobadas · 0.0% Rechazadas</div>
-        <div style="margin-top:0.55rem; font-size:0.75rem; color:#fde047; font-weight:600;">🔍 Clic para ver pruebas de carga y fotos</div>
-      </div>
-
-      <div class="kpi-card" onclick="openDetailModal('noconformes')" style="border-left: 4px solid #ef4444;">
-        <div class="kpi-label">⚠️ % No Conformidad Global</div>
-        <div class="kpi-value" id="kpi-fail-pct" style="color:#ef4444;">0.0%</div>
-        <div class="kpi-sub" id="kpi-fail-sub">Porcentaje general de incidencias</div>
-        <div style="margin-top:0.55rem; font-size:0.75rem; color:#fca5a5; font-weight:600;">🔍 Clic para ver causas y acciones correctivas</div>
-      </div>
-
-      <div class="kpi-card" onclick="openDetailModal('fotos')" style="border-left: 4px solid #38bdf8;">
-        <div class="kpi-label">📷 Evidencia Fotográfica</div>
-        <div class="kpi-value" id="kpi-photos-count" style="color:#38bdf8;">0</div>
-        <div class="kpi-sub" id="kpi-photos-sub">Fotografías de inspecciones y pruebas de carga</div>
-        <div style="margin-top:0.55rem; font-size:0.75rem; color:#7dd3fc; font-weight:600;">🖼️ Clic para abrir galería de fotos</div>
-      </div>
-    </div>
-
-    <!-- Gráficos de Porcentajes Generales (Sin dividir por máquina) -->
-    <div class="charts-grid">
-      <!-- Porcentaje General de Inspecciones -->
-      <div class="card" style="margin-bottom:0;">
-        <h3 class="card-title">📈 Porcentaje General de Inspecciones de Calidad</h3>
-        <p style="font-size:0.83rem; color:var(--text-secondary); margin-bottom:1rem;">
-          Porcentaje general unificado de todas las inspecciones de calidad realizadas a producto Walmart.
+        <p style="font-size: 0.9rem; color: #475569; margin-bottom: 1.25rem; text-align: left;">
+          El reporte estadístico está listo. Toca el botón verde para guardar el archivo Excel directamente en tu dispositivo:
         </p>
 
-        <div style="display:grid; grid-template-columns: 175px 1fr; gap:1.25rem; align-items:center;">
-          <div style="text-align:center; cursor:pointer;" onclick="openDetailModal('inspecciones')">
-            <canvas id="canvas-insp-general" width="165" height="165"></canvas>
-          </div>
-          <div>
-            <div class="progress-row">
-              <div class="progress-header">
-                <span style="color:#10b981;">✔ Inspecciones Conformes</span>
-                <span id="bar-label-ok" style="color:#10b981;">0.0%</span>
-              </div>
-              <div class="progress-track">
-                <div class="progress-fill-ok" id="bar-fill-ok" style="width:0%;"></div>
-              </div>
-            </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem;">
+          <a id="btn-download-xlsx-direct" href="#" download="Estadisticas_Walmart.xlsx" class="btn-primary" style="padding: 12px 18px; font-size: 0.95rem; background: #16a34a; border-color: #15803d; color: #ffffff; font-weight: 700; text-decoration: none; text-align: center; border-radius: 6px; box-shadow: 0 4px 6px rgba(22,163,74,0.25); display: flex; align-items: center; justify-content: center; gap: 8px;">
+            📥 Descargar Excel (.xlsx)
+          </a>
 
-            <div class="progress-row">
-              <div class="progress-header">
-                <span style="color:#ef4444;">✖ Inspecciones No Conformes</span>
-                <span id="bar-label-bad" style="color:#ef4444;">0.0%</span>
-              </div>
-              <div class="progress-track">
-                <div class="progress-fill-bad" id="bar-fill-bad" style="width:0%;"></div>
-              </div>
-            </div>
+          <a id="btn-download-xls-direct" href="#" download="Estadisticas_Walmart.xls" class="btn-secondary" style="padding: 10px 18px; font-size: 0.9rem; font-weight: 600; text-decoration: none; text-align: center; border-radius: 6px; background: #f8fafc; border: 1px solid #cbd5e1; color: #1e293b; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            📄 Descargar Excel Formato (.xls)
+          </a>
 
-            <div id="defects-breakdown-box" style="margin-top:1rem; padding-top:0.85rem; border-top:1px solid var(--border-color); font-size:0.82rem; color:var(--text-secondary);">
-              Cargando porcentajes generales por parámetro...
-            </div>
-          </div>
+          <button type="button" onclick="copyExcelDataToClipboard()" class="btn-secondary" style="padding: 10px 18px; font-size: 0.85rem; font-weight: 600; text-align: center; border-radius: 6px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            📋 Copiar Datos al Portapapeles (Para Pegar en Excel / Numbers)
+          </button>
         </div>
-      </div>
 
-      <!-- Porcentajes Generales de Pruebas de Carga -->
-      <div class="card" style="margin-bottom:0;">
-        <h3 class="card-title">🏋️ Porcentajes Generales de Pruebas de Carga</h3>
-        <p style="font-size:0.83rem; color:var(--text-secondary); margin-bottom:1rem;">
-          Porcentajes generales de aprobación en pruebas de carga estática (30 min) y dinámica (15 min) de Walmart. Haz clic en cualquier gráfico para ver los detalles y fotos.
-        </p>
-
-        <div class="pie-grid-3">
-          <div class="pie-box" onclick="openDetailModal('cargas')">
-            <h4>Total Pruebas de Carga</h4>
-            <canvas id="canvas-load-all" width="145" height="145"></canvas>
-            <div id="legend-load-all" style="font-size:0.78rem; margin-top:0.45rem; color:var(--text-secondary);"></div>
-          </div>
-          <div class="pie-box" onclick="openDetailModal('cargas_estatica')">
-            <h4>Carga Estática (30 min)</h4>
-            <canvas id="canvas-load-static" width="145" height="145"></canvas>
-            <div id="legend-load-static" style="font-size:0.78rem; margin-top:0.45rem; color:var(--text-secondary);"></div>
-          </div>
-          <div class="pie-box" onclick="openDetailModal('cargas_dinamica')">
-            <h4>Carga Dinámica (15 min)</h4>
-            <canvas id="canvas-load-dynamic" width="145" height="145"></canvas>
-            <div id="legend-load-dynamic" style="font-size:0.78rem; margin-top:0.45rem; color:var(--text-secondary);"></div>
-          </div>
+        <div style="text-align: right;">
+          <button type="button" class="btn-secondary" onclick="closeExcelDownloadModal()" style="padding: 6px 16px; font-size: 0.85rem;">
+            Cerrar
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Sección Interactiva Unificada: Inspecciones, Pruebas de Carga y Fotos -->
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
-        <h3 class="card-title" style="margin-bottom:0;">📋 Listado General de Inspecciones, Pruebas de Carga y Fotografías</h3>
-        <div class="tabs-inline" data-html2canvas-ignore="true" style="margin-bottom:0;">
-          <button type="button" class="tab-pill active" id="tab-btn-all" onclick="setTableTab('all')"> Todos los Registros</button>
-          <button type="button" class="tab-pill" id="tab-btn-insp" onclick="setTableTab('insp')">✅ Inspecciones Calidad</button>
-          <button type="button" class="tab-pill" id="tab-btn-loads" onclick="setTableTab('loads')">🏋️ Pruebas de Carga</button>
-          <button type="button" class="tab-pill" id="tab-btn-photos" onclick="setTableTab('photos')">📷 Galería de Fotos</button>
-          <button type="button" class="tab-pill" id="tab-btn-fails" onclick="setTableTab('fails')">⚠️ No Conformidades</button>
+    <!-- MODAL DE DETALLE DE INCONFORMIDADES EN PRUEBAS DE CARGA (Sin Máquina ni Operador) -->
+    <div id="carga-defect-detail-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(3px);">
+      <div style="background: #ffffff; width: 92%; max-width: 900px; max-height: 85vh; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden;">
+        <div style="padding: 1.25rem 1.5rem; background: linear-gradient(135deg, #dc2626, #b91c1c); color: #ffffff; display: flex; justify-content: space-between; align-items: center;">
+          <h3 id="carga-modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; color: #ffffff;">
+            🚨 Detalles de Defectos en Pruebas de Carga
+          </h3>
+          <button type="button" onclick="closeCargaDefectModal()" style="background: rgba(255,255,255,0.2); border: none; color: #ffffff; font-size: 1.5rem; font-weight: 700; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+            &times;
+          </button>
         </div>
-      </div>
-
-      <div id="unified-table-container" class="table-wrapper">
-        <p style="padding:1.5rem; text-align:center; color:var(--text-muted);">Cargando información de Walmart...</p>
-      </div>
-    </div>
-  </main>
-
-  <!-- Modal de Detalles / Listado -->
-  <div class="modal-overlay" id="detail-modal" onclick="if(event.target===this) closeDetailModal()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="detail-modal-title">Detalle</h3>
-        <button class="modal-close" onclick="closeDetailModal()">&times;</button>
-      </div>
-      <div class="modal-body" id="detail-modal-body"></div>
-    </div>
-  </div>
-
-  <!-- Modal de Ficha Completa de Inspección / Prueba de Carga y Foto -->
-  <div class="modal-overlay" id="photo-viewer-modal" onclick="if(event.target===this) closePhotoViewer()" style="z-index:2500;">
-    <div class="modal-content" style="max-width:850px;">
-      <div class="modal-header">
-        <h3 id="photo-viewer-title">🔍 Detalle de Inspección y Evidencia Fotográfica — Walmart</h3>
-        <button class="modal-close" onclick="closePhotoViewer()">&times;</button>
-      </div>
-      <div class="modal-body" id="photo-viewer-body"></div>
-    </div>
-  </div>
-
-  <script>
-    let allInspections = [];
-    let currentTableTab = 'all';
-    let lastFilteredInspections = [];
-
-    function isWalmartBrand(str) {
-      const s = String(str || '').toLowerCase();
-      return s.includes('walmart') || s.includes('wal-mart');
-    }
-
-    function anonymizeRecord(item) {
-      const copy = { ...item };
-      delete copy.operador;
-      delete copy.usuario;
-      delete copy.editado_por;
-      delete copy.carga_realizado_por;
-      delete copy.realizado_por;
-      delete copy.maquina;
-      delete copy.banda;
-      return copy;
-    }
-
-    function extractPhotosFromInspection(ins) {
-      const photos = [];
-      if (ins.foto_url && typeof ins.foto_url === 'string' && ins.foto_url !== 'null') {
-        photos.push({
-          src: ins.foto_url,
-          label: isLoadTestRecord(ins) ? 'Evidencia de Prueba de Carga' : 'Evidencia de Inspección de Calidad'
-        });
-      }
-      if (Array.isArray(ins.fotos_evidencia)) {
-        ins.fotos_evidencia.forEach((src, idx) => {
-          if (src && typeof src === 'string' && !photos.some(p => p.src === src)) {
-            photos.push({ src, label: `Evidencia de Inspección #${idx + 1}` });
-          }
-        });
-      }
-      if (ins.foto_evidencia && typeof ins.foto_evidencia === 'string' && !photos.some(p => p.src === ins.foto_evidencia)) {
-        photos.push({ src: ins.foto_evidencia, label: 'Evidencia de Inspección' });
-      }
-      if (Array.isArray(ins.carga_fotos_evidencia)) {
-        ins.carga_fotos_evidencia.forEach((src, idx) => {
-          if (src && typeof src === 'string' && !photos.some(p => p.src === src)) {
-            photos.push({ src, label: `Evidencia Prueba de Carga #${idx + 1}` });
-          }
-        });
-      }
-      if (ins.carga_foto && typeof ins.carga_foto === 'string' && !photos.some(p => p.src === ins.carga_foto)) {
-        photos.push({ src: ins.carga_foto, label: 'Evidencia Prueba de Carga' });
-      }
-      return photos;
-    }
-
-    function isLoadTestRecord(ins) {
-      return !!(
-        ins.es_prueba_carga === 1 ||
-        ins.prueba_carga === 'Si' ||
-        ins.carga_tipo_prueba ||
-        ins.tipo_prueba_carga ||
-        (ins.carga_tipo && ins.carga_tipo !== 'No Aplica' && ins.carga_tipo !== '') ||
-        ins.carga_estatica_estado ||
-        ins.carga_dinamica_estado
-      );
-    }
-
-    function getLoadTypeNormalized(ins) {
-      const raw = String(ins.carga_tipo_prueba || ins.tipo_prueba_carga || ins.carga_tipo || '').toLowerCase();
-      if (raw.includes('estatica') || raw.includes('estática')) return 'estatica';
-      if (raw.includes('dinamica') || raw.includes('dinámica')) return 'dinamica';
-      return raw;
-    }
-
-    function isRecordApproved(ins) {
-      if (ins.carga_resultado === 'Falla' || ins.resultado === 'Rechazado' || ins.resultado === 'NO CONFORME') {
-        return false;
-      }
-      return true;
-    }
-
-    function getRecordDateStr(ins) {
-      return ins.fecha_registro || ins.timestamp || ins.fecha || ins.hora_inspeccion || '—';
-    }
-
-    function getRecordIsoDate(ins) {
-      const raw = String(ins.fecha_registro || ins.timestamp || ins.fecha || '').trim();
-      if (!raw) return '';
-      return raw.substring(0, 10);
-    }
-
-    async function syncFromCloud() {
-      let fetched = [];
-      try {
-        const res = await fetch('/api/inspecciones?t=' + Date.now());
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            fetched = data;
-          }
-        }
-      } catch (e) {
-        console.warn('Error cargando desde API, revisando almacenamiento local:', e);
-      }
-
-      if (fetched.length === 0) {
-        try {
-          const localRaw = localStorage.getItem('calidad_inspecciones') || localStorage.getItem('cb_inspecciones');
-          if (localRaw) {
-            const parsed = JSON.parse(localRaw);
-            if (Array.isArray(parsed)) fetched = parsed;
-          }
-        } catch (_) {}
-      }
-
-      allInspections = fetched
-        .filter(i => {
-          const m = (i.marca_especificaciones || i.marca_cliente || i.marca || '');
-          return isWalmartBrand(m);
-        })
-        .map(anonymizeRecord);
-
-      renderPortal();
-    }
-
-    function onPeriodChange() {
-      const p = document.getElementById('filter-period').value;
-      document.getElementById('group-from').style.display = p === 'custom' ? '' : 'none';
-      document.getElementById('group-to').style.display = p === 'custom' ? '' : 'none';
-      renderPortal();
-    }
-
-    function getFilteredInspections() {
-      const period = document.getElementById('filter-period').value;
-      const q = (document.getElementById('filter-search').value || '').trim().toLowerCase();
-
-      const now = new Date();
-      const todayIso = now.toISOString().split('T')[0];
-      let fromIso = '';
-      let toIso = '9999-12-31';
-
-      if (period === 'today') {
-        fromIso = todayIso;
-        toIso = todayIso;
-      } else if (period === 'week') {
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        fromIso = weekAgo.toISOString().split('T')[0];
-      } else if (period === 'month') {
-        fromIso = todayIso.substring(0, 7) + '-01';
-      } else if (period === 'custom') {
-        fromIso = document.getElementById('filter-from').value || '';
-        toIso = document.getElementById('filter-to').value || '9999-12-31';
-      }
-
-      return allInspections.filter(i => {
-        if (fromIso) {
-          const dIso = getRecordIsoDate(i);
-          if (!dIso || dIso < fromIso || dIso > toIso) return false;
-        }
-        if (q) {
-          const hay = [
-            i.numero_rollo,
-            i.numero_bobina,
-            i.marca_especificaciones,
-            i.marca_cliente,
-            i.observaciones,
-            i.descripcion_defecto,
-            i.accion_correctiva,
-            i.resultado,
-            i.carga_resultado
-          ].join(' ').toLowerCase();
-          if (!hay.includes(q)) return false;
-        }
-        return true;
-      });
-    }
-
-    function drawDonutChart(canvasId, okCount, badCount, centerLabel) {
-      const canvas = document.getElementById(canvasId);
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-
-      const cx = w / 2;
-      const cy = h / 2;
-      const r = Math.min(cx, cy) - 10;
-      const innerR = r * 0.62;
-      const total = okCount + badCount;
-
-      if (total === 0) {
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(148, 163, 184, 0.15)';
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
-        ctx.fillStyle = '#0f213c';
-        ctx.fill();
-
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = 'bold 12px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('Sin datos', cx, cy);
-        return;
-      }
-
-      const okAngle = (okCount / total) * Math.PI * 2;
-      let startAngle = -Math.PI / 2;
-
-      if (okCount > 0) {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, r, startAngle, startAngle + okAngle);
-        ctx.closePath();
-        ctx.fillStyle = '#10b981';
-        ctx.fill();
-        startAngle += okAngle;
-      }
-
-      if (badCount > 0) {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, r, startAngle, -Math.PI / 2 + Math.PI * 2);
-        ctx.closePath();
-        ctx.fillStyle = '#ef4444';
-        ctx.fill();
-      }
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
-      ctx.fillStyle = '#0f213c';
-      ctx.fill();
-
-      const pct = ((okCount / total) * 100).toFixed(1) + '%';
-      ctx.fillStyle = '#f1f5f9';
-      ctx.font = '800 17px JetBrains Mono, monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(pct, cx, cy - 6);
-
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '600 9.5px Inter, sans-serif';
-      ctx.fillText(centerLabel || 'CONFORME', cx, cy + 11);
-    }
-
-    function renderPortal() {
-      const filtered = getFilteredInspections();
-      lastFilteredInspections = filtered;
-
-      const qualityInspections = filtered.filter(i => !isLoadTestRecord(i));
-      const loadRecords = filtered.filter(isLoadTestRecord);
-
-      const totalInsp = qualityInspections.length;
-      const okInsp = qualityInspections.filter(isRecordApproved).length;
-      const badInsp = totalInsp - okInsp;
-
-      const okPct = totalInsp > 0 ? ((okInsp / totalInsp) * 100) : 0;
-      const badPct = totalInsp > 0 ? ((badInsp / totalInsp) * 100) : 0;
-
-      // Pruebas de carga
-      let loadOk = 0, loadBad = 0;
-      let estOk = 0, estBad = 0;
-      let dinOk = 0, dinBad = 0;
-
-      loadRecords.forEach(ins => {
-        const pass = isRecordApproved(ins);
-        if (pass) loadOk++;
-        else loadBad++;
-
-        const t = getLoadTypeNormalized(ins);
-        if (t === 'estatica') {
-          if (pass) estOk++;
-          else estBad++;
-        } else if (t === 'dinamica') {
-          if (pass) dinOk++;
-          else dinBad++;
-        } else {
-          if (ins.carga_estatica_estado === 'Aprobado') estOk++;
-          else if (ins.carga_estatica_estado === 'Rechazado') estBad++;
-          if (ins.carga_dinamica_estado === 'Aprobado') dinOk++;
-          else if (ins.carga_dinamica_estado === 'Rechazado') dinBad++;
-        }
-      });
-
-      const totalLoad = loadOk + loadBad;
-      const loadOkPct = totalLoad > 0 ? ((loadOk / totalLoad) * 100) : 0;
-      const loadBadPct = totalLoad > 0 ? ((loadBad / totalLoad) * 100) : 0;
-
-      // Porcentaje global de no conformidad (Inspecciones + Carga)
-      const totalAll = filtered.length;
-      const badAll = filtered.filter(i => !isRecordApproved(i)).length;
-      const badAllPct = totalAll > 0 ? ((badAll / totalAll) * 100) : 0;
-
-      // Fotos totales
-      let totalPhotos = 0;
-      filtered.forEach(ins => {
-        totalPhotos += extractPhotosFromInspection(ins).length;
-      });
-
-      // Actualizar KPIs en porcentajes generales
-      document.getElementById('kpi-insp-pct').textContent = totalInsp > 0 ? `${okPct.toFixed(1)}%` : '—';
-      document.getElementById('kpi-insp-sub').textContent = totalInsp > 0
-        ? `${okPct.toFixed(1)}% Conforme vs ${badPct.toFixed(1)}% No Conforme`
-        : 'Sin inspecciones en el periodo';
-
-      document.getElementById('kpi-load-pct').textContent = totalLoad > 0 ? `${loadOkPct.toFixed(1)}%` : '—';
-      document.getElementById('kpi-load-sub').textContent = totalLoad > 0
-        ? `${loadOkPct.toFixed(1)}% Aprobado vs ${loadBadPct.toFixed(1)}% Rechazado`
-        : 'Sin pruebas de carga en el periodo';
-
-      document.getElementById('kpi-fail-pct').textContent = totalAll > 0 ? `${badAllPct.toFixed(1)}%` : '0.0%';
-      document.getElementById('kpi-fail-sub').textContent = totalAll > 0
-        ? `${(100 - badAllPct).toFixed(1)}% Conformidad Global Unificada`
-        : '0.0% No Conformidad';
-
-      document.getElementById('kpi-photos-count').textContent = totalPhotos;
-      document.getElementById('kpi-photos-sub').textContent = totalPhotos === 1
-        ? '1 fotografía disponible para consulta'
-        : `${totalPhotos} fotografías disponibles para consulta`;
-
-      // Gráfico general de inspecciones
-      drawDonutChart('canvas-insp-general', okInsp, badInsp, 'CONFORME');
-      document.getElementById('bar-label-ok').textContent = `${okPct.toFixed(1)}%`;
-      document.getElementById('bar-fill-ok').style.width = `${okPct.toFixed(1)}%`;
-      document.getElementById('bar-label-bad').textContent = `${badPct.toFixed(1)}%`;
-      document.getElementById('bar-fill-bad').style.width = `${badPct.toFixed(1)}%`;
-
-      // Desglose porcentual general por parámetro (sin dividir por máquina)
-      renderParameterConformityPercentages(qualityInspections);
-
-      // Gráficos de Pruebas de Carga
-      drawDonutChart('canvas-load-all', loadOk, loadBad, 'APROBADO');
-      const estTot = estOk + estBad;
-      const dinTot = dinOk + dinBad;
-      drawDonutChart('canvas-load-static', estOk, estBad, 'ESTÁTICA');
-      drawDonutChart('canvas-load-dynamic', dinOk, dinBad, 'DINÁMICA');
-
-      document.getElementById('legend-load-all').innerHTML = totalLoad > 0
-        ? `<span style="color:#10b981;font-weight:700;">✔ ${loadOkPct.toFixed(1)}% Aprob.</span> · <span style="color:#ef4444;font-weight:700;">✖ ${loadBadPct.toFixed(1)}% Rech.</span>`
-        : 'Sin registros';
-      document.getElementById('legend-load-static').innerHTML = estTot > 0
-        ? `<span style="color:#10b981;font-weight:700;">✔ ${((estOk / estTot) * 100).toFixed(1)}% Aprob.</span> · <span style="color:#ef4444;font-weight:700;">✖ ${((estBad / estTot) * 100).toFixed(1)}% Rech.</span>`
-        : 'Sin registros';
-      document.getElementById('legend-load-dynamic').innerHTML = dinTot > 0
-        ? `<span style="color:#10b981;font-weight:700;">✔ ${((dinOk / dinTot) * 100).toFixed(1)}% Aprob.</span> · <span style="color:#ef4444;font-weight:700;">✖ ${((dinBad / dinTot) * 100).toFixed(1)}% Rech.</span>`
-        : 'Sin registros';
-
-      renderUnifiedTable(filtered);
-    }
-
-    function renderParameterConformityPercentages(qualityInspections) {
-      const box = document.getElementById('defects-breakdown-box');
-      if (!box) return;
-      if (qualityInspections.length === 0) {
-        box.innerHTML = 'No hay inspecciones de calidad registradas para el filtro seleccionado.';
-        return;
-      }
-
-      const total = qualityInspections.length;
-      let printOk = 0, glueOk = 0, handleOk = 0, dimOk = 0;
-
-      qualityInspections.forEach(i => {
-        if (i.impresion_correcta !== 0 && i.defecto_impresion !== 1 && i.estado_impresion !== 'Defecto') printOk++;
-        if (i.pegado_fondo !== 0 && i.pegamento_lineal !== 0 && i.pegado_correcto !== 0) glueOk++;
-        if (i.pegamiento_suficiente_asa !== 0 && i.posicion_asa_correcta !== 0 && i.pegado_correcto_parche !== 0) handleOk++;
-        if (i.medidas_dentro_parametro !== 0 && i.medidas_coinciden !== 0) dimOk++;
-      });
-
-      const pPrint = ((printOk / total) * 100).toFixed(1);
-      const pGlue = ((glueOk / total) * 100).toFixed(1);
-      const pHandle = ((handleOk / total) * 100).toFixed(1);
-      const pDim = ((dimOk / total) * 100).toFixed(1);
-
-      box.innerHTML = `
-        <div style="font-weight:700; color:var(--text-primary); margin-bottom:0.45rem;">Porcentajes Generales por Rubro Evaluado:</div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap:0.5rem;">
-          <div style="background:rgba(255,255,255,0.03); padding:0.45rem 0.65rem; border-radius:6px; border:1px solid var(--border-color);">
-            🎨 Impresión: <strong style="color:#10b981;">${pPrint}% OK</strong>
-          </div>
-          <div style="background:rgba(255,255,255,0.03); padding:0.45rem 0.65rem; border-radius:6px; border:1px solid var(--border-color);">
-            🧪 Pegado y Fondo: <strong style="color:#10b981;">${pGlue}% OK</strong>
-          </div>
-          <div style="background:rgba(255,255,255,0.03); padding:0.45rem 0.65rem; border-radius:6px; border:1px solid var(--border-color);">
-            🛍️ Asa y Parche: <strong style="color:#10b981;">${pHandle}% OK</strong>
-          </div>
-          <div style="background:rgba(255,255,255,0.03); padding:0.45rem 0.65rem; border-radius:6px; border:1px solid var(--border-color);">
-            📏 Dimensiones: <strong style="color:#10b981;">${pDim}% OK</strong>
-          </div>
-        </div>
-      `;
-    }
-
-    function setTableTab(tab) {
-      currentTableTab = tab;
-      ['all', 'insp', 'loads', 'photos', 'fails'].forEach(t => {
-        const btn = document.getElementById('tab-btn-' + t);
-        if (btn) btn.classList.toggle('active', t === tab);
-      });
-      renderUnifiedTable(lastFilteredInspections);
-    }
-
-    function formatInspectionSummary(ins) {
-      if (isLoadTestRecord(ins)) {
-        const t = getLoadTypeNormalized(ins);
-        const tLabel = t === 'estatica' ? 'Carga Estática (30 min)' : (t === 'dinamica' ? 'Carga Dinámica (15 min)' : (ins.carga_tipo_prueba || ins.tipo_prueba_carga || 'Prueba de Carga'));
-        const peso = ins.carga_peso_kg || ins.peso_colocado_kg || ins.carga_peso || '—';
-        const hIni = ins.carga_hora_inicial || ins.hora_inicial || '';
-        const hFin = ins.carga_hora_final || ins.hora_final || '';
-        const dur = ins.duracion_calculada || (hIni && hFin ? `${hIni} a ${hFin}` : '');
-        return `<strong>${tLabel}</strong> · Peso: <strong>${peso} kg</strong> ${dur ? `· Duración: ${dur}` : ''}`;
-      }
-
-      const u = ins.medidas_unidad === 'cm' ? 'cm' : '"';
-      const hasMed = ins.medida_ancho || ins.medida_largo || ins.medida_fuelle || ins.ancho_bolsa;
-      const medStr = hasMed
-        ? `Medidas: ${ins.medida_ancho ?? ins.ancho_bolsa ?? '—'}${u} × ${ins.medida_largo ?? ins.largo_bolsa ?? '—'}${u} × ${ins.medida_fuelle ?? ins.fuelle_ancho ?? '—'}${u}`
-        : 'Parámetros de calidad verificados';
-      const tempStr = ins.temperatura_pegamento ? ` · Temp. HotMelt: ${ins.temperatura_pegamento}°C` : '';
-      return `${medStr}${tempStr}`;
-    }
-
-    function renderUnifiedTable(list) {
-      const container = document.getElementById('unified-table-container');
-      if (!container) return;
-
-      if (currentTableTab === 'photos') {
-        const photoItems = [];
-        list.forEach(ins => {
-          extractPhotosFromInspection(ins).forEach(p => {
-            photoItems.push({ ins, src: p.src, label: p.label });
-          });
-        });
-        if (photoItems.length === 0) {
-          container.innerHTML = `<p style="padding:2rem; text-align:center; color:var(--text-muted);">No hay fotografías registradas para el filtro actual.</p>`;
-          return;
-        }
-        container.innerHTML = `
-          <div class="photo-grid" style="padding:1rem;">
-            ${photoItems.map(item => {
-              const isOk = isRecordApproved(item.ins);
-              return `
-                <div class="photo-card" onclick="openInspectionDetailById('${String(item.ins.id).replace(/'/g, "\\'")}')">
-                  <img src="${item.src}" alt="${item.label}" loading="lazy" />
-                  <div class="photo-card-body">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
-                      <span style="font-weight:700; color:#ffc220; font-size:0.75rem;">${item.label}</span>
-                      <span class="status-badge ${isOk ? 'conforme' : 'no-conforme'}" style="font-size:0.68rem; padding:0.12rem 0.45rem;">${isOk ? '✔ OK' : '✖ Defecto'}</span>
-                    </div>
-                    <div style="color:var(--text-primary); font-weight:600;">${item.ins.marca_especificaciones || item.ins.marca_cliente || 'WALMART'}</div>
-                    <div style="color:var(--text-secondary); font-size:0.75rem;">📅 ${getRecordDateStr(item.ins)}</div>
-                    ${item.ins.numero_rollo ? `<div style="color:#93c5fd; font-size:0.75rem; margin-top:0.2rem;">Rollo: ${item.ins.numero_rollo}</div>` : ''}
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
-        return;
-      }
-
-      let rows = [...list];
-      if (currentTableTab === 'insp') {
-        rows = rows.filter(i => !isLoadTestRecord(i));
-      } else if (currentTableTab === 'loads') {
-        rows = rows.filter(isLoadTestRecord);
-      } else if (currentTableTab === 'fails') {
-        rows = rows.filter(i => !isRecordApproved(i));
-      }
-
-      if (rows.length === 0) {
-        container.innerHTML = `<p style="padding:1.75rem; text-align:center; color:var(--text-muted);">No se encontraron registros de Walmart para esta vista.</p>`;
-        return;
-      }
-
-      container.innerHTML = `
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Fecha y Hora</th>
-              <th>Tipo de Evaluación</th>
-              <th>Marca / Producto</th>
-              <th>No. Rollo</th>
-              <th>Parámetros / Prueba de Carga</th>
-              <th>Dictamen</th>
-              <th>Observaciones / Acción Correctiva</th>
-              <th>Evidencia Fotográfica</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(ins => {
-              const isOk = isRecordApproved(ins);
-              const badgeClass = isOk ? 'conforme' : 'no-conforme';
-              const badgeText = isOk ? '✔ CONFORME' : '✖ NO CONFORME';
-              const isLoad = isLoadTestRecord(ins);
-              const tipoBadge = isLoad
-                ? `<span style="background:rgba(255,194,32,0.15); color:#ffc220; border:1px solid rgba(255,194,32,0.35); padding:0.2rem 0.55rem; border-radius:6px; font-size:0.75rem; font-weight:700;">🏋️ Prueba de Carga</span>`
-                : `<span style="background:rgba(0,113,206,0.2); color:#7dd3fc; border:1px solid rgba(56,189,248,0.35); padding:0.2rem 0.55rem; border-radius:6px; font-size:0.75rem; font-weight:700;">✅ Inspección Calidad</span>`;
-
-              const photos = extractPhotosFromInspection(ins);
-              const photoBtn = photos.length > 0
-                ? `<button type="button" class="btn btn-outline" style="padding:0.3rem 0.65rem; font-size:0.76rem; color:#38bdf8; border-color:rgba(56,189,248,0.4);" onclick="event.stopPropagation(); openInspectionDetailById('${String(ins.id).replace(/'/g, "\\'")}')">📷 Ver Foto</button>`
-                : `<span style="color:var(--text-muted); font-size:0.76rem;">Sin foto</span>`;
-
-              const notes = [ins.descripcion_defecto, ins.observaciones, ins.accion_correctiva ? `Acción: ${ins.accion_correctiva}` : ''].filter(Boolean).join(' | ') || 'Sin observaciones';
-
-              return `
-                <tr onclick="openInspectionDetailById('${String(ins.id).replace(/'/g, "\\'")}')">
-                  <td style="white-space:nowrap; font-weight:600; color:#93c5fd;">${getRecordDateStr(ins)} 🔍</td>
-                  <td>${tipoBadge}</td>
-                  <td><strong>${ins.marca_especificaciones || ins.marca_cliente || ins.marca || 'WALMART'}</strong></td>
-                  <td style="font-family:'JetBrains Mono',monospace;">${ins.numero_rollo || '—'}</td>
-                  <td style="font-size:0.82rem;">${formatInspectionSummary(ins)}</td>
-                  <td><span class="status-badge ${badgeClass}">${badgeText}</span></td>
-                  <td style="max-width:260px; font-size:0.8rem; color:var(--text-secondary);">${notes}</td>
-                  <td>${photoBtn}</td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-      `;
-    }
-
-    function openInspectionDetailById(id) {
-      const ins = allInspections.find(x => String(x.id) === String(id));
-      if (!ins) return;
-      const photos = extractPhotosFromInspection(ins);
-      const isOk = isRecordApproved(ins);
-
-      const title = document.getElementById('photo-viewer-title');
-      const body = document.getElementById('photo-viewer-body');
-      title.textContent = isLoadTestRecord(ins)
-        ? `🏋️ Detalle de Prueba de Carga — Walmart`
-        : `🔍 Detalle de Inspección de Calidad — Walmart`;
-
-      const excludeKeys = [
-        'id', 'area', 'maquina', 'banda', 'hora_inspeccion', 'fecha_registro',
-        'operador', 'editado_por', 'usuario', 'carga_realizado_por', 'realizado_por',
-        'resultado', 'carga_resultado', 'foto_url', 'fotos_evidencia', 'foto_evidencia',
-        'carga_foto', 'carga_fotos_evidencia', 'es_prueba_carga', 'bobina_id',
-        'marca', 'marca_cliente', 'marca_especificaciones', 'timestamp'
-      ];
-
-      const paramCards = [];
-      for (const key in ins) {
-        if (excludeKeys.includes(key)) continue;
-        let val = ins[key];
-        if (val === null || val === undefined || val === '') continue;
-
-        if (key === 'defecto_impresion') {
-          val = val === 1 ? 'Con Defecto ❌' : 'Sin Defecto ✅';
-        } else if (val === 1) {
-          val = 'Sí / Cumple ✅';
-        } else if (val === 0) {
-          val = 'No / Incumple ❌';
-        }
-
-        const label = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        paramCards.push(`
-          <div style="background:rgba(255,255,255,0.04); border:1px solid var(--border-color); padding:0.65rem 0.85rem; border-radius:8px;">
-            <span style="color:var(--text-secondary); font-size:0.74rem; display:block;">${label}</span>
-            <strong style="font-size:0.9rem; color:var(--text-primary);">${val}</strong>
-          </div>
-        `);
-      }
-
-      body.innerHTML = `
-        <div style="margin-bottom:1.1rem; background:rgba(255,255,255,0.04); padding:1rem; border-radius:10px; border:1px solid var(--border-color); display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.75rem;">
-          <div>
-            <span style="color:var(--text-secondary); font-size:0.78rem; display:block;">Fecha y Hora</span>
-            <strong>${getRecordDateStr(ins)}</strong>
-          </div>
-          <div>
-            <span style="color:var(--text-secondary); font-size:0.78rem; display:block;">Marca</span>
-            <strong style="color:#ffc220;">${ins.marca_especificaciones || ins.marca_cliente || ins.marca || 'WALMART'}</strong>
-          </div>
-          <div>
-            <span style="color:var(--text-secondary); font-size:0.78rem; display:block;">No. Rollo</span>
-            <strong style="font-family:'JetBrains Mono',monospace;">${ins.numero_rollo || '—'}</strong>
-          </div>
-          <div>
-            <span style="color:var(--text-secondary); font-size:0.78rem; display:block;">Dictamen</span>
-            <span class="status-badge ${isOk ? 'conforme' : 'no-conforme'}">${isOk ? '✔ CONFORME' : '✖ NO CONFORME'}</span>
-          </div>
-        </div>
-
-        ${paramCards.length > 0 ? `
-          <h4 style="font-size:0.95rem; margin-bottom:0.65rem; color:#93c5fd;">Parámetros Evaluados</h4>
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:0.65rem; margin-bottom:1.25rem;">
-            ${paramCards.join('')}
-          </div>
-        ` : ''}
-
-        ${photos.length > 0 ? `
-          <h4 style="font-size:0.95rem; margin-bottom:0.65rem; color:#ffc220;">📷 Evidencia Fotográfica</h4>
-          <div style="display:grid; grid-template-columns:1fr; gap:1rem; text-align:center;">
-            ${photos.map(p => `
-              <div style="background:#000; border-radius:10px; padding:0.75rem; border:1px solid var(--border-color);">
-                <div style="font-size:0.82rem; color:#ffc220; font-weight:700; margin-bottom:0.5rem;">${p.label}</div>
-                <img src="${p.src}" alt="${p.label}" style="max-width:100%; max-height:62vh; border-radius:6px; object-fit:contain;" />
-              </div>
-            `).join('')}
-          </div>
-        ` : `<p style="text-align:center; color:var(--text-muted); padding:1rem;">Sin fotografía adjunta en este registro.</p>`}
-      `;
-      document.getElementById('photo-viewer-modal').classList.add('open');
-    }
-
-    function closePhotoViewer() {
-      document.getElementById('photo-viewer-modal').classList.remove('open');
-    }
-
-    function openDetailModal(type) {
-      const modal = document.getElementById('detail-modal');
-      const title = document.getElementById('detail-modal-title');
-      const body = document.getElementById('detail-modal-body');
-
-      if (type === 'fotos') {
-        title.textContent = '🖼️ Galería General de Evidencia Fotográfica — Walmart';
-        const allPhotoItems = [];
-        lastFilteredInspections.forEach(ins => {
-          extractPhotosFromInspection(ins).forEach(p => {
-            allPhotoItems.push({ ins, src: p.src, label: p.label });
-          });
-        });
-
-        if (allPhotoItems.length === 0) {
-          body.innerHTML = `<p style="padding:2rem; text-align:center; color:var(--text-muted);">No hay fotografías registradas en el periodo seleccionado.</p>`;
-        } else {
-          body.innerHTML = `
-            <div class="photo-grid">
-              ${allPhotoItems.map(item => `
-                <div class="photo-card" onclick="openInspectionDetailById('${String(item.ins.id).replace(/'/g, "\\'")}')">
-                  <img src="${item.src}" alt="${item.label}" loading="lazy" />
-                  <div class="photo-card-body">
-                    <div style="font-weight:700; color:#ffc220; margin-bottom:0.2rem;">${item.label}</div>
-                    <div style="color:var(--text-primary); font-weight:600;">${item.ins.marca_especificaciones || item.ins.marca_cliente || 'WALMART'}</div>
-                    <div style="color:var(--text-secondary); font-size:0.75rem;">${getRecordDateStr(item.ins)}</div>
-                    ${item.ins.numero_rollo ? `<div style="color:#93c5fd; font-size:0.75rem; margin-top:0.2rem;">Rollo: ${item.ins.numero_rollo}</div>` : ''}
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          `;
-        }
-        modal.classList.add('open');
-        return;
-      }
-
-      let subset = [...lastFilteredInspections];
-      if (type === 'inspecciones') {
-        title.textContent = '✅ Detalle General de Inspecciones de Calidad — Walmart';
-        subset = subset.filter(i => !isLoadTestRecord(i));
-      } else if (type === 'cargas') {
-        title.textContent = '🏋️ Detalle General de Pruebas de Carga — Walmart';
-        subset = subset.filter(isLoadTestRecord);
-      } else if (type === 'cargas_estatica') {
-        title.textContent = '🏋️ Pruebas de Carga Estática (30 min) — Walmart';
-        subset = subset.filter(i => isLoadTestRecord(i) && getLoadTypeNormalized(i) === 'estatica');
-      } else if (type === 'cargas_dinamica') {
-        title.textContent = '🏋️ Pruebas de Carga Dinámica (15 min) — Walmart';
-        subset = subset.filter(i => isLoadTestRecord(i) && getLoadTypeNormalized(i) === 'dinamica');
-      } else if (type === 'noconformes') {
-        title.textContent = '⚠️ Detalle General de No Conformidades — Walmart';
-        subset = subset.filter(i => !isRecordApproved(i));
-      }
-
-      if (subset.length === 0) {
-        body.innerHTML = `<p style="padding:2rem; text-align:center; color:var(--text-muted);">Sin registros para mostrar en esta categoría.</p>`;
-      } else {
-        body.innerHTML = `
-          <div class="table-wrapper">
-            <table class="data-table">
+        <div style="padding: 1.5rem; overflow-y: auto; flex: 1;">
+          <div class="table-container" style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
               <thead>
-                <tr>
-                  <th>Fecha / Hora</th>
-                  <th>Marca</th>
-                  <th>No. Rollo</th>
-                  <th>Resumen de Parámetros / Carga</th>
-                  <th>Resultado</th>
-                  <th>Observaciones</th>
-                  <th>Evidencia Fotográfica</th>
+                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                  <th style="padding: 10px;">Fecha / Hora</th>
+                  <th style="padding: 10px;">No. Rollo</th>
+                  <th style="padding: 10px;">Peso (kg)</th>
+                  <th style="padding: 10px;">Defecto / Inconformidad</th>
+                  <th style="padding: 10px;">Acción Correctiva</th>
+                  <th style="padding: 10px;">Evidencia Fotográfica</th>
                 </tr>
               </thead>
-              <tbody>
-                ${subset.map(ins => {
-                  const isOk = isRecordApproved(ins);
-                  const photos = extractPhotosFromInspection(ins);
-                  const notes = [ins.descripcion_defecto, ins.observaciones, ins.accion_correctiva ? `Acción: ${ins.accion_correctiva}` : ''].filter(Boolean).join(' | ') || '—';
-
-                  return `
-                    <tr onclick="openInspectionDetailById('${String(ins.id).replace(/'/g, "\\'")}')">
-                      <td style="white-space:nowrap; font-weight:600; color:#93c5fd;">${getRecordDateStr(ins)} 🔍</td>
-                      <td><strong>${ins.marca_especificaciones || ins.marca_cliente || 'WALMART'}</strong></td>
-                      <td style="font-family:'JetBrains Mono',monospace;">${ins.numero_rollo || '—'}</td>
-                      <td style="font-size:0.82rem;">${formatInspectionSummary(ins)}</td>
-                      <td><span class="status-badge ${isOk ? 'conforme' : 'no-conforme'}">${isOk ? '✔ CONFORME' : '✖ NO CONFORME'}</span></td>
-                      <td style="font-size:0.8rem; color:var(--text-secondary);">${notes}</td>
-                      <td>
-                        ${photos.length > 0
-                          ? `<button type="button" class="btn btn-outline" style="padding:0.25rem 0.55rem; font-size:0.75rem; color:#38bdf8;" onclick="event.stopPropagation(); openInspectionDetailById('${String(ins.id).replace(/'/g, "\\'")}')">📷 Ver Foto</button>`
-                          : '—'}
-                      </td>
-                    </tr>
-                  `;
-                }).join('')}
+              <tbody id="carga-modal-tbody">
+                <!-- Se llena dinámicamente -->
               </tbody>
             </table>
           </div>
+        </div>
+        <div style="padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
+          <button type="button" class="btn-secondary" onclick="closeCargaDefectModal()" style="padding: 8px 20px; font-weight: 700; cursor: pointer;">
+            Cerrar Ventana
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE DETALLE DE INSPECCIONES Y PRUEBAS DE CARGA (Sin Máquina ni Operador) -->
+    <div id="machine-inspections-detail-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(3px);">
+      <div style="background: #ffffff; width: 92%; max-width: 950px; max-height: 85vh; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden;">
+        <div style="padding: 1.25rem 1.5rem; background: linear-gradient(135deg, #15803d, #166534); color: #ffffff; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3 id="machine-modal-title" style="margin: 0; font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; color: #ffffff;">
+              📊 Inspecciones Realizadas — Walmart
+            </h3>
+            <span id="machine-modal-subtitle" style="font-size: 0.8rem; color: #dcfce7;">Listado completo de auditorías y pruebas asociadas</span>
+          </div>
+          <button type="button" onclick="closeMachineInspectionsModal()" style="background: rgba(255,255,255,0.2); border: none; color: #ffffff; font-size: 1.5rem; font-weight: 700; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+            &times;
+          </button>
+        </div>
+        <div style="padding: 1.5rem; overflow-y: auto; flex: 1;">
+          <div class="table-container" style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+              <thead>
+                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                  <th style="padding: 10px;">Fecha / Hora</th>
+                  <th style="padding: 10px; color:#0f172a;">Marca</th>
+                  <th style="padding: 10px;">No. Rollo</th>
+                  <th style="padding: 10px;">Resultado</th>
+                  <th style="padding: 10px;">Detalles / Observaciones</th>
+                  <th style="padding: 10px;">Evidencia Fotográfica</th>
+                </tr>
+              </thead>
+              <tbody id="machine-modal-tbody">
+                <!-- Se llena dinámicamente por JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div style="padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
+          <button type="button" class="btn-secondary" onclick="closeMachineInspectionsModal()" style="padding: 8px 20px; font-weight: 700; cursor: pointer;">
+            Cerrar Ventana
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL PARA VER FOTO COMPLETA -->
+    <div id="full-photo-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 100000; align-items: center; justify-content: center; backdrop-filter: blur(4px);" onclick="this.style.display='none'">
+      <span style="position: absolute; top: 20px; right: 30px; font-size: 30px; color: white; cursor: pointer; font-weight: bold;">&times;</span>
+      <img id="full-photo-img" src="" style="max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);" />
+    </div>
+
+    <!-- FULL INSPECTION DETAIL MODAL (Sin Máquina ni Operador) -->
+    <div id="full-inspection-detail-modal" class="modal-overlay" style="display: none; z-index: 20000;">
+      <div class="modal-content" style="max-width: 700px;">
+        <button class="modal-close" onclick="document.getElementById('full-inspection-detail-modal').style.display='none'">×</button>
+        <div style="padding: 10px 0;">
+          <h2 style="color: var(--color-primary); font-size: 1.4rem; font-weight: 800; display:flex; align-items:center; gap:8px;">
+            🔍 Detalles de la Inspección
+          </h2>
+          <div id="full-inspection-detail-body" style="margin-top: 15px; display: grid; gap: 10px; max-height: 70vh; overflow-y: auto;">
+            <!-- RENDERED DYNAMICALLY -->
+          </div>
+          <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+            <button onclick="document.getElementById('full-inspection-detail-modal').style.display='none'" style="background:var(--color-primary); color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          for (let reg of regs) reg.unregister();
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          for (let name of names) caches.delete(name);
+        });
+      }
+
+      let state = {
+        section: 'estadisticas',
+        role: 'estadisticas_globales',
+        bobinas: [],
+        inspecciones: [],
+        activeDate: '',
+        periodo: 'dia',
+        usuarioActual: 'Walmart'
+      };
+
+      const SERVER_URL = (window.location.protocol.startsWith('http') && !window.location.hostname.includes('localhost')) 
+        ? window.location.origin 
+        : 'https://calidad-bolsas-app.onrender.com';
+      const isOnline = true;
+      let statIndepPeriodo = 'dia';
+      let currentRawExcelData = '';
+
+      function isWalmartRecord(item, bobinasMap = {}) {
+        let m = String(item.marca_especificaciones || item.marca_cliente || item.marca || '').toLowerCase();
+        if (!m) {
+          if (item.bobina_id && bobinasMap[item.bobina_id]) m = bobinasMap[item.bobina_id];
+          else if (item.numero_rollo && bobinasMap['rollo:' + String(item.numero_rollo).toLowerCase()]) m = bobinasMap['rollo:' + String(item.numero_rollo).toLowerCase()];
+        }
+        return m.includes('walmart') || m.includes('wal-mart');
+      }
+
+      function stripSensitiveFields(item) {
+        const copy = { ...item };
+        delete copy.operador;
+        delete copy.editado_por;
+        delete copy.usuario;
+        delete copy.carga_realizado_por;
+        delete copy.realizado_por;
+        delete copy.maquina;
+        delete copy.banda;
+        return copy;
+      }
+
+      async function apiFetch(endpoint, options = {}) {
+        try {
+          const fullUrl = endpoint.startsWith('http') ? endpoint : (SERVER_URL + endpoint);
+          const res = await fetch(fullUrl, options);
+          if (!res.ok) throw new Error('API Error');
+          return await res.json();
+        } catch (e) {
+          console.error('API Fetch failed:', e);
+          return null;
+        }
+      }
+
+      function showToast(text, type = 'success') {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.className = `notification ${type}`;
+        document.getElementById('toast-icon').textContent = type === 'success' ? '✅' : (type === 'info' ? 'ℹ️' : '❌');
+        document.getElementById('toast-text').textContent = text;
+        toast.style.display = 'flex';
+        setTimeout(() => { toast.style.display = 'none'; }, 4000);
+      }
+
+      function fixOldFlexoRecords() {
+        if (state && state.inspecciones) {
+          state.inspecciones.forEach(i => {
+            if (!i.es_prueba_carga && (i.carga_resultado || i.carga_peso_kg || i.peso_colocado_kg)) {
+              i.es_prueba_carga = 1;
+            }
+          });
+        }
+      }
+
+      async function syncDataWithServer() {
+        try {
+          const i = await apiFetch('/api/inspecciones');
+          let rawInsps = [];
+          if (i && Array.isArray(i)) {
+            rawInsps = i;
+          } else {
+            rawInsps = JSON.parse(localStorage.getItem('calidad_inspecciones')) || [];
+          }
+
+          // Construir mapa de bobinas locales por si se abrió en modo local
+          const localBobinas = JSON.parse(localStorage.getItem('calidad_bobinas')) || [];
+          const bobinasMap = {};
+          localBobinas.forEach(b => {
+            const m = String(b.marca_especificaciones || b.proveedor || '').toLowerCase();
+            if (b.id) bobinasMap[b.id] = m;
+            if (b.numero_rollo) bobinasMap['rollo:' + String(b.numero_rollo).toLowerCase()] = m;
+          });
+
+          state.inspecciones = rawInsps
+            .filter(item => isWalmartRecord(item, bobinasMap))
+            .map(stripSensitiveFields);
+
+          fixOldFlexoRecords();
+          renderStatIndepView();
+        } catch (err) {
+          console.error('Error en sincronización continua:', err);
+        }
+      }
+
+      window.onload = async function() {
+        await syncDataWithServer();
+        setInterval(syncDataWithServer, 5000);
+
+        const now = new Date();
+        let defaultDate = now.toISOString().split('T')[0];
+        if (state.inspecciones.length > 0) {
+          const dates = state.inspecciones
+            .map(i => getInspIsoDate(i))
+            .filter(Boolean)
+            .sort()
+            .reverse();
+          if (dates[0]) defaultDate = dates[0];
+        }
+        const inputFecha = document.getElementById('stat-indep-fecha-input');
+        if (inputFecha) inputFecha.value = defaultDate;
+
+        renderStatIndepView();
+      };
+
+      function openIndependentEstadisticas() {
+        document.getElementById('landing-screen').style.display = 'none';
+        document.getElementById('app-screen').style.display = 'block';
+        document.getElementById('view-estadisticas-independiente').style.display = 'block';
+
+        const inputFecha = document.getElementById('stat-indep-fecha-input');
+        if (inputFecha && !inputFecha.value) {
+          inputFecha.value = new Date().toISOString().split('T')[0];
+        }
+        renderStatIndepView();
+      }
+
+      function exitToLanding() {
+        document.getElementById('app-screen').style.display = 'none';
+        document.getElementById('landing-screen').style.display = 'flex';
+      }
+
+      function setStatIndepPeriodo(periodo) {
+        statIndepPeriodo = periodo;
+        ['dia', 'semana', 'mes', 'ano'].forEach(p => {
+          const btn = document.getElementById(`btn-indep-periodo-${p}`);
+          if (btn) {
+            if (p === periodo) btn.classList.add('active-tab');
+            else btn.classList.remove('active-tab');
+          }
+        });
+        renderStatIndepView();
+      }
+
+      function getInspIsoDate(insp) {
+        if (!insp) return '';
+        const raw = (insp.fecha_registro || insp.fecha_iso || insp.fecha || '').trim();
+        if (!raw) return '';
+        if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+          return raw.substring(0, 10);
+        }
+        const firstChunk = raw.split(' ')[0];
+        const parts = firstChunk.split('/');
+        if (parts.length === 3) {
+          const d = parts[0].padStart(2, '0');
+          const m = parts[1].padStart(2, '0');
+          const y = parts[2].replace(',', '');
+          if (y.length === 4) return `${y}-${m}-${d}`;
+        }
+        return firstChunk;
+      }
+
+      function getWeekNumber(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00');
+        if (isNaN(d.getTime())) return 'Desconocido';
+        const date = new Date(d.getTime());
+        date.setHours(0, 0, 0, 0);
+        date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+        const week1 = new Date(date.getFullYear(), 0, 4);
+        week1.setDate(week1.getDate() + 3 - (week1.getDay() + 6) % 7);
+        const weekNo = 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+        return date.getFullYear() + '-W' + (weekNo < 10 ? '0' + weekNo : weekNo);
+      }
+
+      function getFilteredPeriodInspections() {
+        const fechaVal = document.getElementById('stat-indep-fecha-input')?.value || new Date().toISOString().split('T')[0];
+        const allInspections = (state && state.inspecciones) ? state.inspecciones : [];
+
+        return allInspections.filter(insp => {
+          const inspDate = getInspIsoDate(insp);
+          if (!inspDate) return false;
+          if (statIndepPeriodo === 'dia') return inspDate === fechaVal;
+          if (statIndepPeriodo === 'semana') return getWeekNumber(inspDate) === getWeekNumber(fechaVal);
+          if (statIndepPeriodo === 'mes') return inspDate.substring(0, 7) === fechaVal.substring(0, 7);
+          if (statIndepPeriodo === 'ano') return inspDate.substring(0, 4) === fechaVal.substring(0, 4);
+          return true;
+        });
+      }
+
+      async function renderStatIndepView() {
+        const filteredInspections = getFilteredPeriodInspections();
+
+        // 1. Porcentajes Generales en Tarjetas KPI
+        const qualityOnly = filteredInspections.filter(i => i.es_prueba_carga !== 1);
+        const totalQual = qualityOnly.length;
+        const conformesQual = qualityOnly.filter(i => i.resultado === 'Aprobado').length;
+        const noConformesQual = qualityOnly.filter(i => i.resultado === 'Rechazado').length;
+
+        const pctConfQual = totalQual > 0 ? Math.round((conformesQual / totalQual) * 100) : 0;
+        const pctNoConfQual = totalQual > 0 ? (100 - pctConfQual) : 0;
+
+        const cargaOnly = filteredInspections.filter(i => i.es_prueba_carga === 1);
+        const totalCarga = cargaOnly.length;
+        const passCarga = cargaOnly.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+        const pctPassCarga = totalCarga > 0 ? Math.round((passCarga / totalCarga) * 100) : 0;
+
+        const kpiConf = document.getElementById('stat-kpi-conformes');
+        const kpiCarga = document.getElementById('stat-kpi-carga-pct');
+        const kpiNoConf = document.getElementById('stat-kpi-noconformes');
+
+        if (kpiConf) kpiConf.textContent = totalQual > 0 ? `${pctConfQual}%` : '0%';
+        if (kpiCarga) kpiCarga.textContent = totalCarga > 0 ? `${pctPassCarga}%` : '0%';
+        if (kpiNoConf) kpiNoConf.textContent = totalQual > 0 ? `${pctNoConfQual}%` : '0%';
+
+        renderConformidadSVGChart(filteredInspections);
+        renderInconformidadesTable(filteredInspections);
+        renderCargaPieCharts(filteredInspections);
+      }
+
+      // Barra General de Porcentaje de Inspecciones de Calidad (Sin dividir por máquina)
+      function renderConformidadSVGChart(inspections) {
+        const wrapper = document.getElementById('wrapper-stat-conformidad-svg');
+        if (!wrapper) return;
+
+        const qualityInspections = inspections.filter(i => i.es_prueba_carga !== 1);
+        const total = qualityInspections.length;
+
+        if (total === 0) {
+          wrapper.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 2rem; font-style: italic;">No hay inspecciones de calidad de Walmart para mostrar en el periodo seleccionado.</div>`;
+          return;
+        }
+
+        const conformes = qualityInspections.filter(i => i.resultado === 'Aprobado').length;
+        const noConformes = total - conformes;
+        const pctConf = Math.round((conformes / total) * 100);
+        const pctNoConf = 100 - pctConf;
+
+        wrapper.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div 
+              onclick="showAllWalmartInspectionsModal('general')"
+              style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px 18px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;"
+              onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.08)'"
+              onmouseout="this.style.transform='none'; this.style.boxShadow='none'"
+              title="Toca para ver todas las inspecciones de calidad y fotos de Walmart"
+            >
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                <span style="font-weight: 800; color: var(--color-primary); font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                  <span>Resultado General de Inspecciones Walmart</span>
+                  <span style="font-size: 0.75rem; background: #e2e8f0; color: #334155; padding: 2px 8px; border-radius: 4px; font-weight: 600;">🔍 Ver inspecciones y fotos</span>
+                </span>
+                <span style="font-weight: 700; font-size: 0.88rem; color: #475569;">${pctConf}% Conformes / ${pctNoConf}% No Conformes</span>
+              </div>
+              <div style="height: 26px; width: 100%; background: #e2e8f0; border-radius: 13px; overflow: hidden; display: flex;">
+                <div style="width: ${pctConf}%; background: #16a34a; height: 100%; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 0.8rem; font-weight: 800;" title="${pctConf}% Conforme">
+                  ${pctConf > 10 ? pctConf + '% OK' : ''}
+                </div>
+                <div style="width: ${pctNoConf}%; background: #dc2626; height: 100%; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 0.8rem; font-weight: 800;" title="${pctNoConf}% No Conforme">
+                  ${pctNoConf > 10 ? pctNoConf + '%' : ''}
+                </div>
+              </div>
+            </div>
+          </div>
         `;
       }
 
-      modal.classList.add('open');
-    }
+      // Gráficos de Pastel de Pruebas de Carga en Porcentajes Generales (Sin dividir por máquina)
+      function createPieChartSVG(conf, noConf, type) {
+        const total = conf + noConf;
+        if (total === 0) {
+          return `
+            <div style="text-align: center; padding: 10px 0;">
+              <svg viewBox="0 0 100 100" style="width: 90px; height: 90px;">
+                <circle cx="50" cy="50" r="40" fill="#e2e8f0" />
+                <circle cx="50" cy="50" r="22" fill="#ffffff" />
+                <text x="50" y="54" text-anchor="middle" font-size="9" font-weight="700" fill="#94a3b8">0%</text>
+              </svg>
+              <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px; font-weight: 600;">Sin registros</div>
+            </div>
+          `;
+        }
 
-    function closeDetailModal() {
-      document.getElementById('detail-modal').classList.remove('open');
-    }
+        const pctConf = Math.round((conf / total) * 100);
+        const pctNoConf = 100 - pctConf;
+        const R = 40;
+        const cx = 50;
+        const cy = 50;
 
-    function exportStatsToExcel() {
-      if (typeof XLSX === 'undefined') {
-        alert('Cargando librería Excel, intenta de nuevo en unos segundos.');
-        return;
+        let svgContent = '';
+        if (noConf === 0) {
+          svgContent = `
+            <circle cx="${cx}" cy="${cy}" r="${R}" fill="#16a34a" style="cursor: pointer;" onclick="showAllWalmartInspectionsModal('carga')" />
+            <circle cx="${cx}" cy="${cy}" r="22" fill="#ffffff" />
+            <text x="${cx}" y="54" text-anchor="middle" font-size="11" font-weight="800" fill="#16a34a">100%</text>
+          `;
+        } else if (conf === 0) {
+          svgContent = `
+            <circle cx="${cx}" cy="${cy}" r="${R}" fill="#dc2626" style="cursor: pointer;" onclick="showCargaDefectsModal('${type}')" />
+            <circle cx="${cx}" cy="${cy}" r="22" fill="#ffffff" />
+            <text x="${cx}" y="54" text-anchor="middle" font-size="11" font-weight="800" fill="#dc2626" style="cursor: pointer;" onclick="showCargaDefectsModal('${type}')">0%</text>
+          `;
+        } else {
+          const angleConf = (conf / total) * 2 * Math.PI;
+          const startAngle = -Math.PI / 2;
+          const midAngleConf = startAngle + angleConf;
+
+          const x1 = cx + R * Math.cos(startAngle);
+          const y1 = cy + R * Math.sin(startAngle);
+          const x2 = cx + R * Math.cos(midAngleConf);
+          const y2 = cy + R * Math.sin(midAngleConf);
+
+          const largeArcGreen = angleConf > Math.PI ? 1 : 0;
+          const greenPath = `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${R} ${R} 0 ${largeArcGreen} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+
+          const angleNoConf = 2 * Math.PI - angleConf;
+          const largeArcRed = angleNoConf > Math.PI ? 1 : 0;
+          const redPath = `M ${cx} ${cy} L ${x2.toFixed(2)} ${y2.toFixed(2)} A ${R} ${R} 0 ${largeArcRed} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z`;
+
+          svgContent = `
+            <path d="${greenPath}" fill="#16a34a" style="cursor: pointer;" onclick="showAllWalmartInspectionsModal('carga')" />
+            <path d="${redPath}" fill="#dc2626" style="cursor: pointer;" onclick="showCargaDefectsModal('${type}')">
+              <title>Toca para ver detalles de fallas</title>
+            </path>
+            <circle cx="${cx}" cy="${cy}" r="22" fill="#ffffff" />
+            <text x="${cx}" y="54" text-anchor="middle" font-size="10" font-weight="800" fill="#1e293b">${pctConf}%</text>
+          `;
+        }
+
+        return `
+          <div style="text-align: center;">
+            <svg viewBox="0 0 100 100" style="width: 95px; height: 95px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));">
+              ${svgContent}
+            </svg>
+            <div style="margin-top: 6px; font-size: 0.78rem; display: flex; justify-content: center; gap: 10px; font-weight: 700;">
+              <span style="color: #16a34a; cursor: pointer;" onclick="showAllWalmartInspectionsModal('carga')">🟢 ${pctConf}%</span>
+              <span style="color: #dc2626; cursor: pointer; text-decoration: underline;" onclick="showCargaDefectsModal('${type}')">🔴 ${pctNoConf}%</span>
+            </div>
+          </div>
+        `;
       }
-      const wb = XLSX.utils.book_new();
-      const qualityInsp = lastFilteredInspections.filter(i => !isLoadTestRecord(i));
-      const loads = lastFilteredInspections.filter(isLoadTestRecord);
 
-      const qTot = qualityInsp.length;
-      const qOk = qualityInsp.filter(isRecordApproved).length;
-      const qBad = qTot - qOk;
-      const qOkPct = qTot > 0 ? ((qOk / qTot) * 100).toFixed(1) + '%' : '0.0%';
-      const qBadPct = qTot > 0 ? ((qBad / qTot) * 100).toFixed(1) + '%' : '0.0%';
+      function renderCargaPieCharts(inspections) {
+        const container = document.getElementById('wrapper-carga-pie-charts');
+        if (!container) return;
 
-      const lTot = loads.length;
-      const lOk = loads.filter(isRecordApproved).length;
-      const lBad = lTot - lOk;
-      const lOkPct = lTot > 0 ? ((lOk / lTot) * 100).toFixed(1) + '%' : '0.0%';
-      const lBadPct = lTot > 0 ? ((lBad / lTot) * 100).toFixed(1) + '%' : '0.0%';
+        const cargaInspections = inspections.filter(i => i.es_prueba_carga === 1);
 
-      const resumenRows = [
-        ['REPORTE GENERAL DE CALIDAD — WALMART'],
-        ['Fecha de Generación', new Date().toLocaleString('es-MX')],
-        [],
-        ['INDICADOR GENERAL UNIFICADO', '% CONFORME / APROBADO', '% NO CONFORME / RECHAZADO'],
-        ['Conformidad General en Inspecciones de Calidad', qOkPct, qBadPct],
-        ['Aprobación General en Pruebas de Carga', lOkPct, lBadPct]
-      ];
-      const wsResumen = XLSX.utils.aoa_to_sheet(resumenRows);
-      XLSX.utils.book_append_sheet(wb, wsResumen, 'Porcentajes Generales');
+        const estaticas = cargaInspections.filter(i => {
+          const raw = String(i.carga_tipo_prueba || i.tipo_prueba_carga || '').toLowerCase();
+          return raw === 'estatica' || raw.includes('estática') || raw.includes('estatica');
+        });
+        const estConf = estaticas.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+        const estNoConf = estaticas.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length;
 
-      const detalleRows = [
-        ['Fecha y Hora', 'Tipo de Registro', 'Marca', 'No. Rollo', 'Detalle / Medidas / Peso', 'Dictamen', 'Observaciones / Acción Correctiva']
-      ];
-      lastFilteredInspections.forEach(i => {
-        detalleRows.push([
-          getRecordDateStr(i),
-          isLoadTestRecord(i) ? 'Prueba de Carga' : 'Inspección de Calidad',
-          i.marca_especificaciones || i.marca_cliente || 'WALMART',
-          i.numero_rollo || '—',
-          formatInspectionSummary(i).replace(/<[^>]+>/g, ''),
-          isRecordApproved(i) ? 'CONFORME' : 'NO CONFORME',
-          [i.descripcion_defecto, i.observaciones, i.accion_correctiva].filter(Boolean).join(' | ')
-        ]);
-      });
-      const wsDetalle = XLSX.utils.aoa_to_sheet(detalleRows);
-      XLSX.utils.book_append_sheet(wb, wsDetalle, 'Inspecciones y Cargas');
+        const dinamicas = cargaInspections.filter(i => {
+          const raw = String(i.carga_tipo_prueba || i.tipo_prueba_carga || '').toLowerCase();
+          return raw === 'dinamica' || raw.includes('dinámica') || raw.includes('dinamica');
+        });
+        const dinConf = dinamicas.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+        const dinNoConf = dinamicas.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length;
 
-      XLSX.writeFile(wb, `Reporte_Calidad_Walmart_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    }
+        const estSVG = createPieChartSVG(estConf, estNoConf, 'estatica');
+        const dinSVG = createPieChartSVG(dinConf, dinNoConf, 'dinamica');
 
-    function exportStatsToPDF() {
-      if (typeof html2pdf === 'undefined') {
-        window.print();
-        return;
+        const totalFallas = estNoConf + dinNoConf;
+        const cardBorder = totalFallas > 0 ? 'border: 2px solid #fca5a5; background: #fff5f5;' : 'border: 1px solid #e2e8f0; background: #ffffff;';
+
+        container.innerHTML = `
+          <div class="card" style="padding: 1.25rem; margin-bottom: 0; border-radius: 12px; box-shadow: 0 3px 6px rgba(0,0,0,0.05); ${cardBorder}">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;">
+              <h4 
+                onclick="showAllWalmartInspectionsModal('carga')"
+                style="margin: 0; font-weight: 800; color: var(--color-primary); font-size: 1rem; display: flex; align-items: center; gap: 8px; cursor: pointer;"
+                title="Toca para ver todas las pruebas de carga y fotos de Walmart"
+              >
+                🏋️‍♂️ Resultado General de Pruebas de Carga — Walmart <span style="font-size:0.75rem; font-weight:600; background:#e2e8f0; color:#334155; padding:2px 8px; border-radius:4px;">🔍 Ver todas las pruebas y fotos</span>
+              </h4>
+              ${totalFallas > 0 
+                ? `<span style="background: #fee2e2; color: #dc2626; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 800;">⚠️ Con Incidencias</span>`
+                : cargaInspections.length > 0
+                  ? `<span style="background: #dcfce7; color: #16a34a; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 800;">✅ 100% Conforme</span>`
+                  : `<span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 700;">⚪ Sin pruebas en el periodo</span>`
+              }
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center;">
+              <div>
+                <div style="font-size: 0.85rem; font-weight: 800; text-align: center; color: #475569; margin-bottom: 6px;">⏱️ Estática (30 min)</div>
+                ${estSVG}
+              </div>
+              <div>
+                <div style="font-size: 0.85rem; font-weight: 800; text-align: center; color: #475569; margin-bottom: 6px;">🏃 Dinámica (15 min)</div>
+                ${dinSVG}
+              </div>
+            </div>
+          </div>
+        `;
       }
-      const element = document.getElementById('stats-export-container');
-      const opt = {
-        margin: [8, 8, 8, 8],
-        filename: `Reporte_Calidad_Walmart_${new Date().toISOString().slice(0, 10)}.pdf`,
-        image: { type: 'jpeg', quality: 0.96 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0a1628' },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-      };
-      html2pdf().set(opt).from(element).save();
-    }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      syncFromCloud();
-    });
-  </script>
-</body>
+      // Tabla de Inconformidades (Sin Máquina ni Operador)
+      function renderInconformidadesTable(inspections) {
+        const tbody = document.getElementById('table-inconformidades-body');
+        if (!tbody) return;
 
+        const defectsList = inspections.filter(i => 
+          i.resultado === 'Rechazado' || 
+          i.carga_resultado === 'Falla' || 
+          (i.descripcion_defecto && i.descripcion_defecto.trim() !== '') ||
+          i.impresion_correcta === 0 ||
+          i.registro_correcto === 0 ||
+          i.medidas_dentro_parametro === 0 ||
+          i.integridad_bolsa === 0 ||
+          i.pva_suficiente === 0 ||
+          i.hotmelt_suficiente === 0 ||
+          i.posicion_asa_correcta === 0 ||
+          i.pegado_correcto === 0 ||
+          i.posicion_parche_correcta === 0
+        );
+
+        if (defectsList.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: #16a34a; font-weight: 700; background: #f0fdf4;">🎉 Sin inconformidades registradas para los filtros seleccionados.</td></tr>`;
+          return;
+        }
+
+        let html = '';
+        defectsList.forEach(i => {
+          let defectoTexto = i.descripcion_defecto || i.observaciones || 'No conformidad detectada';
+          if (i.impresion_correcta === 0) defectoTexto = 'Fallo en Impresión/Tinta. ' + defectoTexto;
+          if (i.registro_correcto === 0) defectoTexto = 'Fallo en Registro. ' + defectoTexto;
+          if (i.medidas_dentro_parametro === 0) {
+            const u = i.medidas_unidad === 'cm' ? 'cm' : 'in';
+            defectoTexto = `Medidas Fuera de Rango [A: ${i.medida_ancho||'-'}${u}, L: ${i.medida_largo||'-'}${u}, F: ${i.medida_fuelle||'-'}${u}]. ` + defectoTexto;
+          }
+          if (i.integridad_bolsa === 0) defectoTexto = 'Fallo Integridad de Bolsa. ' + defectoTexto;
+          if (i.pva_suficiente === 0) defectoTexto = 'Fallo PVA. ' + defectoTexto;
+          if (i.hotmelt_suficiente === 0) defectoTexto = 'Fallo Hotmelt. ' + defectoTexto;
+          if (i.posicion_asa_correcta === 0 || i.pegado_correcto === 0 || i.posicion_parche_correcta === 0) {
+            defectoTexto = 'Fallo Posición/Pegado de Asa o Parche. ' + defectoTexto;
+          }
+          if (i.carga_resultado === 'Falla') defectoTexto = 'Falla en Resistencia de Asas. ' + defectoTexto;
+
+          const fotoCell = i.foto_url
+            ? `<img src="${i.foto_url}" onclick="event.stopPropagation(); showFullPhoto('${i.foto_url}')" title="Toca para ver foto completa" style="width: 55px; height: 55px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" />`
+            : `<span style="color: #94a3b8; font-size: 0.75rem;">Sin foto</span>`;
+
+          const rolloDisplay = i.numero_rollo || i.bobina_id || '-';
+
+          html += `
+            <tr onclick="if(!event.target.closest('img') && !event.target.closest('button')) viewInspectionDetail('${i.id}')" style="cursor:pointer; border-bottom: 1px solid #e2e8f0;" onmouseover="this.style.backgroundColor='#f1f5f9'" onmouseout="this.style.backgroundColor='transparent'" title="Haz clic para ver detalles">
+              <td style="padding: 10px; font-weight: 600; color:#0284c7;">${i.fecha_registro || '-'} 🔍</td>
+              <td style="padding: 10px;">${rolloDisplay}</td>
+              <td style="padding: 10px; color: #dc2626; font-weight: 600;">${defectoTexto}</td>
+              <td style="padding: 10px; color: #15803d; font-weight: 600;">${i.accion_correctiva || 'Ajuste de proceso aplicado'}</td>
+              <td style="padding: 10px; text-align: center;">${fotoCell}</td>
+            </tr>
+          `;
+        });
+
+        tbody.innerHTML = html;
+      }
+
+      // Modal de Defectos de Carga (Unificado, sin máquina ni operador)
+      function showCargaDefectsModal(type) {
+        const modal = document.getElementById('carga-defect-detail-modal');
+        const title = document.getElementById('carga-modal-title');
+        const tbody = document.getElementById('carga-modal-tbody');
+        if (!modal || !tbody) return;
+
+        const tipoText = type === 'estatica' ? 'Estática (30 min)' : 'Dinámica (15 min)';
+        if (title) title.textContent = `🚨 Detalles de Defectos en Pruebas de Carga — Walmart (${tipoText})`;
+
+        const periodInsps = getFilteredPeriodInspections();
+        const defects = periodInsps.filter(i => {
+          if (i.es_prueba_carga !== 1) return false;
+          const rawTipo = String(i.carga_tipo_prueba || i.tipo_prueba_carga || '').toLowerCase();
+          const isEst = rawTipo === 'estatica' || rawTipo.includes('estática') || rawTipo.includes('estatica');
+          const isDin = rawTipo === 'dinamica' || rawTipo.includes('dinámica') || rawTipo.includes('dinamica');
+          if (type === 'estatica' && !isEst) return false;
+          if (type === 'dinamica' && !isDin) return false;
+          return (i.carga_resultado === 'Falla' || i.resultado === 'Rechazado');
+        });
+
+        if (defects.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: #16a34a; font-weight: 700; background: #f0fdf4;">🎉 No hay registros de fallas para este tipo de prueba en el periodo seleccionado.</td></tr>`;
+        } else {
+          let html = '';
+          defects.forEach(d => {
+            html += `
+              <tr onclick="if(!event.target.closest('button')) viewInspectionDetail('${d.id}')" style="cursor:pointer; border-bottom: 1px solid #e2e8f0;" onmouseover="this.style.backgroundColor='#fef2f2'" onmouseout="this.style.backgroundColor='transparent'" title="Haz clic para ver detalles">
+                <td style="padding: 10px; font-weight: 600; color:#0284c7;">${d.fecha_registro || '-'} 🔍</td>
+                <td style="padding: 10px;">${d.numero_rollo || d.marca_cliente || '-'}</td>
+                <td style="padding: 10px; font-weight: 700; color: #2563eb;">${d.carga_peso_kg || d.peso_colocado_kg || 0} kg</td>
+                <td style="padding: 10px; color: #dc2626; font-weight: 700;">${d.observaciones || d.descripcion_defecto || 'Falla en resistencia de asa'}</td>
+                <td style="padding: 10px; color: #15803d; font-weight: 600;">${d.accion_correctiva || 'Ajustar pegado / sellado de asa'}</td>
+                <td style="padding: 10px; text-align: center;">
+                  ${d.foto_url ? `<button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="event.stopPropagation(); showFullPhoto('${d.foto_url}')">📷 Ver Foto</button>` : '<span style="color:#94a3b8; font-size: 0.8rem;">Sin foto</span>'}
+                </td>
+              </tr>
+            `;
+          });
+          tbody.innerHTML = html;
+        }
+
+        modal.style.display = 'flex';
+      }
+
+      function closeCargaDefectModal() {
+        const modal = document.getElementById('carga-defect-detail-modal');
+        if (modal) modal.style.display = 'none';
+      }
+
+      // Modal Unificado de Inspecciones y Pruebas de Carga de Walmart (Sin Máquina ni Operador)
+      function showAllWalmartInspectionsModal(filterType = 'general') {
+        const modal = document.getElementById('machine-inspections-detail-modal');
+        const title = document.getElementById('machine-modal-title');
+        const subtitle = document.getElementById('machine-modal-subtitle');
+        const tbody = document.getElementById('machine-modal-tbody');
+        if (!modal || !tbody) return;
+
+        const fechaVal = document.getElementById('stat-indep-fecha-input')?.value || new Date().toISOString().split('T')[0];
+        const periodInsps = getFilteredPeriodInspections();
+
+        const list = periodInsps.filter(insp => {
+          if (filterType === 'carga') return insp.es_prueba_carga === 1;
+          if (filterType === 'noconformes') return insp.resultado === 'Rechazado' || insp.carga_resultado === 'Falla';
+          return insp.es_prueba_carga !== 1;
+        });
+
+        const periodLabel = statIndepPeriodo === 'dia' ? `del Día ${fechaVal}` : statIndepPeriodo === 'semana' ? 'de la Semana' : statIndepPeriodo === 'mes' ? `de ${fechaVal.substring(0, 7)}` : `del Año ${fechaVal.substring(0, 4)}`;
+
+        if (title) {
+          title.textContent = filterType === 'carga'
+            ? `📊 Pruebas de Carga Walmart (${periodLabel})`
+            : filterType === 'noconformes'
+              ? `⚠️ No Conformidades Walmart (${periodLabel})`
+              : `📊 Inspecciones de Calidad Walmart (${periodLabel})`;
+        }
+
+        const total = list.length;
+        const approvedCount = list.filter(i => i.resultado === 'Aprobado' || i.carga_resultado === 'Pasa').length;
+        const pctAppr = total > 0 ? Math.round((approvedCount / total) * 100) : 0;
+        const pctRej = total > 0 ? (100 - pctAppr) : 0;
+
+        if (subtitle) {
+          subtitle.textContent = `Porcentaje General: ✅ ${pctAppr}% Conformes | 🔴 ${pctRej}% No Conformes`;
+        }
+
+        if (list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: #64748b; font-style: italic; background: #f8fafc;">No hay registros de Walmart en este periodo.</td></tr>`;
+        } else {
+          let html = '';
+          list.forEach(ins => {
+            const isApproved = (ins.resultado === 'Aprobado' || ins.carga_resultado === 'Pasa');
+            const resBadge = isApproved 
+              ? `<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">${ins.resultado || ins.carga_resultado || 'Aprobado'}</span>`
+              : `<span style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">${ins.resultado || ins.carga_resultado || 'Rechazado'}</span>`;
+
+            let obs = ins.descripcion_defecto || ins.observaciones || '';
+            if (ins.es_prueba_carga === 1) {
+              const rawT = String(ins.carga_tipo_prueba || ins.tipo_prueba_carga || '');
+              const tLabel = (rawT === 'estatica' || rawT.toLowerCase().includes('est')) ? 'Estática' : 'Dinámica';
+              const pesoVal = ins.carga_peso_kg || ins.peso_colocado_kg || 0;
+              const hIni = ins.carga_hora_inicial || ins.hora_inicial || '';
+              const hFin = ins.carga_hora_final || ins.hora_final || '';
+              const durTxt = ins.duracion_calculada ? ` (${ins.duracion_calculada})` : (hIni && hFin ? ` (${hIni} - ${hFin})` : '');
+              obs = `Prueba Carga (${tLabel} - ${pesoVal} kg)${durTxt}. ` + obs;
+            } else if (ins.area === 'Flexo') {
+              obs = `Impresión: ${ins.impresion_correcta === 1 ? 'OK' : 'Fallo'}. Tintas: ${ins.numero_tintas || 1}. ` + obs;
+            } else if (ins.area === 'Nanjang' || ins.area === 'Con Asa') {
+              const u = ins.medidas_unidad === 'cm' ? 'cm' : '"';
+              const med = (ins.medida_ancho || ins.medida_largo) ? ` [${ins.medida_ancho||'-'}${u}x${ins.medida_largo||'-'}${u}]` : '';
+              obs = `Medidas ${ins.medidas_dentro_parametro === 1 ? 'OK' : 'Fuera de rango'}${med}. ` + obs;
+            }
+            if (ins.accion_correctiva) {
+              obs += ` | Acc. Corr: ${ins.accion_correctiva}`;
+            }
+
+            html += `
+              <tr onclick="if(!event.target.closest('button') && !event.target.closest('a')) viewInspectionDetail('${ins.id}')" style="cursor:pointer; border-bottom: 1px solid #e2e8f0;" onmouseover="this.style.backgroundColor='#f1f5f9'" onmouseout="this.style.backgroundColor='transparent'" title="Haz clic para ver detalles completos">
+                <td style="padding: 10px; font-weight: 600; color:#0284c7;">${ins.fecha_registro || ins.hora_inspeccion || '-'} 🔍</td>
+                <td style="padding: 10px; font-weight: 600; color: #0f172a;">${ins.marca_especificaciones || ins.marca_cliente || ins.marca || 'WALMART'}</td>
+                <td style="padding: 10px;"><code>${ins.numero_rollo || '-'}</code></td>
+                <td style="padding: 10px;">${resBadge}</td>
+                <td style="padding: 10px; font-size: 0.8rem; color: var(--text-main);">${obs || 'Sin observaciones'}</td>
+                <td style="padding: 10px; text-align: center;">
+                  ${ins.foto_url ? `<button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="event.stopPropagation(); showFullPhoto('${ins.foto_url}')">📷 Ver Foto</button>` : '<span style="color:#94a3b8; font-size: 0.8rem;">Sin foto</span>'}
+                </td>
+              </tr>
+            `;
+          });
+          tbody.innerHTML = html;
+        }
+
+        modal.style.display = 'flex';
+      }
+
+      function closeMachineInspectionsModal() {
+        const modal = document.getElementById('machine-inspections-detail-modal');
+        if (modal) modal.style.display = 'none';
+      }
+
+      function showFullPhoto(src) {
+        if (!src || src === 'null' || src === '') return;
+        const modal = document.getElementById('full-photo-modal');
+        const img = document.getElementById('full-photo-img');
+        img.src = src;
+        modal.style.display = 'flex';
+      }
+
+      // Detalle Completo de Inspección (Sin Máquina, sin Área interna y sin Operador/Registró)
+      function viewInspectionDetail(idStr) {
+        if (!state || !state.inspecciones) return;
+        const insp = state.inspecciones.find(i => String(i.id) === String(idStr));
+        if (!insp) return;
+
+        const body = document.getElementById('full-inspection-detail-body');
+        if (!body) return;
+
+        let html = `<div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:15px; margin-bottom:10px;">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div><span style="color:#64748b; font-size:0.85rem;">Fecha/Hora:</span> <strong style="display:block;">${insp.fecha_registro || insp.hora_inspeccion || '-'}</strong></div>
+            <div><span style="color:#64748b; font-size:0.85rem;">Marca:</span> <strong style="display:block; color:#0284c7;">${insp.marca_especificaciones || insp.marca_cliente || insp.marca || 'WALMART'}</strong></div>
+            <div><span style="color:#64748b; font-size:0.85rem;">No. Rollo:</span> <strong style="display:block;">${insp.numero_rollo || insp.bobina_id || '-'}</strong></div>
+            <div><span style="color:#64748b; font-size:0.85rem;">Resultado:</span> <strong style="display:block; color:${(insp.resultado==='Rechazado' || insp.carga_resultado==='Falla') ? '#dc2626':'#15803d'}">${insp.resultado || insp.carga_resultado || '-'}</strong></div>
+          </div>
+        </div>`;
+
+        html += `<h3 style="font-size:1rem; color:#0f172a; margin-top:10px; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">Parámetros Evaluados</h3>`;
+        html += `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px; padding: 10px;">`;
+
+        const excludeKeys = [
+          'id', 'area', 'maquina', 'banda', 'hora_inspeccion', 'fecha_registro', 
+          'operador', 'editado_por', 'usuario', 'carga_realizado_por', 'realizado_por',
+          'resultado', 'carga_resultado', 'foto_url',
+          'es_prueba_carga', 'bobina_id', 'marca', 'marca_cliente', 'marca_especificaciones',
+          'timestamp'
+        ];
+
+        for (const key in insp) {
+          if (excludeKeys.includes(key)) continue;
+          let val = insp[key];
+
+          if (key === 'defecto_impresion') {
+            if (val === 1) val = 'Sí (Hay defecto) ❌';
+            if (val === 0) val = 'No (Sin defecto) ✅';
+          } else {
+            if (val === 1) val = 'Sí / Correcto ✅';
+            if (val === 0) val = 'No / Incorrecto ❌';
+          }
+          if (val === null || val === undefined || val === '') val = '-';
+
+          let label = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          html += `<div style="background:#fff; border:1px solid #e2e8f0; padding:8px 12px; border-radius:6px;">
+            <span style="color:#64748b; font-size:0.75rem; display:block;">${label}</span>
+            <strong style="font-size:0.9rem;">${val}</strong>
+          </div>`;
+        }
+        html += `</div>`;
+
+        if (insp.foto_url && insp.foto_url.startsWith('data:image')) {
+          html += `<div style="margin-top:15px; text-align:center;">
+            <h3 style="font-size:1rem; color:#0f172a; margin-bottom:10px;">Evidencia Fotográfica</h3>
+            <img src="${insp.foto_url}" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="showFullPhoto('${insp.foto_url}')"/>
+          </div>`;
+        }
+
+        body.innerHTML = html;
+        document.getElementById('full-inspection-detail-modal').style.display = 'flex';
+      }
+
+      // Exportación Excel y PDF en Porcentajes Generales (Sin Máquina ni Operador)
+      function triggerBlobDownload(blob, filename) {
+        try {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          a.target = '_self';
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            if (a.parentNode) document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 2000);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      function closeExcelDownloadModal() {
+        const modal = document.getElementById('excel-download-modal');
+        if (modal) modal.style.display = 'none';
+      }
+
+      function closePdfReportModal() {
+        const modal = document.getElementById('pdf-report-modal');
+        if (modal) modal.style.display = 'none';
+      }
+
+      function copyExcelDataToClipboard() {
+        if (!currentRawExcelData) return;
+        navigator.clipboard.writeText(currentRawExcelData).then(() => {
+          showToast('📋 Datos copiados al portapapeles.', 'success');
+        });
+      }
+
+      async function exportStatsToExcel() {
+        showToast('Generando reporte Excel de Walmart...', 'info');
+        const scopedInspections = getFilteredPeriodInspections();
+        const selectedDate = document.getElementById('stat-indep-fecha-input')?.value || new Date().toISOString().split('T')[0];
+        const periodoName = statIndepPeriodo === 'dia' ? 'Día' : statIndepPeriodo === 'semana' ? 'Semana' : statIndepPeriodo === 'mes' ? 'Mes' : 'Año';
+        const fileName = `Estadisticas_Walmart_${periodoName}_${selectedDate}.xlsx`;
+
+        const qual = scopedInspections.filter(i => i.es_prueba_carga !== 1);
+        const carga = scopedInspections.filter(i => i.es_prueba_carga === 1);
+
+        const qTot = qual.length;
+        const qOk = qual.filter(i => i.resultado === 'Aprobado').length;
+        const qPctOk = qTot > 0 ? ((qOk / qTot) * 100).toFixed(1) + '%' : '0%';
+        const qPctFail = qTot > 0 ? (((qTot - qOk) / qTot) * 100).toFixed(1) + '%' : '0%';
+
+        const cTot = carga.length;
+        const cOk = carga.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+        const cPctOk = cTot > 0 ? ((cOk / cTot) * 100).toFixed(1) + '%' : '0%';
+        const cPctFail = cTot > 0 ? (((cTot - cOk) / cTot) * 100).toFixed(1) + '%' : '0%';
+
+        const summaryData = [
+          ["CONTROL DE CALIDAD DIPAPEL - REPORTE GENERAL WALMART"],
+          ["Periodo de Consulta:", periodoName, "Fecha:", selectedDate],
+          ["Generado el:", new Date().toLocaleString()],
+          [],
+          ["PORCENTAJES GENERALES DE CALIDAD (WALMART)"],
+          ["Rubro", "% Conforme / Aprobado", "% No Conforme / Rechazado"],
+          ["Inspecciones de Calidad", qPctOk, qPctFail],
+          ["Pruebas de Carga y Resistencia de Asas", cPctOk, cPctFail]
+        ];
+
+        const detailRows = [
+          ["DETALLE GENERAL DE INSPECCIONES Y PRUEBAS DE CARGA — WALMART"],
+          ["Fecha/Hora", "Tipo", "Nº Rollo", "Resultado", "Observaciones / Acción Correctiva"]
+        ];
+        scopedInspections.forEach(i => {
+          detailRows.push([
+            i.fecha_registro || '-',
+            i.es_prueba_carga === 1 ? 'Prueba de Carga' : 'Inspección de Calidad',
+            i.numero_rollo || '-',
+            i.resultado || i.carga_resultado || '-',
+            [i.descripcion_defecto, i.observaciones, i.accion_correctiva].filter(Boolean).join(' | ')
+          ]);
+        });
+
+        try {
+          if (typeof XLSX !== 'undefined') {
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), "Porcentajes Generales");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detailRows), "Detalle Walmart");
+
+            const b64 = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+            const xlsxDataUrl = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + b64;
+            const btnXlsx = document.getElementById('btn-download-xlsx-direct');
+            if (btnXlsx) {
+              btnXlsx.href = xlsxDataUrl;
+              btnXlsx.download = fileName;
+            }
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            triggerBlobDownload(new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), fileName);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+
+        let tsvContent = "";
+        summaryData.forEach(r => tsvContent += r.join('\t') + '\n');
+        detailRows.forEach(r => tsvContent += r.join('\t') + '\n');
+        currentRawExcelData = tsvContent;
+
+        const modal = document.getElementById('excel-download-modal');
+        if (modal) modal.style.display = 'flex';
+      }
+
+      async function exportStatsToPDF() {
+        const scopedInspections = getFilteredPeriodInspections();
+        const selectedDate = document.getElementById('stat-indep-fecha-input')?.value || new Date().toISOString().split('T')[0];
+        const periodoName = statIndepPeriodo === 'dia' ? 'Día' : statIndepPeriodo === 'semana' ? 'Semana' : statIndepPeriodo === 'mes' ? 'Mes' : 'Año';
+
+        const qual = scopedInspections.filter(i => i.es_prueba_carga !== 1);
+        const carga = scopedInspections.filter(i => i.es_prueba_carga === 1);
+
+        const qTot = qual.length;
+        const qOk = qual.filter(i => i.resultado === 'Aprobado').length;
+        const qPctOk = qTot > 0 ? ((qOk / qTot) * 100).toFixed(1) + '%' : '0%';
+        const qPctFail = qTot > 0 ? (((qTot - qOk) / qTot) * 100).toFixed(1) + '%' : '0%';
+
+        const cTot = carga.length;
+        const cOk = carga.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+        const cPctOk = cTot > 0 ? ((cOk / cTot) * 100).toFixed(1) + '%' : '0%';
+
+        const bodyContainer = document.getElementById('pdf-report-modal-body');
+        if (bodyContainer) {
+          bodyContainer.innerHTML = `
+            <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; padding: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #15803d; padding-bottom: 12px; margin-bottom: 20px;">
+                <div>
+                  <h2 style="font-size: 18px; color: #15803d; margin: 0; font-weight: 800;">DIPAPEL - REPORTE GENERAL DE CALIDAD (WALMART)</h2>
+                  <p style="margin: 4px 0 0 0; color: #64748b; font-size: 11px;">Planta Lechugueros &bull; Resultados en Porcentajes Generales</p>
+                </div>
+                <div style="text-align: right; font-size: 11px; color: #475569; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                  <strong>Marca:</strong> WALMART<br/>
+                  <strong>Periodo:</strong> ${periodoName} (${selectedDate})
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; text-align: center;">
+                  <div style="font-size: 10px; color: #64748b; font-weight: 700;">% CONFORMIDAD INSPECCIONES</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #16a34a; margin-top: 4px;">${qPctOk}</div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; text-align: center;">
+                  <div style="font-size: 10px; color: #64748b; font-weight: 700;">% APROBACIÓN PRUEBAS DE CARGA</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #15803d; margin-top: 4px;">${cPctOk}</div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; text-align: center;">
+                  <div style="font-size: 10px; color: #64748b; font-weight: 700;">% NO CONFORMIDAD</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #dc2626; margin-top: 4px;">${qPctFail}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        const modal = document.getElementById('pdf-report-modal');
+        if (modal) modal.style.display = 'flex';
+      }
+    </script>
+  </body>
 </html>
