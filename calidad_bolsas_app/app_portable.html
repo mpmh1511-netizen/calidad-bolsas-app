@@ -623,6 +623,15 @@
               </div>
 
               <div>
+                <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Filtrar por Turno:</label>
+                <select id="stat-indep-turno-select" class="form-control" onchange="onStatIndepFilterChange()" style="width: 100%; padding: 8px; font-weight: 600;">
+                  <option value="">Todos los Turnos (Día + Noche)</option>
+                  <option value="Dia">☀️ 1er Turno (7:00 AM - 6:59 PM)</option>
+                  <option value="Noche">🌙 2do Turno (7:00 PM - 6:59 AM)</option>
+                </select>
+              </div>
+
+              <div>
                 <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Periodo de Consulta:</label>
                 <div style="display: flex; gap: 4px;">
                   <button type="button" id="btn-indep-periodo-dia" class="btn-secondary active-tab" onclick="setStatIndepPeriodo('dia')" style="flex: 1; padding: 7px 0; font-size: 0.8rem;">Día</button>
@@ -640,7 +649,7 @@
           </div>
 
           <!-- Tarjetas KPI de Resumen Global -->
-          <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+          <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
             <div class="kpi-card" style="border-left: 4px solid var(--color-primary);">
               <label>Auditorías Totales</label>
               <div id="stat-kpi-total" class="kpi-val" style="color: var(--color-primary);">0</div>
@@ -659,6 +668,17 @@
             <div class="kpi-card" style="border-left: 4px solid #2563eb;">
               <label>% Índice de Conformidad</label>
               <div id="stat-kpi-pct-conformidad" class="kpi-val" style="color: #2563eb;">0%</div>
+            </div>
+          </div>
+
+          <!-- Comparativa de Calidad y Productividad entre Turnos -->
+          <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+              <h3 style="margin: 0; font-size: 1.15rem; color: var(--color-primary);">⚖️ Análisis Comparativo entre Turnos (1er Turno vs. 2do Turno)</h3>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">☀️ 1er Turno: 7:00 AM a 6:59 PM &bull; 🌙 2do Turno: 7:00 PM a 6:59 AM</span>
+            </div>
+            <div id="wrapper-stat-indep-comparativa-turnos">
+              <!-- Se renderizará por JS -->
             </div>
           </div>
 
@@ -882,18 +902,18 @@
                     id="btn-prod-pers-turno-dia"
                     class="btn-secondary active-tab"
                     onclick="selectProdPersTurno('Dia')"
-                    style="padding: 6px 16px;"
+                    style="padding: 6px 14px;"
                   >
-                    ☀️ Día
+                    ☀️ 1er Turno (7:00 AM - 6:59 PM)
                   </button>
                   <button 
                     type="button"
                     id="btn-prod-pers-turno-noche"
                     class="btn-secondary"
                     onclick="selectProdPersTurno('Noche')"
-                    style="padding: 6px 16px;"
+                    style="padding: 6px 14px;"
                   >
-                    🌙 Noche
+                    🌙 2do Turno (7:00 PM - 6:59 AM)
                   </button>
                 </div>
               </div>
@@ -904,20 +924,20 @@
             <!-- Formulario -->
             <div class="card" style="padding: 1.5rem;">
               <div class="card-title" style="margin-bottom: 1.5rem;">
-                <h2 style="font-size: 1.2rem; color: var(--color-primary);">Registro de Personal Diario</h2>
-                <span style="font-size: 0.8rem; color: var(--text-muted);">Asigna operadores y auxiliares a las máquinas</span>
+                <h2 style="font-size: 1.2rem; color: var(--color-primary);">Registro de Personal en Turno</h2>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Registra quiénes están presentes al inicio del turno para identificar el equipo de cada máquina y autocompletar al operador en Calidad</span>
               </div>
 
               <form id="form-registro-personal-only" onsubmit="savePersonalEntryOnly(event)" style="display: flex; flex-direction: column; gap: 1rem;">
                 <div class="form-group">
                   <label>Tipo de Máquina</label>
-                  <div style="display: flex; gap: 10px; margin-top: 4px;">
+                  <div style="display: flex; gap: 8px; margin-top: 4px;">
                     <button
                       type="button"
                       id="btn-prod-pers-type-flexo"
                       class="btn-secondary"
                       onclick="changeProdPersType('Flexo')"
-                      style="flex: 1; padding: 8px;"
+                      style="flex: 1; padding: 8px; font-size: 0.85rem;"
                     >
                       🖨️ Flexo
                     </button>
@@ -926,9 +946,18 @@
                       id="btn-prod-pers-type-armado"
                       class="btn-secondary active-tab"
                       onclick="changeProdPersType('Armado')"
-                      style="flex: 1; padding: 8px;"
+                      style="flex: 1; padding: 8px; font-size: 0.85rem;"
                     >
-                      ⚙️ Armado
+                      ⚙️ Armado (M1-M13)
+                    </button>
+                    <button
+                      type="button"
+                      id="btn-prod-pers-type-frias"
+                      class="btn-secondary"
+                      onclick="changeProdPersType('Frias')"
+                      style="flex: 1; padding: 8px; font-size: 0.85rem;"
+                    >
+                      ❄️ Frías (Bandas)
                     </button>
                   </div>
                 </div>
@@ -938,13 +967,14 @@
                   <select 
                     id="prod-pers-maquina"
                     class="form-control" 
+                    onchange="onProdPersMachineSelectChange()"
                     style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);"
                   >
                   </select>
                 </div>
 
                 <div class="form-group">
-                  <label>Operador</label>
+                  <label>Operador Responsable (Presente en Turno)</label>
                   <input
                     type="text"
                     id="prod-pers-operador"
@@ -958,7 +988,7 @@
 
                 <!-- Auxiliares (completamente opcionales y sin restricciones) -->
                 <div id="wrapper-pers-auxiliares" style="border: 1px solid var(--border-color); border-radius: var(--border-radius-md); padding: 10px 15px; display: flex; flex-direction: column; gap: 0.8rem;">
-                  <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-primary-light);">Auxiliares (Opcionales)</span>
+                  <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-primary-light);">Equipo / Auxiliares de la Máquina (Opcionales)</span>
                   
                   <div class="form-group">
                     <label style="font-size: 0.75rem;">Auxiliar 1</label>
@@ -1002,7 +1032,7 @@
                   class="btn-primary" 
                   style="width: 100%; padding: 12px; justify-content: center; margin-top: 0.5rem;"
                 >
-                  💾 Guardar Personal
+                  💾 Guardar Personal de Máquina
                 </button>
               </form>
             </div>
@@ -1010,8 +1040,8 @@
             <!-- Tabla de Historial -->
             <div class="card" style="padding: 1.5rem; min-height: 400px;">
               <div class="card-title" style="margin-bottom: 1.5rem;">
-                <h2 style="font-size: 1.2rem; color: var(--color-primary);">Personal Asignado en Turno</h2>
-                <span style="font-size: 0.8rem; color: var(--text-muted);">Lista de personal activo por máquina</span>
+                <h2 style="font-size: 1.2rem; color: var(--color-primary);">Personal Presente Asignado en Turno</h2>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Equipo activo por máquina (se vincula automáticamente con Calidad y Estadísticas)</span>
               </div>
 
               <div id="wrapper-tabla-pers-only">
@@ -1044,18 +1074,18 @@
                     id="btn-prod-bolsas-turno-dia"
                     class="btn-secondary active-tab"
                     onclick="selectProdBolsasTurno('Dia')"
-                    style="padding: 6px 16px;"
+                    style="padding: 6px 14px;"
                   >
-                    ☀️ Día
+                    ☀️ 1er Turno (7:00 AM - 6:59 PM)
                   </button>
                   <button 
                     type="button"
                     id="btn-prod-bolsas-turno-noche"
                     class="btn-secondary"
                     onclick="selectProdBolsasTurno('Noche')"
-                    style="padding: 6px 16px;"
+                    style="padding: 6px 14px;"
                   >
-                    🌙 Noche
+                    🌙 2do Turno (7:00 PM - 6:59 AM)
                   </button>
                 </div>
               </div>
@@ -1067,7 +1097,7 @@
             <div class="card" style="padding: 1.5rem;">
               <div class="card-title" style="margin-bottom: 1.5rem;">
                 <h2 style="font-size: 1.2rem; color: var(--color-primary);">Registro de Bolsas / Producción</h2>
-                <span style="font-size: 0.8rem; color: var(--text-muted);">Captura el volumen producido por máquina</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Registra el avance por hora únicamente en Bolsas Producidas; al final del turno ingresa las Bolsas en Tarima para calcular la Merma</span>
               </div>
 
               <form id="form-registro-bolsas-only" onsubmit="saveBolsasEntryOnly(event)" style="display: flex; flex-direction: column; gap: 1rem;">
@@ -1099,22 +1129,23 @@
                 <div id="prod-bolsas-datos-generales-box" style="background: #f8f9fa; padding: 10px 15px; border-radius: var(--border-radius-md); font-size: 0.85rem; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                      <strong>Operador Asignado: </strong> 
+                      <strong>Equipo Asignado en Máquina: </strong> 
                       <span id="label-prod-bolsas-operador" style="color: var(--text-muted);">No se ha asignado personal en este turno</span>
                     </div>
                   </div>
                   <div id="box-prod-bolsas-calidad-row" style="display: none; justify-content: space-between; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 8px;">
-                    <strong>Porcentaje de Calidad:</strong>
+                    <strong>Merma Estimada / Aprovechamiento:</strong>
                     <span id="lbl-prod-bolsas-calidad-val" style="font-weight: 700;">-</span>
                   </div>
                 </div>
 
                 <div class="form-group">
-                  <label>Hora de la Actualización</label>
+                  <label>Hora de la Actualización <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 400;">(Reconoce automáticamente 1er o 2do Turno)</span></label>
                   <input
                     type="time"
                     id="prod-bolsas-num-hora-actualizacion"
                     class="form-control"
+                    onchange="onProdBolsasHoraChange(this.value)"
                     required
                     style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);"
                   />
@@ -1151,32 +1182,40 @@
                     />
                   </div>
                   <span id="lbl-meta-fijada-info" style="font-size: 0.75rem; color: var(--color-success); display: none;">
-                    🔒 Meta y Marca fijadas para el día. Se puede actualizar la producción abajo libremente.
+                    🔒 Meta y Marca fijadas para el turno. Se puede actualizar el avance abajo libremente.
                   </span>
                 </div>
 
                 <div class="form-group">
-                  <label>Bolsas Producidas</label>
+                  <label>📈 Bolsas Producidas (Avance por Hora en Máquina)</label>
                   <input
                     type="number"
                     id="prod-bolsas-num-producidas"
                     class="form-control"
-                    placeholder="Ej: 50000"
-                    required
+                    placeholder="Ingresa el acumulado de bolsas producidas..."
+                    oninput="updateLiveMermaPreview()"
                     style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);"
                   />
+                  <span style="font-size: 0.73rem; color: var(--text-muted); margin-top: 2px; display: block;">
+                    En cada corte por hora ingresa únicamente este número.
+                  </span>
                 </div>
 
-                <div class="form-group">
-                  <label>Bolsas en Tarima</label>
+                <div class="form-group" style="background: #f0fdf4; border: 1px dashed #86efac; padding: 12px; border-radius: var(--border-radius-md);">
+                  <label style="color: #166534; font-weight: 700;">📦 Bolsas en Tarima (Registrar solo al final del turno)</label>
                   <input
                     type="number"
                     id="prod-bolsas-num-tarima"
                     class="form-control"
-                    placeholder="Ej: 48500"
-                    required
-                    style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);"
+                    placeholder="Dejar vacío en avances por hora; ingresar al cerrar turno..."
+                    oninput="updateLiveMermaPreview()"
+                    style="width: 100%; padding: 8px; border: 1px solid #86efac; border-radius: var(--border-radius-md); background: #fff; margin-top: 4px;"
                   />
+                  <span style="font-size: 0.73rem; color: #15803d; margin-top: 4px; display: block;">
+                    Opcional durante el turno. Al ingresarlo al final del turno se calculará automáticamente el estimado de merma (cantidad y %).
+                  </span>
+                  <div id="box-prod-bolsas-merma-preview" style="display: none; margin-top: 8px; padding: 8px 10px; background: #fff; border-radius: 6px; border: 1px solid #bbf7d0; font-size: 0.8rem;">
+                  </div>
                 </div>
 
                 <button 
@@ -1184,7 +1223,7 @@
                   class="btn-primary" 
                   style="width: 100%; padding: 12px; justify-content: center; margin-top: 0.5rem;"
                 >
-                  💾 Guardar Producción
+                  💾 Guardar Avance / Cierre de Turno
                 </button>
               </form>
             </div>
@@ -1192,8 +1231,8 @@
             <!-- Tabla de Rendimiento -->
             <div class="card" style="padding: 1.5rem; min-height: 400px;">
               <div class="card-title" style="margin-bottom: 1.5rem;">
-                <h2 style="font-size: 1.2rem; color: var(--color-primary);">Rendimiento de Producción</h2>
-                <span style="font-size: 0.8rem; color: var(--text-muted);">Lista de máquinas activas y su porcentaje de aprobación</span>
+                <h2 style="font-size: 1.2rem; color: var(--color-primary);">Rendimiento y Merma por Máquina</h2>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Equipo asignado, avance de bolsas producidas, bolsas en tarima y estimado de merma</span>
               </div>
 
               <div id="wrapper-tabla-bolsas-only">
@@ -1232,7 +1271,7 @@
                     id="stat-maquina-select"
                     class="form-control"
                     onchange="onStatMachineFilterChange()"
-                    style="width: 220px; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);"
+                    style="width: 200px; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);"
                   >
                     <option value="">Todas las Máquinas</option>
                   <option value="Armado-M1">Armado M1</option>
@@ -1259,9 +1298,24 @@
                   id="stat-persona-select"
                   class="form-control"
                   onchange="onStatPersonaFilterChange()"
-                  style="width: 220px; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);"
+                  style="width: 200px; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);"
                 >
                   <option value="">Todas las Personas</option>
+                </select>
+              </div>
+
+              <!-- Selector de Turno -->
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Filtrar por Turno</label>
+                <select
+                  id="stat-turno-select"
+                  class="form-control"
+                  onchange="calculateAndRenderStats()"
+                  style="width: 240px; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); font-weight: 600;"
+                >
+                  <option value="">Todos los Turnos (Comparativo)</option>
+                  <option value="Dia">☀️ 1er Turno (7:00 AM - 6:59 PM)</option>
+                  <option value="Noche">🌙 2do Turno (7:00 PM - 6:59 AM)</option>
                 </select>
               </div>
 
@@ -1273,7 +1327,7 @@
                   id="stat-fecha-input"
                   class="form-control"
                   onchange="calculateAndRenderStats()"
-                  style="width: 200px; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);"
+                  style="width: 170px; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);"
                 />
               </div>
             </div>
@@ -1312,9 +1366,9 @@
               <span style="font-size: 0.8rem; color: var(--text-muted);">Total de bolsas procesadas</span>
             </div>
             <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 8px;">
-              <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Aprobadas (En Tarima)</span>
+              <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Bolsas en Tarima (Cierre Turno)</span>
               <span id="stat-kpi-tarima" style="font-size: 2rem; font-weight: 800; color: var(--color-success);">0</span>
-              <span id="stat-kpi-rendimiento" style="font-size: 0.8rem; color: var(--color-success-dark); font-weight: 600;">Rendimiento: 0%</span>
+              <span id="stat-kpi-rendimiento" style="font-size: 0.8rem; color: var(--color-success-dark); font-weight: 600;">Aprovechamiento: 0%</span>
             </div>
             <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 8px;">
               <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Avance de Meta General</span>
@@ -1322,10 +1376,21 @@
               <span id="stat-kpi-meta-total" style="font-size: 0.8rem; color: var(--text-muted);">Meta Total: 0</span>
             </div>
             <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 8px;">
-              <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Descarte / Desperdicio</span>
+              <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">Estimado de Merma (Cant. y %)</span>
               <span id="stat-kpi-descarte" style="font-size: 2rem; font-weight: 800; color: var(--color-danger);">0</span>
-              <span id="stat-kpi-tasa-descarte" style="font-size: 0.8rem; color: var(--color-danger-dark); font-weight: 600;">Tasa: 0%</span>
+              <span id="stat-kpi-tasa-descarte" style="font-size: 0.8rem; color: var(--color-danger-dark); font-weight: 600;">Porcentaje de Merma: 0%</span>
             </div>
+          </div>
+
+          <!-- Análisis Comparativo de Productividad entre Turnos -->
+          <div class="card" style="padding: 1.5rem; margin-bottom: 2rem; border-left: 4px solid #4f46e5;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--color-primary); margin: 0;">⚖️ Análisis Comparativo de Productividad por Turno</h3>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">1er Turno (7:00 AM - 6:59 PM) vs 2do Turno (7:00 PM - 6:59 AM) en el periodo seleccionado</span>
+              </div>
+            </div>
+            <div id="wrapper-prod-comparativa-turnos"></div>
           </div>
 
           <!-- Gráfico SVG -->
@@ -1338,11 +1403,11 @@
             </div>
           </div>
 
-          <!-- Tabla por Máquina -->
-          <div class="card" style="padding: 1.5rem;">
+          <!-- Tabla por Máquina y Equipo -->
+          <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
             <div class="card-title" style="margin-bottom: 1.5rem;">
-              <h3 style="font-size: 1.1rem; color: var(--color-primary);">Rendimiento Acumulado por Máquina</h3>
-              <span style="font-size: 0.8rem; color: var(--text-muted);">Desglose de metas y producción acumuladas por equipo</span>
+              <h3 style="font-size: 1.1rem; color: var(--color-primary);">Evaluación de Desempeño y Resultados por Máquina y Equipo</h3>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Identificación de Operador y Auxiliares asignados a cada máquina, cumplimiento de meta, bolsas en tarima y merma estimada</span>
             </div>
             <div id="wrapper-tabla-stat-maquinas">
               <!-- Se inyectará por JS -->
@@ -1372,21 +1437,22 @@
               </div>
               <div class="form-group">
                 <label>Máquina</label>
-                <select id="insp-maquina" class="form-control">
+                <select id="insp-maquina" class="form-control" onchange="autoFillOperatorFromMachine('inspector')">
                   <!-- Dinámico -->
                 </select>
               </div>
               <div class="form-group">
                 <label>Fecha de Inspección</label>
-                <input type="date" id="insp-fecha" class="form-control" required />
+                <input type="date" id="insp-fecha" class="form-control" onchange="autoFillOperatorFromMachine('inspector')" required />
               </div>
               <div class="form-group">
                 <label>Hora de Inspección</label>
-                <input type="time" id="insp-hora" class="form-control" required />
+                <input type="time" id="insp-hora" class="form-control" onchange="autoFillOperatorFromMachine('inspector')" required />
               </div>
               <div class="form-group">
-                <label>Operador de la Máquina</label>
-                <input type="text" id="insp-operador" class="form-control" placeholder="Nombre operador" required list="operadores-datalist" />
+                <label>Operador de la Máquina <span id="insp-turno-badge" style="font-size: 0.72rem; font-weight: 600; color: #0284c7;"></span></label>
+                <input type="text" id="insp-operador" class="form-control" placeholder="Se autocompleta al elegir máquina..." required list="operadores-datalist" />
+                <small id="insp-operador-team-info" style="display: block; margin-top: 4px; font-size: 0.75rem; color: var(--color-success);"></small>
               </div>
               <div class="form-group">
                 <label>Print Card en Máquina</label>
@@ -1921,7 +1987,7 @@
               <div class="form-grid">
                 <div class="form-group">
                   <label>Máquina de Confección</label>
-                  <select id="tarima-maquina" class="form-control">
+                  <select id="tarima-maquina" class="form-control" onchange="autoFillOperatorFromMachine('tarima')">
                     <option value="M1">M1</option>
                     <option value="M2">M2</option>
                     <option value="M3">M3</option>
@@ -1939,8 +2005,9 @@
                 </div>
 
                 <div class="form-group">
-                  <label>Operador de la Máquina</label>
-                  <input type="text" id="tarima-operador" class="form-control" placeholder="Nombre completo del operador" required list="operadores-datalist" />
+                  <label>Operador de la Máquina <span id="tarima-turno-badge" style="font-size: 0.72rem; font-weight: 600; color: #0284c7;"></span></label>
+                  <input type="text" id="tarima-operador" class="form-control" placeholder="Se autocompleta al elegir máquina..." required list="operadores-datalist" />
+                  <small id="tarima-operador-team-info" style="display: block; margin-top: 4px; font-size: 0.75rem; color: var(--color-success);"></small>
                 </div>
 
                 <div class="form-group" style="grid-column: 1 / -1;">
@@ -2320,7 +2387,7 @@
             <div class="form-grid">
               <div class="form-group">
                 <label>Número de Banda *</label>
-                <select id="frias-insp-banda" class="form-control" required>
+                <select id="frias-insp-banda" class="form-control" onchange="autoFillOperatorFromMachine('frias-insp')" required>
                   <option value="Banda 1">Banda 1</option>
                   <option value="Banda 2">Banda 2</option>
                   <option value="Banda 3">Banda 3</option>
@@ -2329,15 +2396,16 @@
               </div>
               <div class="form-group">
                 <label>Fecha de Inspección *</label>
-                <input type="date" id="frias-insp-fecha" class="form-control" required />
+                <input type="date" id="frias-insp-fecha" class="form-control" onchange="autoFillOperatorFromMachine('frias-insp')" required />
               </div>
               <div class="form-group">
                 <label>Hora de Inspección *</label>
-                <input type="time" id="frias-insp-hora" class="form-control" required />
+                <input type="time" id="frias-insp-hora" class="form-control" onchange="autoFillOperatorFromMachine('frias-insp')" required />
               </div>
               <div class="form-group">
-                <label>Operador de la Máquina *</label>
-                <input type="text" id="frias-insp-operador" class="form-control" placeholder="Nombre completo" required list="operadores-datalist" />
+                <label>Operador de la Máquina * <span id="frias-insp-turno-badge" style="font-size: 0.72rem; font-weight: 600; color: #0284c7;"></span></label>
+                <input type="text" id="frias-insp-operador" class="form-control" placeholder="Se autocompleta al elegir banda..." required list="operadores-datalist" />
+                <small id="frias-insp-operador-team-info" style="display: block; margin-top: 4px; font-size: 0.75rem; color: var(--color-success);"></small>
               </div>
               <div class="form-group">
                 <label>Marca / Cliente *</label>
@@ -2580,7 +2648,7 @@
               <div class="form-grid">
                 <div class="form-group">
                   <label>Número de Banda *</label>
-                  <select id="frias-tarima-banda" class="form-control" required>
+                  <select id="frias-tarima-banda" class="form-control" onchange="autoFillOperatorFromMachine('frias-tarima')" required>
                     <option value="Banda 1">Banda 1</option>
                     <option value="Banda 2">Banda 2</option>
                     <option value="Banda 3">Banda 3</option>
@@ -2588,8 +2656,9 @@
                   </select>
                 </div>
                 <div class="form-group">
-                  <label>Operador *</label>
-                  <input type="text" id="frias-tarima-operador" class="form-control" placeholder="Nombre del operador" required list="operadores-datalist" />
+                  <label>Operador * <span id="frias-tarima-turno-badge" style="font-size: 0.72rem; font-weight: 600; color: #0284c7;"></span></label>
+                  <input type="text" id="frias-tarima-operador" class="form-control" placeholder="Se autocompleta al elegir banda..." required list="operadores-datalist" />
+                  <small id="frias-tarima-operador-team-info" style="display: block; margin-top: 4px; font-size: 0.75rem; color: var(--color-success);"></small>
                 </div>
                 <div class="form-group">
                   <label>Bobina *</label>
@@ -3633,6 +3702,15 @@
         event.preventDefault();
         const name = document.getElementById('login-username').value.trim();
         if (!name) return;
+        const lowerName = name.toLowerCase();
+        if (lowerName === 'walmart' || lowerName === 'wal-mart') {
+          window.location.href = 'cliente_walmart.html';
+          return;
+        }
+        if (lowerName === 'mcdonalds' || lowerName === 'mc donalds') {
+          window.location.href = 'cliente_mcdonalds.html';
+          return;
+        }
         try { localStorage.setItem('usuario_actual', name); } catch(e) { console.warn('Local storage full, ignoring login persist'); }
         state.usuarioActual = name;
         document.getElementById('current-user-label').textContent = name;
@@ -3930,6 +4008,157 @@
       }
 
       
+      function getShiftFromTimeStr(timeStr) {
+        if (!timeStr) return 'Dia';
+        const clean = String(timeStr).trim();
+        const match = clean.match(/(\d{1,2}):(\d{2})/);
+        if (!match) return 'Dia';
+        let h = parseInt(match[1], 10);
+        const lower = clean.toLowerCase();
+        if (lower.includes('pm') && h < 12) h += 12;
+        if (lower.includes('am') && h === 12) h = 0;
+        // 7:00 AM (7) a 6:59 PM (18:59) -> 1er Turno ('Dia')
+        // 7:00 PM (19) a 6:59 AM (06:59) -> 2do Turno ('Noche')
+        return (h >= 7 && h < 19) ? 'Dia' : 'Noche';
+      }
+
+      function getRecordShift(rec) {
+        if (!rec) return 'Dia';
+        if (rec.turno === 'Dia' || rec.turno === '1' || rec.turno === '1er Turno') return 'Dia';
+        if (rec.turno === 'Noche' || rec.turno === '2' || rec.turno === '2do Turno') return 'Noche';
+        const timeCandidate = rec.hora_inspeccion || rec.hora_actualizacion || rec.carga_hora_inicial || rec.hora_inicial ||
+          (rec.fecha_registro && String(rec.fecha_registro).includes(' ') ? String(rec.fecha_registro).split(' ')[1] : '');
+        return getShiftFromTimeStr(timeCandidate);
+      }
+
+      function getShiftLabel(turnoCode) {
+        return turnoCode === 'Noche'
+          ? '🌙 2do Turno (7:00 PM - 6:59 AM)'
+          : '☀️ 1er Turno (7:00 AM - 6:59 PM)';
+      }
+
+      function getCurrentActiveShiftAndDate() {
+        const now = new Date();
+        const h = now.getHours();
+        const todayIso = now.toISOString().split('T')[0];
+        if (h < 7) {
+          const yesterday = new Date(now);
+          yesterday.setDate(now.getDate() - 1);
+          return { turno: 'Noche', fecha: yesterday.toISOString().split('T')[0], calendarDate: todayIso };
+        } else if (h >= 19) {
+          return { turno: 'Noche', fecha: todayIso, calendarDate: todayIso };
+        } else {
+          return { turno: 'Dia', fecha: todayIso, calendarDate: todayIso };
+        }
+      }
+
+      function normalizeMachineMatch(recordMaq, recordTipo, targetMaq, targetArea) {
+        const rMaq = String(recordMaq || '').trim().toUpperCase();
+        const tMaq = String(targetMaq || '').trim().toUpperCase();
+        if (!rMaq || !tMaq) return false;
+        if (rMaq === tMaq) {
+          if (targetArea === 'Flexo' && recordTipo && recordTipo !== 'Flexo') return false;
+          if ((targetArea === 'Nanjang' || targetArea === 'Con Asa' || targetArea === 'Armado') && recordTipo === 'Flexo') return false;
+          return true;
+        }
+        // Compatibilidad "Flexo 1" <-> "M1" cuando tipo_maquina === 'Flexo'
+        if (targetArea === 'Flexo' || recordTipo === 'Flexo') {
+          const numR = rMaq.replace('FLEXO', '').replace('M', '').trim();
+          const numT = tMaq.replace('FLEXO', '').replace('M', '').trim();
+          if (numR && numR === numT && (recordTipo === 'Flexo' || rMaq.startsWith('FLEXO') || tMaq.startsWith('FLEXO'))) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      async function autoFillOperatorFromMachine(context) {
+        try {
+          const personalList = await getPersonalList();
+          const activeInfo = getCurrentActiveShiftAndDate();
+
+          let maq = '';
+          let area = 'Armado';
+          let fechaVal = activeInfo.fecha;
+          let horaVal = '';
+          let inputEl = null;
+          let badgeEl = null;
+          let teamEl = null;
+
+          if (context === 'inspector') {
+            area = document.getElementById('insp-area')?.value || 'Flexo';
+            maq = document.getElementById('insp-maquina')?.value || '';
+            fechaVal = document.getElementById('insp-fecha')?.value || activeInfo.calendarDate;
+            horaVal = document.getElementById('insp-hora')?.value || '';
+            inputEl = document.getElementById('insp-operador');
+            badgeEl = document.getElementById('insp-turno-badge');
+            teamEl = document.getElementById('insp-operador-team-info');
+          } else if (context === 'tarima') {
+            area = 'Armado';
+            maq = document.getElementById('tarima-maquina')?.value || '';
+            inputEl = document.getElementById('tarima-operador');
+            badgeEl = document.getElementById('tarima-turno-badge');
+            teamEl = document.getElementById('tarima-operador-team-info');
+          } else if (context === 'frias-insp') {
+            area = 'Frias';
+            maq = document.getElementById('frias-insp-banda')?.value || '';
+            fechaVal = document.getElementById('frias-insp-fecha')?.value || activeInfo.calendarDate;
+            horaVal = document.getElementById('frias-insp-hora')?.value || '';
+            inputEl = document.getElementById('frias-insp-operador');
+            badgeEl = document.getElementById('frias-insp-turno-badge');
+            teamEl = document.getElementById('frias-insp-operador-team-info');
+          } else if (context === 'frias-tarima') {
+            area = 'Frias';
+            maq = document.getElementById('frias-tarima-banda')?.value || '';
+            inputEl = document.getElementById('frias-tarima-operador');
+            badgeEl = document.getElementById('frias-tarima-turno-badge');
+            teamEl = document.getElementById('frias-tarima-operador-team-info');
+          }
+
+          if (!inputEl || !maq) return;
+
+          const turnoDetectado = horaVal ? getShiftFromTimeStr(horaVal) : activeInfo.turno;
+          if (badgeEl) {
+            badgeEl.textContent = turnoDetectado === 'Noche' ? '(🌙 2do Turno)' : '(☀️ 1er Turno)';
+          }
+
+          // Buscar en personalList coincidencias para la máquina y turno (revisando fecha exacta o fecha activa de turno nocturno)
+          const candidateDates = new Set([fechaVal, activeInfo.fecha, activeInfo.calendarDate].filter(Boolean));
+          let matches = personalList.filter(r =>
+            candidateDates.has(r.fecha) &&
+            r.turno === turnoDetectado &&
+            normalizeMachineMatch(r.maquina, r.tipo_maquina, maq, area) &&
+            r.operador && r.operador !== 'Sin Asignar'
+          );
+
+          // Si no hay en la fecha exacta, buscar el último asignado en el mismo día de hoy en cualquier turno
+          if (matches.length === 0) {
+            matches = personalList.filter(r =>
+              candidateDates.has(r.fecha) &&
+              normalizeMachineMatch(r.maquina, r.tipo_maquina, maq, area) &&
+              r.operador && r.operador !== 'Sin Asignar'
+            );
+          }
+
+          if (matches.length > 0) {
+            const latest = matches[matches.length - 1];
+            inputEl.value = latest.operador;
+            const auxs = [latest.auxiliar_1, latest.auxiliar_2, latest.auxiliar_3].filter(Boolean);
+            if (teamEl) {
+              teamEl.style.color = 'var(--color-success)';
+              teamEl.textContent = `✅ Personal en turno (${latest.turno === 'Noche' ? '2do Turno' : '1er Turno'}): Operador ${latest.operador}${auxs.length ? ' • Aux: ' + auxs.join(', ') : ''}`;
+            }
+          } else {
+            if (teamEl) {
+              teamEl.style.color = 'var(--text-muted)';
+              teamEl.textContent = `ℹ️ Sin operador pre-registrado en ${maq} para este turno (puedes escribirlo manualmente).`;
+            }
+          }
+        } catch (err) {
+          console.error('Error en autoFillOperatorFromMachine:', err);
+        }
+      }
+
       function getInspIsoDate(insp) {
         if (!insp) return '';
         const raw = (insp.fecha_registro || insp.fecha_iso || '').trim();
@@ -3952,43 +4181,38 @@
         const areaFilter = document.getElementById('stat-indep-area-select')?.value || '';
         const machineFilter = document.getElementById('stat-indep-maquina-select')?.value || '';
         const marcaFilter = document.getElementById('stat-indep-marca-select')?.value || '';
+        const turnoFilter = document.getElementById('stat-indep-turno-select')?.value || '';
         const fechaVal = document.getElementById('stat-indep-fecha-input')?.value || new Date().toISOString().split('T')[0];
 
         const allInspections = (state && state.inspecciones) ? state.inspecciones : [];
 
-
-
-        // Filtrar por Área, Máquina, Periodo y Fecha (EXCLUYE Frías / Bandas del panel superior)
-        const filteredInspections = allInspections.filter(insp => {
-          if (insp.maquina === 'Desconocida') return false; // Ocultar registros simulados de las gráficas
-
+        // Filtrar base por Área, Máquina, Marca, Periodo y Fecha (antes de filtrar por turno para alimentar la comparativa)
+        const baseStandardInspections = allInspections.filter(insp => {
+          if (insp.maquina === 'Desconocida') return false;
           const inspDate = getInspIsoDate(insp);
-
-          // Excluir ÚNICAMENTE registros de Frías / Bandas del panel superior
-          const isFrias = (insp.area === 'Frías') || 
+          const isFrias = (insp.area === 'Frías') ||
                           String(insp.maquina || insp.banda || '').toLowerCase().startsWith('banda');
           if (isFrias) return false;
-
           if (areaFilter && insp.area !== areaFilter) return false;
-
           if (machineFilter) {
             if (machineFilter.startsWith('Frias-')) return false;
             const [tipo, maq] = machineFilter.split('-');
             if (insp.maquina !== maq && insp.banda !== maq) return false;
           }
-
           if (marcaFilter) {
             const m = (insp.marca_especificaciones || insp.marca_cliente || insp.marca || '').trim().toUpperCase();
             if (m !== marcaFilter) return false;
           }
-
           if (statIndepPeriodo === 'dia') return inspDate === fechaVal;
           if (statIndepPeriodo === 'semana') return getWeekNumber(inspDate) === getWeekNumber(fechaVal);
           if (statIndepPeriodo === 'mes') return inspDate.substring(0, 7) === fechaVal.substring(0, 7);
           if (statIndepPeriodo === 'ano') return inspDate.substring(0, 4) === fechaVal.substring(0, 4);
-
           return true;
         });
+
+        const filteredInspections = turnoFilter
+          ? baseStandardInspections.filter(insp => getRecordShift(insp) === turnoFilter)
+          : baseStandardInspections;
 
         // KPIs (excluyendo pruebas de carga de las estadísticas generales de calidad)
         const qualityOnly = filteredInspections.filter(i => i.es_prueba_carga !== 1);
@@ -4010,14 +4234,13 @@
         renderConformidadSVGChart(filteredInspections);
         renderInconformidadesTable(filteredInspections);
         renderCargaPieCharts(filteredInspections);
-        // Obtener inspecciones de Frías (Banda 1 a Banda 4) para el periodo/fecha seleccionados
-        const periodFriasInspections = allInspections.filter(insp => {
-          const inspDate = getInspIsoDate(insp);
 
-          const isFrias = (insp.area === 'Frías') || 
+        // Obtener inspecciones de Frías (Banda 1 a Banda 4) para el periodo/fecha seleccionados
+        const baseFriasInspections = allInspections.filter(insp => {
+          const inspDate = getInspIsoDate(insp);
+          const isFrias = (insp.area === 'Frías') ||
                           String(insp.maquina || insp.banda || '').toLowerCase().startsWith('banda');
           if (!isFrias) return false;
-
           if (machineFilter) {
             if (machineFilter.startsWith('Frias-')) {
               const maq = machineFilter.replace('Frias-', '');
@@ -4026,69 +4249,70 @@
               return false;
             }
           }
-
           if (marcaFilter) {
             const m = (insp.marca_especificaciones || insp.marca_cliente || insp.marca || '').trim().toUpperCase();
             if (m !== marcaFilter) return false;
           }
-
           if (statIndepPeriodo === 'dia') return inspDate === fechaVal;
           if (statIndepPeriodo === 'semana') return getWeekNumber(inspDate) === getWeekNumber(fechaVal);
           if (statIndepPeriodo === 'mes') return inspDate.substring(0, 7) === fechaVal.substring(0, 7);
           if (statIndepPeriodo === 'ano') return inspDate.substring(0, 4) === fechaVal.substring(0, 4);
-
           return true;
         });
+
+        const periodFriasInspections = turnoFilter
+          ? baseFriasInspections.filter(insp => getRecordShift(insp) === turnoFilter)
+          : baseFriasInspections;
 
         updateFriasStatsView(periodFriasInspections);
 
         // CALCULAR TARIMAS LIBERADAS POR MÁQUINA
+        let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+        let serverTarimas = [];
+        if (isOnline) {
+          serverTarimas = await apiFetch('/api/tarimas') || [];
+        }
+        const tarimaMap = new Map();
+        localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+        serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+        let globalTarimas = Array.from(tarimaMap.values());
+
+        let baseValidTarimas = globalTarimas.filter(t => t && (t.codigo_liberacion || t.codigo_tarima));
+
+        if (marcaFilter) {
+          baseValidTarimas = baseValidTarimas.filter(t => {
+            let m = (t.marca || t.marca_especificaciones || t.marca_cliente || '').trim().toUpperCase();
+            if (!m && t.bobina_id) {
+              const bObj = state.bobinas.find(b => String(b.id) === String(t.bobina_id));
+              if (bObj) m = (bObj.marca_especificaciones || '').trim().toUpperCase();
+            }
+            return m === marcaFilter;
+          });
+        }
+
+        const selectedDate = fechaVal;
+        const periodo = statIndepPeriodo;
+        baseValidTarimas = baseValidTarimas.filter(t => {
+          const rowDateStr = (t.fecha_registro || t.fecha_iso || '').substring(0, 10);
+          if (!rowDateStr) return false;
+          if (periodo === 'dia') return rowDateStr === selectedDate;
+          if (periodo === 'semana') return getWeekNumber(rowDateStr) === getWeekNumber(selectedDate);
+          if (periodo === 'mes') return rowDateStr.substring(0, 7) === selectedDate.substring(0, 7);
+          if (periodo === 'ano') return rowDateStr.substring(0, 4) === selectedDate.substring(0, 4);
+          return false;
+        });
+
+        if (machineFilter) {
+          const soloMaq = machineFilter.includes('-') ? machineFilter.split('-').slice(1).join('-') : machineFilter;
+          baseValidTarimas = baseValidTarimas.filter(t => t.maquina === soloMaq || t.banda === soloMaq);
+        }
+
+        const validTarimas = turnoFilter
+          ? baseValidTarimas.filter(t => getRecordShift(t) === turnoFilter)
+          : baseValidTarimas;
+
         const tarimasTbody = document.getElementById('table-tarimas-stats-body');
         if (tarimasTbody) {
-          let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
-          let serverTarimas = [];
-          if (isOnline) {
-            serverTarimas = await apiFetch('/api/tarimas') || [];
-          }
-          const tarimaMap = new Map();
-          localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
-          serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
-          let globalTarimas = Array.from(tarimaMap.values());
-
-          // Tarimas reales de Nanjang / Con Asa (codigo_liberacion) y Frías (codigo_tarima)
-          let validTarimas = globalTarimas.filter(t => t && (t.codigo_liberacion || t.codigo_tarima));
-
-          // Filtrar por marca si hay filtro activo
-          if (marcaFilter) {
-            validTarimas = validTarimas.filter(t => {
-              let m = (t.marca || t.marca_especificaciones || t.marca_cliente || '').trim().toUpperCase();
-              if (!m && t.bobina_id) {
-                const bObj = state.bobinas.find(b => String(b.id) === String(t.bobina_id));
-                if (bObj) m = (bObj.marca_especificaciones || '').trim().toUpperCase();
-              }
-              return m === marcaFilter;
-            });
-          }
-
-          // Filtrar por fecha de la vista actual
-          const selectedDate = fechaVal;
-          const periodo = statIndepPeriodo;
-          validTarimas = validTarimas.filter(t => {
-            const rowDateStr = (t.fecha_registro || t.fecha_iso || '').substring(0, 10);
-            if (!rowDateStr) return false;
-            if (periodo === 'dia') return rowDateStr === selectedDate;
-            if (periodo === 'semana') return getWeekNumber(rowDateStr) === getWeekNumber(selectedDate);
-            if (periodo === 'mes') return rowDateStr.substring(0, 7) === selectedDate.substring(0, 7);
-            if (periodo === 'ano') return rowDateStr.substring(0, 4) === selectedDate.substring(0, 4);
-            return false;
-          });
-
-          // Aplicar filtro de máquina/banda si existe
-          if (machineFilter) {
-            const soloMaq = machineFilter.includes('-') ? machineFilter.split('-').slice(1).join('-') : machineFilter;
-            validTarimas = validTarimas.filter(t => t.maquina === soloMaq || t.banda === soloMaq);
-          }
-
           const statsTarimas = {};
           validTarimas.forEach(t => {
             const maq = t.banda || t.maquina || 'Desconocida';
@@ -4102,7 +4326,7 @@
           tarimasTbody.innerHTML = '';
           const mqKeys = Object.keys(statsTarimas).sort();
           if (mqKeys.length === 0) {
-            tarimasTbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted);">Sin tarimas liberadas en el periodo seleccionado.</td></tr>`;
+            tarimasTbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted);">Sin tarimas liberadas en el periodo/turno seleccionado.</td></tr>`;
           } else {
             mqKeys.forEach(m => {
               const st = statsTarimas[m];
@@ -4118,6 +4342,81 @@
               `;
             });
           }
+        }
+
+        // Renderizar Comparativa de Calidad entre 1er Turno y 2do Turno
+        const compWrapper = document.getElementById('wrapper-stat-indep-comparativa-turnos');
+        if (compWrapper) {
+          const allPeriodInsps = [...baseStandardInspections, ...baseFriasInspections];
+          const buildShiftQualMetrics = (shiftKey) => {
+            const sInsps = allPeriodInsps.filter(i => getRecordShift(i) === shiftKey);
+            const qual = sInsps.filter(i => i.es_prueba_carga !== 1);
+            const carga = sInsps.filter(i => i.es_prueba_carga === 1);
+            const qTotal = qual.length;
+            const qOk = qual.filter(i => i.resultado === 'Aprobado').length;
+            const qFail = qual.filter(i => i.resultado === 'Rechazado').length;
+            const qPct = qTotal > 0 ? ((qOk / qTotal) * 100).toFixed(1) : '0.0';
+            const cTotal = carga.length;
+            const cOk = carga.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+            const sTarimas = baseValidTarimas.filter(t => getRecordShift(t) === shiftKey).length;
+            return { qTotal, qOk, qFail, qPct, cTotal, cOk, sTarimas };
+          };
+          const t1 = buildShiftQualMetrics('Dia');
+          const t2 = buildShiftQualMetrics('Noche');
+
+          compWrapper.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+              <div style="background: ${turnoFilter === 'Dia' ? '#eff6ff' : '#f8fafc'}; border: 2px solid ${turnoFilter === 'Dia' ? '#0284c7' : '#e2e8f0'}; border-radius: 10px; padding: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <strong style="color: #0369a1; font-size: 0.95rem;">☀️ 1er Turno (7:00 AM - 6:59 PM)</strong>
+                  <span style="background: #dcfce7; color: #15803d; font-weight: 800; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px;">${t1.qPct}% Conformidad</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; font-size: 0.8rem; margin-top: 10px;">
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">Auditorías</div>
+                    <strong style="font-size: 1rem; color: #0f172a;">${t1.qTotal}</strong>
+                  </div>
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">Aprobadas</div>
+                    <strong style="font-size: 1rem; color: #16a34a;">${t1.qOk}</strong>
+                  </div>
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">Rechazos</div>
+                    <strong style="font-size: 1rem; color: #dc2626;">${t1.qFail}</strong>
+                  </div>
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">Tarimas Lib.</div>
+                    <strong style="font-size: 1rem; color: #0284c7;">${t1.sTarimas}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div style="background: ${turnoFilter === 'Noche' ? '#eef2ff' : '#f8fafc'}; border: 2px solid ${turnoFilter === 'Noche' ? '#4f46e5' : '#e2e8f0'}; border-radius: 10px; padding: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <strong style="color: #3730a3; font-size: 0.95rem;">🌙 2do Turno (7:00 PM - 6:59 AM)</strong>
+                  <span style="background: #dcfce7; color: #15803d; font-weight: 800; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px;">${t2.qPct}% Conformidad</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; font-size: 0.8rem; margin-top: 10px;">
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">Auditorías</div>
+                    <strong style="font-size: 1rem; color: #0f172a;">${t2.qTotal}</strong>
+                  </div>
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">Aprobadas</div>
+                    <strong style="font-size: 1rem; color: #16a34a;">${t2.qOk}</strong>
+                  </div>
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">Rechazos</div>
+                    <strong style="font-size: 1rem; color: #dc2626;">${t2.qFail}</strong>
+                  </div>
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">Tarimas Lib.</div>
+                    <strong style="font-size: 1rem; color: #4f46e5;">${t2.sTarimas}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
         }
       }
 
@@ -4596,6 +4895,7 @@
           badge.style.color = 'rgba(235, 104, 76, 1)';
           document.getElementById('view-tarimas').style.display = 'block';
           changeTarimaTab('registro');
+          autoFillOperatorFromMachine('tarima');
         } else if (roleName === 'inspector' || roleName === 'pruebas_carga') {
           badge.textContent = roleName === 'inspector' ? `Inspector - ${state.selectedArea}` : `Pruebas de Carga - ${state.selectedArea}`;
           badge.style.background = 'var(--color-success-bg)';
@@ -5195,9 +5495,11 @@
       }
 
       function initProdPersModule() {
+        const activeShift = getCurrentActiveShiftAndDate();
         const dateInput = document.getElementById('prod-pers-fecha');
         if (!dateInput.value) {
-          dateInput.value = new Date().toISOString().split('T')[0];
+          dateInput.value = activeShift.fecha;
+          prodPersTurno = activeShift.turno;
         }
 
         // Configurar header badge
@@ -5239,6 +5541,7 @@
           btnDia.style.background = '';
           btnDia.style.color = '';
         }
+        onProdPersMachineSelectChange();
         renderPersonalOnlyTable();
       }
 
@@ -5246,33 +5549,65 @@
         prodPersType = type;
         const btnFlexo = document.getElementById('btn-prod-pers-type-flexo');
         const btnArmado = document.getElementById('btn-prod-pers-type-armado');
+        const btnFrias = document.getElementById('btn-prod-pers-type-frias');
         const selectMaquina = document.getElementById('prod-pers-maquina');
         const wrapperAux = document.getElementById('wrapper-pers-auxiliares');
 
+        [btnFlexo, btnArmado, btnFrias].forEach(b => {
+          if (b) {
+            b.classList.remove('active-tab');
+            b.style.background = '';
+            b.style.color = '';
+          }
+        });
+
         if (type === 'Flexo') {
-          btnFlexo.classList.add('active-tab');
-          btnFlexo.style.background = 'var(--color-primary-light)';
-          btnFlexo.style.color = '#fff';
-          btnArmado.classList.remove('active-tab');
-          btnArmado.style.background = '';
-          btnArmado.style.color = '';
-          wrapperAux.style.display = 'none';
-
-          selectMaquina.innerHTML = ['M1', 'M2', 'M3', 'M4'].map(m => `<option value="${m}">${m}</option>`).join('');
-        } else {
-          btnArmado.classList.add('active-tab');
-          btnArmado.style.background = 'var(--color-primary-light)';
-          btnArmado.style.color = '#fff';
-          btnFlexo.classList.remove('active-tab');
-          btnFlexo.style.background = '';
-          btnFlexo.style.color = '';
+          if (btnFlexo) {
+            btnFlexo.classList.add('active-tab');
+            btnFlexo.style.background = 'var(--color-primary-light)';
+            btnFlexo.style.color = '#fff';
+          }
           wrapperAux.style.display = 'flex';
-
+          selectMaquina.innerHTML = ['Flexo 1', 'Flexo 2', 'Flexo 3', 'Flexo 4'].map(m => `<option value="${m}">${m}</option>`).join('');
+        } else if (type === 'Frias') {
+          if (btnFrias) {
+            btnFrias.classList.add('active-tab');
+            btnFrias.style.background = 'var(--color-primary-light)';
+            btnFrias.style.color = '#fff';
+          }
+          wrapperAux.style.display = 'flex';
+          selectMaquina.innerHTML = ['Banda 1', 'Banda 2', 'Banda 3', 'Banda 4'].map(m => `<option value="${m}">${m}</option>`).join('');
+        } else {
+          if (btnArmado) {
+            btnArmado.classList.add('active-tab');
+            btnArmado.style.background = 'var(--color-primary-light)';
+            btnArmado.style.color = '#fff';
+          }
+          wrapperAux.style.display = 'flex';
           selectMaquina.innerHTML = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12', 'M13'].map(m => `<option value="${m}">${m}</option>`).join('');
         }
+        onProdPersMachineSelectChange();
+      }
+
+      async function onProdPersMachineSelectChange() {
+        const fecha = document.getElementById('prod-pers-fecha')?.value;
+        const maquina = document.getElementById('prod-pers-maquina')?.value;
+        if (!fecha || !maquina) return;
+        const personalList = await getPersonalList();
+        const matches = personalList.filter(r =>
+          r.fecha === fecha &&
+          r.turno === prodPersTurno &&
+          normalizeMachineMatch(r.maquina, r.tipo_maquina, maquina, prodPersType)
+        );
+        const latest = matches[matches.length - 1];
+        document.getElementById('prod-pers-operador').value = (latest && latest.operador && latest.operador !== 'Sin Asignar') ? latest.operador : '';
+        document.getElementById('prod-pers-auxiliar-1').value = latest?.auxiliar_1 || '';
+        document.getElementById('prod-pers-auxiliar-2').value = latest?.auxiliar_2 || '';
+        document.getElementById('prod-pers-auxiliar-3').value = latest?.auxiliar_3 || '';
       }
 
       function onProdPersDateShiftChange() {
+        onProdPersMachineSelectChange();
         renderPersonalOnlyTable();
       }
 
@@ -5293,30 +5628,47 @@
 
         let personalList = await getPersonalList();
         
-        // Buscar si ya existe la máquina asignada
-        const duplicado = personalList.some(r => r.fecha === fecha && r.turno === prodPersTurno && r.tipo_maquina === prodPersType && r.maquina === maquina);
-        if (duplicado) {
-          showToast('Esta máquina ya tiene personal asignado para este día y turno.', 'danger');
-          return;
+        // Buscar si ya existen registros de esta máquina en este día y turno para actualizar su equipo
+        const existingRecords = personalList.filter(r =>
+          r.fecha === fecha &&
+          r.turno === prodPersTurno &&
+          normalizeMachineMatch(r.maquina, r.tipo_maquina, maquina, prodPersType)
+        );
+
+        if (existingRecords.length > 0) {
+          for (const rec of existingRecords) {
+            const updated = {
+              ...rec,
+              tipo_maquina: prodPersType,
+              maquina,
+              operador,
+              auxiliar_1,
+              auxiliar_2,
+              auxiliar_3,
+              editado_por: state.usuarioActual
+            };
+            await savePersonalItem(updated);
+          }
+          showToast(`Personal de ${maquina} actualizado correctamente en el turno.`, 'success');
+        } else {
+          // Crear registro inicial del turno
+          const nuevoRegistro = {
+            id: Date.now(),
+            fecha,
+            turno: prodPersTurno,
+            tipo_maquina: prodPersType,
+            maquina,
+            operador,
+            auxiliar_1,
+            auxiliar_2,
+            auxiliar_3,
+            bolsas_producidas: 0,
+            bolsas_tarima: 0,
+            editado_por: state.usuarioActual
+          };
+          await savePersonalItem(nuevoRegistro);
+          showToast(`Personal de ${maquina} registrado para el turno.`, 'success');
         }
-
-        // Crear registro
-        const nuevoRegistro = {
-          id: Date.now(),
-          fecha,
-          turno: prodPersTurno,
-          tipo_maquina: prodPersType,
-          maquina,
-          operador,
-          auxiliar_1: prodPersType === 'Armado' ? auxiliar_1 : '',
-          auxiliar_2: prodPersType === 'Armado' ? auxiliar_2 : '',
-          auxiliar_3: prodPersType === 'Armado' ? auxiliar_3 : '',
-          bolsas_producidas: 0,
-          bolsas_tarima: 0,
-          editado_por: state.usuarioActual
-        };
-
-        await savePersonalItem(nuevoRegistro);
 
         // Registrar nombres en catálogo
         let catalogo = JSON.parse(localStorage.getItem('catalogo_personal')) || [];
@@ -5326,23 +5678,22 @@
           }
         };
         agregarAlCatalogo(operador, 'Operador');
-        if (prodPersType === 'Armado') {
-          agregarAlCatalogo(auxiliar_1, 'Auxiliar');
-          agregarAlCatalogo(auxiliar_2, 'Auxiliar');
-          if (auxiliar_3) agregarAlCatalogo(auxiliar_3, 'Auxiliar');
-        }
+        agregarAlCatalogo(auxiliar_1, 'Auxiliar');
+        agregarAlCatalogo(auxiliar_2, 'Auxiliar');
+        if (auxiliar_3) agregarAlCatalogo(auxiliar_3, 'Auxiliar');
         localStorage.setItem('catalogo_personal', JSON.stringify(catalogo));
-
-        showToast('Personal asignado correctamente.', 'success');
-
-        // Resetear inputs
-        document.getElementById('prod-pers-operador').value = '';
-        document.getElementById('prod-pers-auxiliar-1').value = '';
-        document.getElementById('prod-pers-auxiliar-2').value = '';
-        document.getElementById('prod-pers-auxiliar-3').value = '';
 
         await updatePersonalDatalists();
         renderPersonalOnlyTable();
+      }
+
+      function editProdPersMachine(tipo, maq) {
+        changeProdPersType(tipo || 'Armado');
+        const sel = document.getElementById('prod-pers-maquina');
+        if (sel) {
+          sel.value = maq;
+          onProdPersMachineSelectChange();
+        }
       }
 
       async function renderPersonalOnlyTable() {
@@ -5353,38 +5704,53 @@
         const filtrados = personalList.filter(r => r.fecha === fecha && r.turno === prodPersTurno);
         const wrapper = document.getElementById('wrapper-tabla-pers-only');
 
-        if (filtrados.length === 0) {
+        // Agrupar por máquina para mostrar una fila limpia por máquina activa en el turno
+        const machineTeamMap = {};
+        filtrados.forEach(row => {
+          const key = `${row.tipo_maquina || 'Armado'}_${row.maquina}`;
+          machineTeamMap[key] = row;
+        });
+        const uniqueRows = Object.values(machineTeamMap);
+
+        if (uniqueRows.length === 0) {
           wrapper.innerHTML = `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 250px; border: 2px dashed var(--border-color); border-radius: var(--border-radius-md); color: var(--text-muted);">
-              <span>📭 Ningún personal registrado en este turno y fecha.</span>
+              <span>📭 Ningún personal registrado en este turno (${prodPersTurno === 'Noche' ? '2do Turno' : '1er Turno'}) y fecha.</span>
             </div>
           `;
           return;
         }
 
         let rowsHtml = '';
-        filtrados.forEach(row => {
-          const auxs = [];
-          if (row.auxiliar_1) auxs.push(row.auxiliar_1);
-          if (row.auxiliar_2) auxs.push(row.auxiliar_2);
-          if (row.auxiliar_3) auxs.push(row.auxiliar_3);
+        uniqueRows.forEach(row => {
+          const auxs = [row.auxiliar_1, row.auxiliar_2, row.auxiliar_3].filter(Boolean);
 
           rowsHtml += `
-            <tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
               <td style="font-weight: 700; padding: 10px;">
                 <span class="badge area-${row.tipo_maquina === 'Flexo' ? 'flexo' : 'nanjang'}" style="margin-right: 6px; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">
-                  ${row.tipo_maquina}
+                  ${row.tipo_maquina || 'Armado'}
                 </span>
                 ${row.maquina}
               </td>
-              <td style="padding: 10px; font-weight: 600;">${row.operador}</td>
-              <td style="padding: 10px; color: var(--text-muted);">${auxs.length > 0 ? auxs.join(', ') : '-'}</td>
-              <td style="padding: 10px;">
+              <td style="padding: 10px; font-weight: 700; color: var(--color-primary);">👤 ${row.operador}</td>
+              <td style="padding: 10px; color: var(--text-muted); font-size: 0.82rem;">${auxs.length > 0 ? '🤝 ' + auxs.join(', ') : '<span style="color:#94a3b8;">Sin auxiliares</span>'}</td>
+              <td style="padding: 10px; display: flex; gap: 6px;">
+                <button 
+                  type="button" 
+                  class="btn-secondary"
+                  onclick="editProdPersMachine('${row.tipo_maquina || 'Armado'}', '${row.maquina}')"
+                  style="padding: 3px 8px; font-size: 0.75rem; cursor: pointer;"
+                  title="Editar personal de esta máquina"
+                >
+                  ✏️ Editar
+                </button>
                 <button 
                   type="button" 
                   class="toggle-btn"
                   onclick="deleteProdPersEntry(${row.id})"
                   style="padding: 3px 8px; font-size: 0.8rem; color: var(--color-danger); border: none; background: none; cursor: pointer;"
+                  title="Eliminar asignación"
                 >
                   🗑️
                 </button>
@@ -5399,8 +5765,8 @@
               <thead>
                 <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
                   <th style="padding: 10px;">Máquina</th>
-                  <th style="padding: 10px;">Operador</th>
-                  <th style="padding: 10px;">Auxiliares</th>
+                  <th style="padding: 10px;">Operador Presente</th>
+                  <th style="padding: 10px;">Auxiliares / Equipo</th>
                   <th style="padding: 10px;">Acciones</th>
                 </tr>
               </thead>
@@ -5432,27 +5798,14 @@
 
       function initProdBolsasModule() {
         const dateInput = document.getElementById('prod-bolsas-fecha');
+        const activeShift = getCurrentActiveShiftAndDate();
+
+        if (!dateInput.value) {
+          dateInput.value = activeShift.fecha;
+        }
+        prodBolsasTurno = activeShift.turno;
+
         const now = new Date();
-        const curH = now.getHours();
-
-        let defaultDate = dateInput.value;
-        if (!defaultDate) {
-          if (curH < 7) {
-            const yesterday = new Date();
-            yesterday.setDate(now.getDate() - 1);
-            defaultDate = yesterday.toISOString().split('T')[0];
-          } else {
-            defaultDate = now.toISOString().split('T')[0];
-          }
-          dateInput.value = defaultDate;
-        }
-
-        if (curH >= 19 || curH < 7) {
-          prodBolsasTurno = 'Noche';
-        } else {
-          prodBolsasTurno = 'Dia';
-        }
-
         const timeInput = document.getElementById('prod-bolsas-num-hora-actualizacion');
         if (timeInput) {
           timeInput.value = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
@@ -5472,6 +5825,56 @@
         document.getElementById('view-produccion-bolsas').style.display = 'block';
 
         selectProdBolsasTurno(prodBolsasTurno);
+      }
+
+      function onProdBolsasHoraChange(horaVal) {
+        if (!horaVal) return;
+        const detected = getShiftFromTimeStr(horaVal);
+        if (detected !== prodBolsasTurno) {
+          selectProdBolsasTurno(detected);
+          // Mantener la hora que el usuario eligió
+          const timeInput = document.getElementById('prod-bolsas-num-hora-actualizacion');
+          if (timeInput) timeInput.value = horaVal;
+          showToast(`Turno reconocido automáticamente: ${detected === 'Dia' ? '1er Turno (7:00 AM - 6:59 PM)' : '2do Turno (7:00 PM - 6:59 AM)'}`, 'success');
+        }
+      }
+
+      let currentMachineLastProd = 0;
+
+      function updateLiveMermaPreview() {
+        const previewBox = document.getElementById('box-prod-bolsas-merma-preview');
+        if (!previewBox) return;
+        const prodRaw = document.getElementById('prod-bolsas-num-producidas')?.value || '';
+        const tarimaRaw = document.getElementById('prod-bolsas-num-tarima')?.value || '';
+
+        const prodVal = prodRaw !== '' ? parseInt(prodRaw, 10) : currentMachineLastProd;
+        const tarimaVal = tarimaRaw !== '' ? parseInt(tarimaRaw, 10) : 0;
+
+        if (tarimaRaw === '' || isNaN(tarimaVal) || tarimaVal <= 0) {
+          previewBox.style.display = 'none';
+          previewBox.innerHTML = '';
+          return;
+        }
+
+        if (!prodVal || prodVal <= 0) {
+          previewBox.style.display = 'block';
+          previewBox.innerHTML = `<span style="color: #b45309; font-weight: 600;">⚠️ Ingresa o registra primero las Bolsas Producidas para calcular la merma contra las ${tarimaVal.toLocaleString()} bolsas en tarima.</span>`;
+          return;
+        }
+
+        const mermaCant = Math.max(0, prodVal - tarimaVal);
+        const mermaPct = ((mermaCant / prodVal) * 100).toFixed(2);
+        const aprovPct = ((tarimaVal / prodVal) * 100).toFixed(1);
+
+        previewBox.style.display = 'block';
+        previewBox.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <span>📊 <strong>Cálculo de Cierre de Turno:</strong> Producidas: <strong>${prodVal.toLocaleString()}</strong> | En Tarima: <strong>${tarimaVal.toLocaleString()}</strong></span>
+            <span style="background: ${mermaCant > 0 ? '#fee2e2' : '#dcfce7'}; color: ${mermaCant > 0 ? '#dc2626' : '#15803d'}; padding: 2px 8px; border-radius: 12px; font-weight: 800;">
+              Merma Estimada: ${mermaCant.toLocaleString()} bolsas (${mermaPct}%) • Aprovechamiento: ${aprovPct}%
+            </span>
+          </div>
+        `;
       }
 
       function selectProdBolsasTurno(turno) {
@@ -5601,22 +6004,32 @@
         const calidadVal = document.getElementById('lbl-prod-bolsas-calidad-val');
 
         if (asignado) {
-          label.textContent = `${asignado.operador} (⏱️ ${hrs.toFixed(1)} hrs transcurridas)`;
+          const auxs = [asignado.auxiliar_1, asignado.auxiliar_2, asignado.auxiliar_3].filter(Boolean);
+          const teamText = auxs.length > 0
+            ? `👤 Op: ${asignado.operador} • 🤝 Aux: ${auxs.join(', ')}`
+            : `👤 Op: ${asignado.operador}`;
+          label.textContent = `${teamText} (⏱️ ${hrs.toFixed(1)} hrs transcurridas)`;
           label.style.color = 'var(--color-primary)';
           inputMeta.value = asignado.meta || '';
           inputMarca.value = asignado.marca_trabajada || '';
-          inputProd.value = ''; // Vacío para nuevo reporte
-          inputTarima.value = ''; // Vacío para nuevo reporte
+          currentMachineLastProd = parseInt(asignado.bolsas_producidas, 10) || 0;
+          inputProd.value = '';
+          inputProd.placeholder = currentMachineLastProd > 0
+            ? `Último acumulado: ${currentMachineLastProd.toLocaleString()} bolsas (ingresa nuevo avance)`
+            : 'Ingresa el acumulado de bolsas producidas...';
+          inputTarima.value = '';
 
-          if (asignado.bolsas_producidas > 0) {
+          if (asignado.bolsas_producidas > 0 && asignado.bolsas_tarima > 0) {
             calidadRow.style.display = 'flex';
-            const pct = (asignado.bolsas_tarima / asignado.bolsas_producidas * 100).toFixed(1);
-            calidadVal.textContent = pct + '%';
-            if (parseFloat(pct) >= 95) {
-              calidadVal.style.color = 'var(--color-success-dark)';
-            } else {
-              calidadVal.style.color = 'var(--color-danger-dark)';
-            }
+            const mermaCant = Math.max(0, asignado.bolsas_producidas - asignado.bolsas_tarima);
+            const mermaPct = ((mermaCant / asignado.bolsas_producidas) * 100).toFixed(1);
+            const pctAprov = ((asignado.bolsas_tarima / asignado.bolsas_producidas) * 100).toFixed(1);
+            calidadVal.textContent = `Merma: ${mermaCant.toLocaleString()} bolsas (${mermaPct}%) • Aprovechamiento: ${pctAprov}%`;
+            calidadVal.style.color = parseFloat(mermaPct) <= 5 ? 'var(--color-success-dark)' : 'var(--color-danger-dark)';
+          } else if (asignado.bolsas_producidas > 0) {
+            calidadRow.style.display = 'flex';
+            calidadVal.textContent = `Acumulado: ${asignado.bolsas_producidas.toLocaleString()} bolsas (Tarima/Merma pendiente al final del turno)`;
+            calidadVal.style.color = '#0284c7';
           } else {
             calidadRow.style.display = 'none';
           }
@@ -5640,11 +6053,13 @@
             isEditingMetaPortable = true;
           }
         } else {
+          currentMachineLastProd = 0;
           label.textContent = `No se ha asignado personal en este turno (⏱️ ${hrs.toFixed(1)} hrs transcurridas)`;
           label.style.color = 'var(--text-muted)';
           inputMeta.value = '';
           inputMarca.value = '';
           inputProd.value = '';
+          inputProd.placeholder = 'Ingresa el acumulado de bolsas producidas...';
           inputTarima.value = '';
           calidadRow.style.display = 'none';
           
@@ -5657,7 +6072,8 @@
           isEditingMetaPortable = true;
         }
 
-        renderVisualBoard(history);
+        updateLiveMermaPreview();
+        renderVisualBoard(history.filter(h => (h.bolsas_producidas || 0) > 0 || h.hora_actualizacion));
       }
 
       function renderVisualBoard(history) {
@@ -5705,27 +6121,22 @@
           const prevBags = idx > 0 ? history[idx - 1].bolsas_producidas || 0 : 0;
           const deltaBags = currentBags - prevBags;
 
-          const currentTime = row.hora_actualizacion || '07:00';
+          const currentTime = row.hora_actualizacion || (prodBolsasTurno === 'Dia' ? '07:00' : '19:00');
           const prevTime = idx > 0 ? (history[idx - 1].hora_actualizacion || '07:00') : (prodBolsasTurno === 'Dia' ? '07:00' : '19:00');
 
-          const min1 = getMinutesVal(currentTime);
-          const min2 = getMinutesVal(prevTime);
-          const deltaMinutes = min1 - min2;
-          const deltaHours = deltaMinutes / 60;
-          const ratePerHour = (deltaHours > 0 && deltaBags >= 0) ? Math.round(deltaBags / deltaHours) : 0;
-
-          // Semáforo estatus
           const rowElapsed = getElapsedShiftHours(row.turno || prodBolsasTurno, row.fecha || document.getElementById('prod-bolsas-fecha').value, currentTime);
           const expectedBags = Math.round(((row.meta || 0) / 12) * rowElapsed);
           const isAhead = currentBags >= expectedBags;
 
+          const rowTarima = parseInt(row.bolsas_tarima, 10) || 0;
+          const rowMerma = (rowTarima > 0 && currentBags > 0) ? Math.max(0, currentBags - rowTarima) : null;
+          const rowMermaPct = (rowMerma !== null && currentBags > 0) ? ((rowMerma / currentBags) * 100).toFixed(1) : null;
+
           nodesHtml += `
             <div style="display: flex; gap: 1rem; align-items: start; position: relative; margin-bottom: 1.5rem;">
-              <!-- Conector circular -->
               <div style="
                 width: 14px;
                 height: 14px;
-                borderRadius: 50%;
                 background: ${isAhead ? 'var(--color-success)' : 'var(--color-danger)'};
                 border: 3px solid #fff;
                 box-shadow: 0 0 3px rgba(0,0,0,0.15);
@@ -5736,7 +6147,6 @@
                 border-radius: 50%;
               "></div>
 
-              <!-- Tarjeta -->
               <div style="
                 flex: 1;
                 background: #f8fafc;
@@ -5751,7 +6161,6 @@
                 font-size: 0.8rem;
                 position: relative;
               ">
-                <!-- Botón de eliminación en la esquina superior derecha -->
                 <button
                   type="button"
                   onclick="deleteBolsasEntry(${row.id})"
@@ -5780,12 +6189,15 @@
                 </div>
                 <div>
                   <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); display: block;">BOLSAS EN ESTE LAPSO</span>
-                  <span style="font-weight: 700; color: var(--color-primary);">+${deltaBags.toLocaleString()}</span>
+                  <span style="font-weight: 700; color: var(--color-primary);">${deltaBags >= 0 ? '+' : ''}${deltaBags.toLocaleString()}</span>
                   <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">(${prevTime} a ${currentTime})</span>
                 </div>
                 <div>
-                  <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); display: block;">RITMO ESPERADO</span>
-                  <strong>${Math.round((row.meta || 0) / 12).toLocaleString()} b/hora</strong>
+                  <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); display: block;">TARIMA / MERMA</span>
+                  ${rowTarima > 0
+                    ? `<strong style="color:#15803d;">📦 ${rowTarima.toLocaleString()}</strong><span style="font-size:0.7rem; color:#dc2626; display:block; font-weight:700;">Merma: ${rowMerma.toLocaleString()} (${rowMermaPct}%)</span>`
+                    : `<span style="color:var(--text-muted); font-size:0.75rem;">⏳ Avance por hora</span>`
+                  }
                 </div>
                 <div style="display: flex; justify-content: flex-end; margin-right: 15px;">
                   <span style="
@@ -5818,42 +6230,44 @@
         const maquina = document.getElementById('prod-bolsas-maquina').value;
         const metaVal = parseInt(document.getElementById('prod-bolsas-num-meta').value, 10) || 0;
         const marcaVal = document.getElementById('prod-bolsas-marca').value.trim();
-        const prodVal = parseInt(document.getElementById('prod-bolsas-num-producidas').value, 10) || 0;
-        const tarimaVal = parseInt(document.getElementById('prod-bolsas-num-tarima').value, 10) || 0;
+        const prodRaw = document.getElementById('prod-bolsas-num-producidas').value;
+        const tarimaRaw = document.getElementById('prod-bolsas-num-tarima').value;
         const horaVal = document.getElementById('prod-bolsas-num-hora-actualizacion').value;
 
         let personalList = await getPersonalList();
-        
+        const history = personalList
+          .filter(r => r.fecha === fecha && r.turno === prodBolsasTurno && r.tipo_maquina === prodBolsasType && r.maquina === maquina)
+          .sort((a, b) => (a.hora_actualizacion || '').localeCompare(b.hora_actualizacion || ''));
+        const last = history[history.length - 1];
+
+        let prodVal = prodRaw !== '' ? parseInt(prodRaw, 10) : (last ? (parseInt(last.bolsas_producidas, 10) || 0) : 0);
+        let tarimaVal = tarimaRaw !== '' ? parseInt(tarimaRaw, 10) : (last && prodRaw !== '' ? (parseInt(last.bolsas_tarima, 10) || 0) : 0);
+
+        if (prodVal <= 0 && tarimaVal <= 0) {
+          showToast('Ingresa el avance de Bolsas Producidas (o las Bolsas en Tarima al cerrar turno).', 'danger');
+          return;
+        }
+
         // Buscar el índice exacto para la misma hora de actualización
         const idx = personalList.findIndex(r => r.fecha === fecha && r.turno === prodBolsasTurno && r.tipo_maquina === prodBolsasType && r.maquina === maquina && r.hora_actualizacion === horaVal);
 
         if (idx !== -1) {
           const item = {
             ...personalList[idx],
-            meta: metaVal,
-            marca_trabajada: marcaVal,
+            meta: metaVal || personalList[idx].meta || 0,
+            marca_trabajada: marcaVal || personalList[idx].marca_trabajada || '',
             bolsas_producidas: prodVal,
             bolsas_tarima: tarimaVal,
             editado_por: state.usuarioActual
           };
           await savePersonalItem(item);
-          showToast('Producción actualizada para la hora ' + horaVal, 'success');
         } else {
-          // Copiar operadores del último registro de esta máquina hoy
-          const history = personalList
-            .filter(r => r.fecha === fecha && r.turno === prodBolsasTurno && r.tipo_maquina === prodBolsasType && r.maquina === maquina)
-            .sort((a, b) => {
-              const timeA = a.hora_actualizacion || '';
-              const timeB = b.hora_actualizacion || '';
-              return timeA.localeCompare(timeB);
-            });
-
-          const last = history[history.length - 1];
           const op = last ? last.operador : 'Sin Asignar';
           const aux1 = last ? last.auxiliar_1 : '';
           const aux2 = last ? last.auxiliar_2 : '';
           const aux3 = last ? last.auxiliar_3 : '';
 
+          // Si el último registro era únicamente la asignación de personal al inicio de turno (sin hora_actualizacion y 0 bolsas), lo actualizamos o creamos el corte horario
           const nuevo = {
             id: Date.now(),
             fecha,
@@ -5864,15 +6278,22 @@
             auxiliar_1: aux1,
             auxiliar_2: aux2,
             auxiliar_3: aux3,
-            meta: metaVal,
-            marca_trabajada: marcaVal,
+            meta: metaVal || (last ? last.meta : 0),
+            marca_trabajada: marcaVal || (last ? last.marca_trabajada : ''),
             bolsas_producidas: prodVal,
             bolsas_tarima: tarimaVal,
             hora_actualizacion: horaVal,
             editado_por: state.usuarioActual
           };
           await savePersonalItem(nuevo);
-          showToast('Registro de avance guardado a las ' + horaVal, 'success');
+        }
+
+        if (tarimaVal > 0 && prodVal > 0) {
+          const merma = Math.max(0, prodVal - tarimaVal);
+          const mermaPct = ((merma / prodVal) * 100).toFixed(1);
+          showToast(`✅ Cierre guardado (${horaVal}). Merma estimada: ${merma.toLocaleString()} bolsas (${mermaPct}%).`, 'success');
+        } else {
+          showToast(`✅ Avance por hora guardado a las ${horaVal} (${prodVal.toLocaleString()} bolsas).`, 'success');
         }
 
         document.getElementById('prod-bolsas-num-producidas').value = '';
@@ -5905,45 +6326,32 @@
           const key = `${row.tipo_maquina}-${row.maquina}`;
           const curTime = row.hora_actualizacion || '';
           const existTime = latestMap[key] ? (latestMap[key].hora_actualizacion || '') : '';
-          if (!latestMap[key] || curTime.localeCompare(existTime) > 0) {
+          if (!latestMap[key] || curTime.localeCompare(existTime) >= 0) {
             latestMap[key] = row;
           }
         });
         const latestRows = Object.values(latestMap).sort((a, b) => {
           if (a.maquina === 'MAQUINA PRUEBA') return 1;
           if (b.maquina === 'MAQUINA PRUEBA') return -1;
-          const numA = parseInt(a.maquina.replace('M', ''), 10) || 0;
-          const numB = parseInt(b.maquina.replace('M', ''), 10) || 0;
+          const numA = parseInt(String(a.maquina).replace(/\D/g, ''), 10) || 0;
+          const numB = parseInt(String(b.maquina).replace(/\D/g, ''), 10) || 0;
           return numA - numB;
         });
 
         let rowsHtml = '';
         latestRows.forEach(row => {
-          const prod = row.bolsas_producidas || 0;
-          const tarima = row.bolsas_tarima || 0;
-          const targetGoal = row.meta || 0;
+          const prod = parseInt(row.bolsas_producidas, 10) || 0;
+          const tarima = parseInt(row.bolsas_tarima, 10) || 0;
+          const targetGoal = parseInt(row.meta, 10) || 0;
+          const auxs = [row.auxiliar_1, row.auxiliar_2, row.auxiliar_3].filter(Boolean);
           
           const rowElapsed = getElapsedShiftHours(row.turno || prodBolsasTurno, row.fecha || fecha, row.hora_actualizacion);
           const expectedBags = Math.round((targetGoal / 12) * rowElapsed);
           const diff = prod - expectedBags;
           
-          const qualityPct = prod > 0 ? (tarima / prod) * 100 : 0;
-
-          // Semáforo para Calidad
-          let qualityColor = 'var(--text-muted)';
-          let qualityBg = '#f1f5f9';
-          if (prod > 0) {
-            if (qualityPct >= 95) {
-              qualityColor = 'var(--color-success-dark)';
-              qualityBg = 'var(--color-success-bg)';
-            } else if (qualityPct >= 90) {
-              qualityColor = 'rgba(245, 158, 11, 1)';
-              qualityBg = 'rgba(245, 158, 11, 0.15)';
-            } else {
-              qualityColor = 'var(--color-danger-dark)';
-              qualityBg = 'var(--color-danger-bg)';
-            }
-          }
+          const hasTarima = tarima > 0;
+          const mermaCant = (hasTarima && prod > 0) ? Math.max(0, prod - tarima) : 0;
+          const mermaPct = (hasTarima && prod > 0) ? ((mermaCant / prod) * 100) : 0;
 
           // Estatus de Avance
           let advanceBadgeHtml = '';
@@ -5965,31 +6373,36 @@
             advanceBadgeHtml = '<span style="color: var(--text-muted);">-</span>';
           }
 
-          const qualityVisualHtml = prod > 0 
-            ? `<div style="display: flex; flex-direction: column; gap: 3px;">
-                 <span class="badge" style="background: ${qualityBg}; color: ${qualityColor}; font-weight: 700; width: fit-content; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">
-                   ${qualityPct.toFixed(1)}%
-                 </span>
-                 <div style="width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden;">
-                   <div style="width: ${Math.min(qualityPct, 100)}%; height: 100%; background: ${qualityColor === 'var(--color-success-dark)' ? 'var(--color-success)' : qualityColor === 'var(--color-danger-dark)' ? 'var(--color-danger)' : 'orange'};"></div>
-                 </div>
-               </div>`
-            : '<span style="color: var(--text-muted);">-</span>';
+          let mermaVisualHtml = '<span style="color: #64748b; font-size: 0.75rem; font-style: italic;">⏳ Al final del turno</span>';
+          if (hasTarima && prod > 0) {
+            const isLowMerma = mermaPct <= 5;
+            mermaVisualHtml = `
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span class="badge" style="background: ${isLowMerma ? 'var(--color-success-bg)' : 'var(--color-danger-bg)'}; color: ${isLowMerma ? 'var(--color-success-dark)' : 'var(--color-danger-dark)'}; font-weight: 800; width: fit-content; padding: 2px 6px; border-radius: 4px; font-size: 0.78rem;">
+                  ${mermaCant.toLocaleString()} bolsas (${mermaPct.toFixed(1)}%)
+                </span>
+                <span style="font-size: 0.7rem; color: var(--text-muted);">Aprovech.: ${(100 - mermaPct).toFixed(1)}%</span>
+              </div>
+            `;
+          }
 
           rowsHtml += `
-            <tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
               <td style="font-weight: 700; padding: 8px;">
                 <span class="badge area-nanjang" style="margin-right: 6px; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">
-                  ${row.maquina === 'MAQUINA PRUEBA' ? 'Prueba' : 'Armado'}
+                  ${row.tipo_maquina || 'Armado'}
                 </span>
                 ${row.maquina}
-                <div style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">${row.operador}</div>
+                <div style="font-size: 0.75rem; font-weight: 600; color: var(--color-primary);">👤 Op: ${row.operador || 'Sin Asignar'}</div>
+                ${auxs.length > 0 ? `<div style="font-size: 0.7rem; color: var(--text-muted);">🤝 Aux: ${auxs.join(', ')}</div>` : ''}
                 ${row.marca_trabajada ? `<div style="font-size: 0.7rem; font-weight: 600; color: var(--color-primary-light); margin-top: 2px;">🏷️ ${row.marca_trabajada}</div>` : ''}
               </td>
               <td style="padding: 8px;">${targetGoal > 0 ? targetGoal.toLocaleString() : '-'}</td>
-              <td style="padding: 8px;">${prod.toLocaleString()}</td>
-              <td style="padding: 8px; font-weight: 600; color: var(--color-primary);">${tarima.toLocaleString()}</td>
-              <td style="padding: 8px;">${qualityVisualHtml}</td>
+              <td style="padding: 8px; font-weight: 700;">${prod.toLocaleString()}</td>
+              <td style="padding: 8px; font-weight: 600; color: ${hasTarima ? 'var(--color-success-dark)' : 'var(--text-muted)'};">
+                ${hasTarima ? tarima.toLocaleString() : '<span style="font-size:0.75rem; font-weight:400;">⏳ Pendiente cierre</span>'}
+              </td>
+              <td style="padding: 8px;">${mermaVisualHtml}</td>
               <td style="padding: 8px;">
                 ${targetGoal > 0 ? `
                   <strong>${expectedBags.toLocaleString()}</strong>
@@ -5997,7 +6410,7 @@
                 ` : '-'}
               </td>
               <td style="padding: 8px;">${advanceBadgeHtml}</td>
-              <td style="padding: 8px; font-weight: 600; color: var(--color-primary-dark);">${row.hora_actualizacion}</td>
+              <td style="padding: 8px; font-weight: 600; color: var(--color-primary-dark);">${row.hora_actualizacion || 'Inicio turno'}</td>
             </tr>
           `;
         });
@@ -6007,11 +6420,11 @@
             <table class="table" style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
               <thead>
                 <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
-                  <th style="padding: 8px;">Máquina</th>
+                  <th style="padding: 8px;">Máquina y Equipo</th>
                   <th style="padding: 8px;">Meta</th>
-                  <th style="padding: 8px;">Acumulado</th>
-                  <th style="padding: 8px;">En Tarima</th>
-                  <th style="padding: 8px;">% Calidad</th>
+                  <th style="padding: 8px;">Producidas (Avance)</th>
+                  <th style="padding: 8px;">En Tarima (Final)</th>
+                  <th style="padding: 8px;">Merma Estimada (Cant. y %)</th>
                   <th style="padding: 8px;">Avance Esperado</th>
                   <th style="padding: 8px;">Estatus</th>
                   <th style="padding: 8px;">Últ. Act</th>
@@ -6143,6 +6556,9 @@
         const currentVal = select.value;
         const names = [...new Set([
           ...list.map(row => row.operador).filter(Boolean),
+          ...list.map(row => row.auxiliar_1).filter(Boolean),
+          ...list.map(row => row.auxiliar_2).filter(Boolean),
+          ...list.map(row => row.auxiliar_3).filter(Boolean),
           ...list.map(row => row.editado_por).filter(Boolean)
         ])].sort();
         
@@ -6162,6 +6578,7 @@
         
         const machineFilter = document.getElementById('stat-maquina-select').value;
         const personaFilter = document.getElementById('stat-persona-select').value;
+        const turnoFilter = document.getElementById('stat-turno-select')?.value || '';
         const selectedDate = document.getElementById('stat-fecha-input').value || new Date().toISOString().split('T')[0];
 
         // 1. Filtrar y agrupar para quedarnos únicamente con la HORA MÁS RECIENTE de cada máquina en cada turno y día (Historial Completo)
@@ -6175,35 +6592,47 @@
             }
           }
 
-          // Filtrar por persona si se seleccionó una
-          if (personaFilter && row.operador !== personaFilter && row.editado_por !== personaFilter) {
+          // Filtrar por persona (Operador, Auxiliares o Registrador) si se seleccionó una
+          if (personaFilter &&
+              row.operador !== personaFilter &&
+              row.auxiliar_1 !== personaFilter &&
+              row.auxiliar_2 !== personaFilter &&
+              row.auxiliar_3 !== personaFilter &&
+              row.editado_por !== personaFilter) {
             return;
           }
 
-          const shiftKey = `${row.fecha}_${row.turno}_${row.tipo_maquina}_${row.maquina}`;
+          const rowTurno = getRecordShift(row);
+          const shiftKey = `${row.fecha}_${rowTurno}_${row.tipo_maquina}_${row.maquina}`;
           if (!uniqueShifts[shiftKey]) {
-            uniqueShifts[shiftKey] = row;
+            uniqueShifts[shiftKey] = { ...row, turno: rowTurno };
           } else {
-            // Comparar hora_actualizacion para quedarnos con el último del turno
-            const curTime = row.hora_actualizacion || '07:00';
-            const existTime = uniqueShifts[shiftKey].hora_actualizacion || '07:00';
-            if (curTime.localeCompare(existTime) > 0) {
-              uniqueShifts[shiftKey] = row;
+            const curTime = row.hora_actualizacion || '';
+            const existTime = uniqueShifts[shiftKey].hora_actualizacion || '';
+            if (curTime.localeCompare(existTime) >= 0) {
+              uniqueShifts[shiftKey] = {
+                ...uniqueShifts[shiftKey],
+                ...row,
+                turno: rowTurno,
+                operador: row.operador && row.operador !== 'Sin Asignar' ? row.operador : uniqueShifts[shiftKey].operador,
+                auxiliar_1: row.auxiliar_1 || uniqueShifts[shiftKey].auxiliar_1,
+                auxiliar_2: row.auxiliar_2 || uniqueShifts[shiftKey].auxiliar_2,
+                auxiliar_3: row.auxiliar_3 || uniqueShifts[shiftKey].auxiliar_3
+              };
             }
           }
         });
 
         const allHistoryShifts = Object.values(uniqueShifts);
 
-        // 2. Filtrar el historial para el periodo y fecha seleccionados (para KPIs y Tabla de rendimiento)
-        const filteredList = allHistoryShifts.filter(row => {
+        // 2. Filtrar el historial para el periodo y fecha seleccionados (antes de filtrar por turno para alimentar la comparativa entre turnos)
+        const periodFilteredList = allHistoryShifts.filter(row => {
           const rowDateStr = row.fecha;
+          if (!rowDateStr) return false;
           if (currentStatPeriodo === 'dia') {
             return rowDateStr === selectedDate;
           } else if (currentStatPeriodo === 'semana') {
-            const rowWeek = getWeekNumber(rowDateStr);
-            const selWeek = getWeekNumber(selectedDate);
-            return rowWeek === selWeek;
+            return getWeekNumber(rowDateStr) === getWeekNumber(selectedDate);
           } else if (currentStatPeriodo === 'mes') {
             return rowDateStr.substring(0, 7) === selectedDate.substring(0, 7);
           } else if (currentStatPeriodo === 'ano') {
@@ -6212,11 +6641,95 @@
           return false;
         });
 
+        // Renderizar Comparativa de Productividad entre 1er Turno (7:00am-6:59pm) y 2do Turno (7:00pm-6:59am)
+        const compProdWrapper = document.getElementById('wrapper-prod-comparativa-turnos');
+        if (compProdWrapper) {
+          const calcShiftStats = (shiftKey) => {
+            const rows = periodFilteredList.filter(r => getRecordShift(r) === shiftKey);
+            let prod = 0, tarima = 0, meta = 0, prodConTarima = 0;
+            rows.forEach(r => {
+              const p = parseInt(r.bolsas_producidas, 10) || 0;
+              const t = parseInt(r.bolsas_tarima, 10) || 0;
+              const m = parseInt(r.meta, 10) || 0;
+              prod += p;
+              tarima += t;
+              meta += m;
+              if (t > 0 && p > 0) prodConTarima += p;
+            });
+            const mermaCant = prodConTarima > 0 ? Math.max(0, prodConTarima - tarima) : 0;
+            const mermaPct = prodConTarima > 0 ? ((mermaCant / prodConTarima) * 100).toFixed(1) : '0.0';
+            const avancePct = meta > 0 ? ((prod / meta) * 100).toFixed(1) : '0.0';
+            return { prod, tarima, meta, mermaCant, mermaPct, avancePct, maquinasCount: rows.length };
+          };
+          const sDia = calcShiftStats('Dia');
+          const sNoche = calcShiftStats('Noche');
+
+          compProdWrapper.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+              <div style="background: ${turnoFilter === 'Dia' ? '#eff6ff' : '#f8fafc'}; border: 2px solid ${turnoFilter === 'Dia' ? '#0284c7' : '#e2e8f0'}; border-radius: 10px; padding: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <strong style="color: #0369a1; font-size: 0.95rem;">☀️ 1er Turno (7:00 AM - 6:59 PM)</strong>
+                  <span style="background: #dbeafe; color: #1e40af; font-weight: 800; font-size: 0.78rem; padding: 2px 8px; border-radius: 12px;">Avance Meta: ${sDia.avancePct}%</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; font-size: 0.8rem; margin-top: 10px;">
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">Producidas</div>
+                    <strong style="font-size: 0.95rem; color: var(--color-primary);">${sDia.prod.toLocaleString()}</strong>
+                  </div>
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">En Tarima</div>
+                    <strong style="font-size: 0.95rem; color: #16a34a;">${sDia.tarima.toLocaleString()}</strong>
+                  </div>
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">Merma (Cant.)</div>
+                    <strong style="font-size: 0.95rem; color: #dc2626;">${sDia.mermaCant.toLocaleString()}</strong>
+                  </div>
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">% Merma</div>
+                    <strong style="font-size: 0.95rem; color: #dc2626;">${sDia.mermaPct}%</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div style="background: ${turnoFilter === 'Noche' ? '#eef2ff' : '#f8fafc'}; border: 2px solid ${turnoFilter === 'Noche' ? '#4f46e5' : '#e2e8f0'}; border-radius: 10px; padding: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <strong style="color: #3730a3; font-size: 0.95rem;">🌙 2do Turno (7:00 PM - 6:59 AM)</strong>
+                  <span style="background: #e0e7ff; color: #3730a3; font-weight: 800; font-size: 0.78rem; padding: 2px 8px; border-radius: 12px;">Avance Meta: ${sNoche.avancePct}%</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; font-size: 0.8rem; margin-top: 10px;">
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">Producidas</div>
+                    <strong style="font-size: 0.95rem; color: var(--color-primary);">${sNoche.prod.toLocaleString()}</strong>
+                  </div>
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">En Tarima</div>
+                    <strong style="font-size: 0.95rem; color: #16a34a;">${sNoche.tarima.toLocaleString()}</strong>
+                  </div>
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">Merma (Cant.)</div>
+                    <strong style="font-size: 0.95rem; color: #dc2626;">${sNoche.mermaCant.toLocaleString()}</strong>
+                  </div>
+                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <div style="color: #64748b; font-size: 0.7rem;">% Merma</div>
+                    <strong style="font-size: 0.95rem; color: #dc2626;">${sNoche.mermaPct}%</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // Aplicar filtro de turno si está seleccionado
+        const filteredList = turnoFilter
+          ? periodFilteredList.filter(row => getRecordShift(row) === turnoFilter)
+          : periodFilteredList;
+
         let total_producido = 0;
         let total_tarima = 0;
         let total_meta = 0;
+        let total_producido_con_tarima = 0;
 
-        // Estructuras para agregación
+        // Estructuras para agregación por máquina + turno para evaluar cada equipo
         const maquinasMap = {};
         const timelineMap = {};
 
@@ -6224,42 +6737,64 @@
           const prod = parseInt(row.bolsas_producidas, 10) || 0;
           const tarima = parseInt(row.bolsas_tarima, 10) || 0;
           const meta = parseInt(row.meta, 10) || 0;
+          const rowTurno = getRecordShift(row);
 
           total_producido += prod;
           total_tarima += tarima;
           total_meta += meta;
+          if (tarima > 0 && prod > 0) {
+            total_producido_con_tarima += prod;
+          }
 
-          // Agrupación por máquina
-          const keyMaq = `${row.tipo_maquina}-${row.maquina}`;
+          // Agrupación por máquina y turno para identificar al equipo (Operador + Auxiliares) y sus resultados
+          const keyMaq = `${row.tipo_maquina}-${row.maquina}-${rowTurno}`;
           if (!maquinasMap[keyMaq]) {
             maquinasMap[keyMaq] = {
               maquina: row.maquina,
-              tipo_maquina: row.tipo_maquina,
+              tipo_maquina: row.tipo_maquina || 'Armado',
+              turno: rowTurno,
+              operadores: new Set(),
+              auxiliares: new Set(),
+              marcas: new Set(),
               total_producido: 0,
+              total_producido_con_tarima: 0,
               total_tarima: 0,
               total_meta: 0
             };
           }
+          if (row.operador && row.operador !== 'Sin Asignar') maquinasMap[keyMaq].operadores.add(row.operador);
+          if (row.auxiliar_1) maquinasMap[keyMaq].auxiliares.add(row.auxiliar_1);
+          if (row.auxiliar_2) maquinasMap[keyMaq].auxiliares.add(row.auxiliar_2);
+          if (row.auxiliar_3) maquinasMap[keyMaq].auxiliares.add(row.auxiliar_3);
+          if (row.marca_trabajada) maquinasMap[keyMaq].marcas.add(row.marca_trabajada);
+
           maquinasMap[keyMaq].total_producido += prod;
           maquinasMap[keyMaq].total_tarima += tarima;
           maquinasMap[keyMaq].total_meta += meta;
+          if (tarima > 0 && prod > 0) {
+            maquinasMap[keyMaq].total_producido_con_tarima += prod;
+          }
         });
 
-        // Agrupación por periodo para la línea de tiempo histórica (usando allHistoryShifts para graficar tendencia)
-        allHistoryShifts.forEach(row => {
+        // Agrupación por periodo para la línea de tiempo histórica
+        const timelineSource = turnoFilter
+          ? allHistoryShifts.filter(r => getRecordShift(r) === turnoFilter)
+          : allHistoryShifts;
+
+        timelineSource.forEach(row => {
           const prod = parseInt(row.bolsas_producidas, 10) || 0;
           const tarima = parseInt(row.bolsas_tarima, 10) || 0;
           const meta = parseInt(row.meta, 10) || 0;
 
           let keyPeriodo = '';
           if (currentStatPeriodo === 'dia') {
-            keyPeriodo = row.fecha; // YYYY-MM-DD
+            keyPeriodo = row.fecha;
           } else if (currentStatPeriodo === 'semana') {
-            keyPeriodo = getWeekNumber(row.fecha); // YYYY-Www
+            keyPeriodo = getWeekNumber(row.fecha);
           } else if (currentStatPeriodo === 'mes') {
-            keyPeriodo = row.fecha.substring(0, 7); // YYYY-MM
+            keyPeriodo = row.fecha.substring(0, 7);
           } else if (currentStatPeriodo === 'ano') {
-            keyPeriodo = row.fecha.substring(0, 4); // YYYY
+            keyPeriodo = row.fecha.substring(0, 4);
           }
 
           if (!timelineMap[keyPeriodo]) {
@@ -6275,27 +6810,30 @@
           timelineMap[keyPeriodo].total_meta += meta;
         });
 
-        // Actualizar KPIs en interfaz
-        const descarteTotal = total_producido - total_tarima;
-        const yieldPct = total_producido > 0 ? (total_tarima / total_producido) * 100 : 0;
+        // Actualizar KPIs en interfaz (calculando merma sobre turnos cerrados con tarima > 0)
+        const mermaTotal = total_producido_con_tarima > 0 ? Math.max(0, total_producido_con_tarima - total_tarima) : 0;
+        const mermaPctGlobal = total_producido_con_tarima > 0 ? ((mermaTotal / total_producido_con_tarima) * 100) : 0;
+        const yieldPct = total_producido_con_tarima > 0 ? ((total_tarima / total_producido_con_tarima) * 100) : 0;
         const progressPct = total_meta > 0 ? (total_producido / total_meta) * 100 : 0;
 
         document.getElementById('stat-kpi-producidas').textContent = total_producido.toLocaleString();
         document.getElementById('stat-kpi-tarima').textContent = total_tarima.toLocaleString();
-        document.getElementById('stat-kpi-rendimiento').textContent = `Rendimiento: ${yieldPct.toFixed(1)}%`;
+        document.getElementById('stat-kpi-rendimiento').textContent = total_tarima > 0 ? `Aprovechamiento: ${yieldPct.toFixed(1)}%` : '⏳ En espera de cierre de tarima';
         document.getElementById('stat-kpi-avance').textContent = `${progressPct.toFixed(1)}%`;
         document.getElementById('stat-kpi-meta-total').textContent = `Meta Total: ${total_meta.toLocaleString()}`;
-        document.getElementById('stat-kpi-descarte').textContent = descarteTotal.toLocaleString();
-        document.getElementById('stat-kpi-tasa-descarte').textContent = `Tasa: ${total_producido > 0 ? ((descarteTotal / total_producido) * 100).toFixed(1) : 0}%`;
+        document.getElementById('stat-kpi-descarte').textContent = mermaTotal.toLocaleString();
+        document.getElementById('stat-kpi-tasa-descarte').textContent = total_tarima > 0
+          ? `Porcentaje de Merma: ${mermaPctGlobal.toFixed(1)}%`
+          : 'Se calcula al registrar Bolsas en Tarima';
 
-        // Renderizar tabla por máquina
+        // Renderizar tabla por máquina y equipo
         const wrapperTabla = document.getElementById('wrapper-tabla-stat-maquinas');
         const maquinasArr = Object.values(maquinasMap).sort((a, b) => b.total_producido - a.total_producido);
 
         if (maquinasArr.length === 0) {
           wrapperTabla.innerHTML = `
             <div style="display: flex; justify-content: center; align-items: center; height: 150px; border: 2px dashed var(--border-color); border-radius: var(--border-radius-md); color: var(--text-muted);">
-              <span>📭 No hay datos acumulados en este periodo.</span>
+              <span>📭 No hay datos acumulados en este periodo/turno.</span>
             </div>
           `;
         } else {
@@ -6304,9 +6842,15 @@
             const prod = row.total_producido;
             const tarima = row.total_tarima;
             const meta = row.total_meta;
-            const descarte = prod - tarima;
+            const hasTarima = tarima > 0 && row.total_producido_con_tarima > 0;
+            const mermaCant = hasTarima ? Math.max(0, row.total_producido_con_tarima - tarima) : 0;
+            const mermaPct = hasTarima ? ((mermaCant / row.total_producido_con_tarima) * 100) : 0;
             const progress = meta > 0 ? (prod / meta) * 100 : 0;
-            const quality = prod > 0 ? (tarima / prod) * 100 : 0;
+            const quality = hasTarima ? (tarima / row.total_producido_con_tarima) * 100 : 0;
+
+            const opsList = [...row.operadores];
+            const auxList = [...row.auxiliares];
+            const marcasList = [...row.marcas];
 
             let progressColor = 'var(--text-muted)';
             let progressBg = '#f1f5f9';
@@ -6328,7 +6872,7 @@
 
             let qualColor = 'var(--text-muted)';
             let qualBg = '#f1f5f9';
-            if (prod > 0) {
+            if (hasTarima) {
               if (quality >= 95) {
                 qualColor = 'var(--color-success-dark)';
                 qualBg = 'var(--color-success-bg)';
@@ -6342,22 +6886,38 @@
             }
 
             rowsHtml += `
-              <tr>
+              <tr style="border-bottom: 1px solid var(--border-color);">
                 <td style="font-weight: 700; padding: 10px 8px;">
                   <span class="badge area-${row.tipo_maquina === 'Flexo' ? 'flexo' : 'nanjang'}" style="margin-right: 6px; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">
                     ${row.tipo_maquina}
                   </span>
                   ${row.maquina}
+                  ${marcasList.length > 0 ? `<div style="font-size: 0.7rem; color: var(--color-primary-light); margin-top: 2px;">🏷️ ${marcasList.join(', ')}</div>` : ''}
+                </td>
+                <td style="padding: 10px 8px; font-size: 0.8rem; font-weight: 600;">
+                  ${row.turno === 'Noche' ? '🌙 2do Turno' : '☀️ 1er Turno'}
+                </td>
+                <td style="padding: 10px 8px;">
+                  <div style="font-weight: 700; color: var(--color-primary); font-size: 0.83rem;">
+                    👤 Op: ${opsList.length > 0 ? opsList.join(', ') : 'Sin Asignar'}
+                  </div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">
+                    ${auxList.length > 0 ? '🤝 Aux: ' + auxList.join(', ') : 'Sin auxiliares registrados'}
+                  </div>
                 </td>
                 <td style="padding: 10px 8px;">${meta > 0 ? meta.toLocaleString() : '-'}</td>
-                <td style="padding: 10px 8px;">${prod.toLocaleString()}</td>
+                <td style="padding: 10px 8px; font-weight: 700;">${prod.toLocaleString()}</td>
                 <td style="padding: 10px 8px;">
                   ${meta > 0 ? `<span class="badge" style="background: ${progressBg}; color: ${progressColor}; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">${progress.toFixed(1)}%</span>` : '<span style="color: var(--text-muted);">-</span>'}
                 </td>
-                <td style="padding: 10px 8px; color: var(--color-primary); font-weight: 600;">${tarima.toLocaleString()}</td>
-                <td style="padding: 10px 8px; color: ${descarte > 0 ? 'var(--color-danger)' : 'var(--text-muted)'};">${descarte > 0 ? descarte.toLocaleString() : '-'}</td>
+                <td style="padding: 10px 8px; color: var(--color-primary); font-weight: 600;">
+                  ${hasTarima ? tarima.toLocaleString() : '<span style="color:var(--text-muted); font-size:0.75rem; font-weight:400;">⏳ Al cerrar turno</span>'}
+                </td>
+                <td style="padding: 10px 8px; color: ${hasTarima && mermaCant > 0 ? 'var(--color-danger)' : 'var(--text-muted)'}; font-weight: 700;">
+                  ${hasTarima ? `${mermaCant.toLocaleString()} (${mermaPct.toFixed(1)}%)` : '-'}
+                </td>
                 <td style="padding: 10px 8px;">
-                  ${prod > 0 ? `<span class="badge" style="background: ${qualBg}; color: ${qualColor}; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">${quality.toFixed(1)}%</span>` : '<span style="color: var(--text-muted);">-</span>'}
+                  ${hasTarima ? `<span class="badge" style="background: ${qualBg}; color: ${qualColor}; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">${quality.toFixed(1)}%</span>` : '<span style="color: var(--text-muted);">-</span>'}
                 </td>
               </tr>
             `;
@@ -6369,12 +6929,14 @@
                 <thead>
                   <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
                     <th style="padding: 8px;">Máquina</th>
-                    <th style="padding: 8px;">Meta Acumulada</th>
-                    <th style="padding: 8px;">Producción Real</th>
-                    <th style="padding: 8px;">Avance Meta</th>
+                    <th style="padding: 8px;">Turno</th>
+                    <th style="padding: 8px;">Personal / Equipo en Máquina</th>
+                    <th style="padding: 8px;">Meta</th>
+                    <th style="padding: 8px;">Bolsas Producidas</th>
+                    <th style="padding: 8px;">% Cumplimiento</th>
                     <th style="padding: 8px;">Bolsas en Tarima</th>
-                    <th style="padding: 8px;">Descarte</th>
-                    <th style="padding: 8px;">% Calidad</th>
+                    <th style="padding: 8px;">Merma (Cant. y %)</th>
+                    <th style="padding: 8px;">% Aprovech.</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -7474,6 +8036,7 @@
           }
         }
 
+        autoFillOperatorFromMachine('inspector');
         autoEvaluate();
       }
 
@@ -8602,6 +9165,7 @@
             document.getElementById('frias-insp-fecha').value = new Date().toISOString().split('T')[0];
           }
           if (inputHora && !inputHora.value) inputHora.value = defaultTimeStr;
+          autoFillOperatorFromMachine('frias-insp');
         } else if (sub === 'carga') {
           state.role = 'frias_carga';
           const v = document.getElementById('view-frias-carga');
@@ -8623,6 +9187,7 @@
           const badge = document.getElementById('app-badge');
           if (badge) badge.textContent = 'Frías - Tarimas';
           changeFriasTarimaTab('registro');
+          autoFillOperatorFromMachine('frias-tarima');
         }
       }
 

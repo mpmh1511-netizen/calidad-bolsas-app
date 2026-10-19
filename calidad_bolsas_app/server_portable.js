@@ -84,18 +84,23 @@ const server = http.createServer(async (req, res) => {
   const user = auth[0];
   const pass = auth[1];
 
-  // Creadenciales de acceso para la empresa
+  // Credenciales de acceso para la empresa y clientes
   const validUser = process.env.APP_USER || 'dipapel';
   const validPass = process.env.APP_PASS || 'calidad2024';
   
   const clienteUser = process.env.CLIENTE_USER || 'mcdonalds';
   const clientePass = process.env.CLIENTE_PASS || 'mcR3visi0n';
 
+  const walmartUser = process.env.WALMART_USER || 'walmart';
+  const walmartPass = process.env.WALMART_PASS || 'wmR3visi0n';
+
   let role = '';
   if (user === validUser && pass === validPass) {
     role = 'admin';
   } else if (user === clienteUser && pass === clientePass) {
     role = 'cliente';
+  } else if (user === walmartUser && pass === walmartPass) {
+    role = 'cliente_walmart';
   } else {
     res.setHeader('WWW-Authenticate', 'Basic realm="Acceso Privado Dipapel"');
     res.writeHead(401, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -107,7 +112,7 @@ const server = http.createServer(async (req, res) => {
   const pathname = parsedUrl.pathname;
   const method = req.method;
 
-  if (role === 'cliente' && method !== 'GET' && method !== 'OPTIONS') {
+  if ((role === 'cliente' || role === 'cliente_walmart') && method !== 'GET' && method !== 'OPTIONS') {
     res.writeHead(403, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Operación no permitida para clientes' }));
     return;
@@ -126,10 +131,23 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- SERVIR FRONTEND ---
-  if (pathname === '/' || pathname === '/index.html' || pathname === '/app_portable.html' || pathname === '/cliente_mcdonalds.html') {
-    const fileToServe = (role === 'cliente') 
-       ? path.join(process.cwd(), 'cliente_mcdonalds.html') 
-       : FILE_PATH;
+  if (
+    pathname === '/' ||
+    pathname === '/index.html' ||
+    pathname === '/app_portable.html' ||
+    pathname === '/cliente_mcdonalds.html' ||
+    pathname === '/cliente_walmart.html'
+  ) {
+    let fileToServe = FILE_PATH;
+    if (role === 'cliente') {
+      fileToServe = path.join(process.cwd(), 'cliente_mcdonalds.html');
+    } else if (role === 'cliente_walmart') {
+      fileToServe = path.join(process.cwd(), 'cliente_walmart.html');
+    } else if (pathname === '/cliente_mcdonalds.html') {
+      fileToServe = path.join(process.cwd(), 'cliente_mcdonalds.html');
+    } else if (pathname === '/cliente_walmart.html') {
+      fileToServe = path.join(process.cwd(), 'cliente_walmart.html');
+    }
     
     fs.readFile(fileToServe, (err, data) => {
       if (err) {
@@ -276,6 +294,9 @@ const server = http.createServer(async (req, res) => {
            delete b.usuario;
            return b;
         });
+      } else if (role === 'cliente_walmart') {
+        // Walmart no tiene acceso a nada de inventario de rollos
+        mapped = [];
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -376,6 +397,39 @@ const server = http.createServer(async (req, res) => {
            delete i.operador;
            delete i.editado_por;
            delete i.usuario;
+           delete i.carga_realizado_por;
+           delete i.realizado_por;
+           return i;
+        });
+      } else if (role === 'cliente_walmart') {
+        let bobinasList = await supabaseRequest('bobinas?select=*&order=id.desc&limit=1000');
+        let bobinasMap = {};
+        if (bobinasList) {
+          bobinasList.forEach(item => {
+             const bd = item.datos || item || {};
+             const m = (bd.marca_especificaciones || bd.proveedor || '').toLowerCase();
+             bobinasMap[bd.id || item.id] = m;
+             const rNum = (bd.numero_rollo || bd.numero_bobina || '').toLowerCase();
+             if (rNum) bobinasMap['rollo:' + rNum] = m;
+          });
+        }
+        clientList = clientList.filter(i => {
+           let marca = (i.marca_especificaciones || i.marca_cliente || i.marca || '').toLowerCase();
+           if (!marca) {
+             if (i.bobina_id && bobinasMap[i.bobina_id]) marca = bobinasMap[i.bobina_id];
+             else if (i.numero_rollo && bobinasMap['rollo:' + String(i.numero_rollo).toLowerCase()]) marca = bobinasMap['rollo:' + String(i.numero_rollo).toLowerCase()];
+             else if (i.numero_bobina && bobinasMap['rollo:' + String(i.numero_bobina).toLowerCase()]) marca = bobinasMap['rollo:' + String(i.numero_bobina).toLowerCase()];
+           }
+           return marca.includes('walmart') || marca.includes('wal-mart');
+        });
+        clientList = clientList.map(i => {
+           delete i.operador;
+           delete i.editado_por;
+           delete i.usuario;
+           delete i.carga_realizado_por;
+           delete i.realizado_por;
+           delete i.maquina;
+           delete i.banda;
            return i;
         });
       }
@@ -474,7 +528,7 @@ const server = http.createServer(async (req, res) => {
         }
         return item;
       });
-      if (role === 'cliente') {
+      if (role === 'cliente' || role === 'cliente_walmart') {
         mapped = [];
       }
 
@@ -540,7 +594,7 @@ const server = http.createServer(async (req, res) => {
         }
         return item;
       });
-      if (role === 'cliente') {
+      if (role === 'cliente' || role === 'cliente_walmart') {
         // Para filtrar tarimas (que no tienen marca directamente), necesitamos cruzar con bobinas
         let bobinasList = await supabaseRequest('bobinas?select=*&order=id.desc&limit=1000');
         let bobinasMap = {};
@@ -569,12 +623,21 @@ const server = http.createServer(async (req, res) => {
              }
            }
            
+           if (role === 'cliente_walmart') {
+             return marca.includes('walmart') || marca.includes('wal-mart');
+           }
            return marca.includes('mcdonalds') || marca.includes('mc donalds');
         });
         mapped = mapped.map(b => {
            delete b.operador;
            delete b.editado_por;
            delete b.usuario;
+           delete b.carga_realizado_por;
+           delete b.realizado_por;
+           if (role === 'cliente_walmart') {
+             delete b.maquina;
+             delete b.banda;
+           }
            return b;
         });
       }
