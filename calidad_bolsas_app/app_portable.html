@@ -541,6 +541,9 @@
         </div>
         <div class="nav-controls" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">👤 Usuario: <span id="current-user-label">Desconocido</span></span>
+          <button class="btn-secondary" onclick="logout()" style="padding: 6px 12px; font-size: 0.78rem; border-color: var(--color-danger-light); color: var(--color-danger-dark);">
+            🚪 Cambiar Usuario
+          </button>
           <button class="btn-secondary" onclick="exitToLanding()" style="padding: 6px 14px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
             ◀ Menú Principal
           </button>
@@ -668,17 +671,6 @@
             <div class="kpi-card" style="border-left: 4px solid #2563eb;">
               <label>% Índice de Conformidad</label>
               <div id="stat-kpi-pct-conformidad" class="kpi-val" style="color: #2563eb;">0%</div>
-            </div>
-          </div>
-
-          <!-- Comparativa de Calidad y Productividad entre Turnos -->
-          <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
-            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
-              <h3 style="margin: 0; font-size: 1.15rem; color: var(--color-primary);">⚖️ Análisis Comparativo entre Turnos (1er Turno vs. 2do Turno)</h3>
-              <span style="font-size: 0.8rem; color: var(--text-muted);">☀️ 1er Turno: 7:00 AM a 6:59 PM &bull; 🌙 2do Turno: 7:00 PM a 6:59 AM</span>
-            </div>
-            <div id="wrapper-stat-indep-comparativa-turnos">
-              <!-- Se renderizará por JS -->
             </div>
           </div>
 
@@ -2987,6 +2979,48 @@
       const M_NANJANG = ['M1', 'M2', 'M3', 'M4', 'M5', 'MAQUINA PRUEBA'];
       const M_ASA = ['M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12', 'M13', 'MAQUINA PRUEBA'];
 
+      // --- LIMPIEZA PREVENTIVA DE SESIÓN 'PRUEBA' Y MEMORIA LOCAL ---
+      function stripPhotosForLocalCache(list) {
+        if (!Array.isArray(list)) return [];
+        return list.map(item => {
+          if (!item || typeof item !== 'object') return item;
+          if ((item.foto_url && item.foto_url.length > 2000) || (item.evidencia_acomodo_url && item.evidencia_acomodo_url.length > 2000)) {
+            const copy = { ...item };
+            if (copy.foto_url && copy.foto_url.length > 2000) delete copy.foto_url;
+            if (copy.evidencia_acomodo_url && copy.evidencia_acomodo_url.length > 2000) delete copy.evidencia_acomodo_url;
+            return copy;
+          }
+          return item;
+        });
+      }
+
+      function safeLocalStorageSet(key, valStr) {
+        try {
+          localStorage.setItem(key, valStr);
+          return true;
+        } catch (e) {
+          try {
+            // Liberar espacio quitando fotos pesadas del caché local (en el servidor siguen intactas)
+            localStorage.removeItem('calidad_inspecciones');
+            localStorage.removeItem('calidad_tarimas');
+            localStorage.setItem(key, valStr);
+            return true;
+          } catch (e2) {
+            console.warn('No se pudo guardar en localStorage para', key, e2);
+            return false;
+          }
+        }
+      }
+
+      (function sanitizeStartupSession() {
+        try {
+          const savedUser = (localStorage.getItem('usuario_actual') || '').trim();
+          if (savedUser.toUpperCase() === 'PRUEBA' || savedUser.toUpperCase() === 'USUARIO PRUEBA' || savedUser.toUpperCase() === 'DESCONOCIDO') {
+            localStorage.removeItem('usuario_actual');
+          }
+        } catch (e) {}
+      })();
+
       // --- ESTADO INICIAL ---
       let state = {
         section: null, // null, 'calidad' o 'produccion'
@@ -3017,7 +3051,8 @@
         const btn = document.querySelector('button[onclick="submitInspection()"]');
         if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Guardando...'; }
         isSubmittingData = true;
-        try { await _submitInspection_impl(); } 
+        try { await _submitInspection_impl(); }
+        catch (err) { console.error(err); showToast('Error al guardar inspección: ' + (err.message || err), 'danger'); }
         finally { isSubmittingData = false; if (btn) { btn.disabled = false; btn.innerHTML = '💾 Guardar Inspección'; } }
       }
 
@@ -3027,7 +3062,8 @@
         const btn = document.querySelector('#tarima-form button[type="submit"]');
         if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Guardando...'; }
         isSubmittingData = true;
-        try { await _submitTarima_impl(e); } 
+        try { await _submitTarima_impl(e); }
+        catch (err) { console.error(err); showToast('Error al guardar tarima: ' + (err.message || err), 'danger'); }
         finally { isSubmittingData = false; if (btn) { btn.disabled = false; btn.innerHTML = '💾 Generar Etiqueta y Guardar'; } }
       }
 
@@ -3037,7 +3073,8 @@
         const btn = document.querySelector('#frias-inspeccion-form button[type="submit"]');
         if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Guardando...'; }
         isSubmittingData = true;
-        try { await _submitFriasInspeccion_impl(e); } 
+        try { await _submitFriasInspeccion_impl(e); }
+        catch (err) { console.error(err); showToast('Error al guardar inspección: ' + (err.message || err), 'danger'); }
         finally { isSubmittingData = false; if (btn) { btn.disabled = false; btn.innerHTML = '💾 Guardar Inspección (Frías)'; } }
       }
 
@@ -3047,7 +3084,8 @@
         const btn = document.querySelector('#frias-carga-form button[type="submit"]');
         if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Guardando...'; }
         isSubmittingData = true;
-        try { await _submitFriasCarga_impl(e); } 
+        try { await _submitFriasCarga_impl(e); }
+        catch (err) { console.error(err); showToast('Error al guardar prueba de carga: ' + (err.message || err), 'danger'); }
         finally { isSubmittingData = false; if (btn) { btn.disabled = false; btn.innerHTML = '💾 Guardar Prueba de Carga'; } }
       }
 
@@ -3057,7 +3095,8 @@
         const btn = document.querySelector('#frias-tarima-form button[type="submit"]');
         if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Guardando...'; }
         isSubmittingData = true;
-        try { await _submitFriasTarima_impl(e); } 
+        try { await _submitFriasTarima_impl(e); }
+        catch (err) { console.error(err); showToast('Error al guardar tarima: ' + (err.message || err), 'danger'); }
         finally { isSubmittingData = false; if (btn) { btn.disabled = false; btn.innerHTML = '💾 Generar Etiqueta Frías'; } }
       }
 
@@ -3251,7 +3290,7 @@
         } else {
           list.unshift(item);
         }
-        localStorage.setItem('produccion_personal', JSON.stringify(list));
+        safeLocalStorageSet('produccion_personal', JSON.stringify(list));
 
         if (CLOUD_URL) {
           await saveDatabase();
@@ -3267,7 +3306,7 @@
       async function deletePersonalItem(id) {
         let list = JSON.parse(localStorage.getItem('produccion_personal')) || [];
         list = list.filter(item => item.id !== id);
-        localStorage.setItem('produccion_personal', JSON.stringify(list));
+        safeLocalStorageSet('produccion_personal', JSON.stringify(list));
 
         if (CLOUD_URL) {
           await saveDatabase();
@@ -3426,7 +3465,7 @@
             const strB = JSON.stringify(b);
             if (JSON.stringify(state.bobinas) !== strB) {
               state.bobinas = b;
-              localStorage.setItem('calidad_bobinas', strB);
+              safeLocalStorageSet('calidad_bobinas', strB);
               needsReRender = true;
             }
           }
@@ -3440,23 +3479,22 @@
               state.inspecciones = i;
               if (typeof fixOldFlexoRecords === 'function') {
                   fixOldFlexoRecords();
-                  strI = JSON.stringify(state.inspecciones); // Refresh string if migration modified data
               }
-              localStorage.setItem('calidad_inspecciones', strI);
+              safeLocalStorageSet('calidad_inspecciones', JSON.stringify(stripPhotosForLocalCache(state.inspecciones)));
               needsReRender = true;
             }
           }
           if (p && Array.isArray(p)) {
             const strP = JSON.stringify(p);
             if (localStorage.getItem('produccion_personal') !== strP) {
-              localStorage.setItem('produccion_personal', strP);
+              safeLocalStorageSet('produccion_personal', strP);
               needsReRender = true;
             }
           }
           if (t && Array.isArray(t)) {
-            const strT = JSON.stringify(t);
+            const strT = JSON.stringify(stripPhotosForLocalCache(t));
             if (localStorage.getItem('calidad_tarimas') !== strT) {
-              localStorage.setItem('calidad_tarimas', strT);
+              safeLocalStorageSet('calidad_tarimas', strT);
               needsReRender = true;
             }
           }
@@ -3526,7 +3564,7 @@
             }
           });
           if (changed) {
-             try { localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones)); } catch(e){}
+             safeLocalStorageSet('calidad_inspecciones', JSON.stringify(stripPhotosForLocalCache(state.inspecciones)));
           }
         }
       }
@@ -3587,98 +3625,11 @@
         }
       }
 
-      // --- INICIALIZACIÓN ---
-      window.onload = async function() {
-        if (CLOUD_URL) {
-          const db = await apiFetch(CLOUD_URL);
-          if (db) {
-            state.bobinas = db.bobinas || [];
-            state.inspecciones = db.inspecciones || [];
-            try {
-          localStorage.setItem('calidad_bobinas', JSON.stringify(state.bobinas));
-        } catch (e) {
-          console.warn('Quota exceeded in saveBobina');
+      function applyUserSessionUI() {
+        if (state.usuarioActual && state.usuarioActual.trim().toUpperCase() === 'PRUEBA') {
+          state.usuarioActual = '';
+          try { localStorage.removeItem('usuario_actual'); } catch (e) {}
         }
-            // Auto-cleanup huge photos before saving
-        state.inspecciones.forEach(i => {
-           if (i.foto_url && i.foto_url.length > 500000) i.foto_url = null;
-        });
-        try {
-          localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
-        } catch (e) {
-          showToast('La memoria del dispositivo está casi llena. Se borrarán fotos antiguas.', 'warning');
-          if (state.inspecciones.length > 0) state.inspecciones[state.inspecciones.length - 1].foto_url = null;
-          try { localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones)); } catch (err) {}
-        }
-            localStorage.setItem('produccion_personal', JSON.stringify(db.produccion_personal || []));
-            localStorage.setItem('calidad_tarimas', JSON.stringify(db.tarimas || []));
-          } else {
-            // Cargar desde cache local si falla la red
-            state.bobinas = JSON.parse(localStorage.getItem('calidad_bobinas')) || [];
-            state.inspecciones = JSON.parse(localStorage.getItem('calidad_inspecciones')) || [];
-          }
-        } else if (isOnline) {
-          await syncDataWithServer();
-          setInterval(syncDataWithServer, 4000);
-          // Keep-Alive Ping cada 2 minutos para mantener Render despierto en la planta
-          setInterval(() => { apiFetch('/api/bobinas').catch(() => {}); }, 120000);
-        } else {
-          if (!localStorage.getItem('calidad_bobinas')) {
-            localStorage.setItem('calidad_bobinas', JSON.stringify([]));
-          }
-          if (!localStorage.getItem('calidad_inspecciones')) {
-            localStorage.setItem('calidad_inspecciones', JSON.stringify([]));
-          }
-          state.bobinas = JSON.parse(localStorage.getItem('calidad_bobinas'));
-          state.inspecciones = JSON.parse(localStorage.getItem('calidad_inspecciones'));
-        }
-
-        // Limpiar duplicados de bobinas si existen
-        if (state.bobinas && state.bobinas.length > 0) {
-          const uniqueMap = {};
-          const cleaned = [];
-          state.bobinas.forEach(b => {
-            const key = b.numero_rollo.toLowerCase();
-            if (!uniqueMap[key]) {
-              uniqueMap[key] = true;
-              cleaned.push(b);
-            }
-          });
-          if (cleaned.length !== state.bobinas.length) {
-            state.bobinas = cleaned;
-            if (!isOnline) {
-              localStorage.setItem('calidad_bobinas', JSON.stringify(cleaned));
-            }
-          }
-        }
-
-        const now = new Date();
-        document.getElementById('insp-fecha').value = now.toISOString().split('T')[0];
-        document.getElementById('insp-hora').value = now.toTimeString().split(' ')[0].substring(0, 5);
-        document.getElementById('flexo-lavado').value = now.toTimeString().split(' ')[0].substring(0, 5);
-        document.getElementById('flexo-bobina-fecha').value = now.toISOString().split('T')[0];
-        if (document.getElementById('add-inv-fecha')) {
-          document.getElementById('add-inv-fecha').value = now.toISOString().split('T')[0];
-        }
-
-        const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
-        document.getElementById('carga-hora-ini').value = thirtyMinsAgo.toTimeString().split(' ')[0].substring(0, 5);
-        document.getElementById('carga-hora-fin').value = now.toTimeString().split(' ')[0].substring(0, 5);
-
-        onAreaChange();
-
-        if (state.inspecciones.length > 0) {
-          const dates = state.inspecciones.map(i => i.fecha_registro.split(' ')[0]);
-          const uniqueDates = [...new Set(dates)].sort().reverse();
-          state.activeDate = uniqueDates[0] || now.toISOString().split('T')[0];
-        } else {
-          state.activeDate = now.toISOString().split('T')[0];
-        }
-        document.getElementById('timeline-manual-date').value = state.activeDate;
-
-        await updatePersonalDatalists();
-
-        // Validar sesión
         if (state.usuarioActual) {
           document.getElementById('current-user-label').textContent = state.usuarioActual;
           document.getElementById('landing-user-label').textContent = state.usuarioActual;
@@ -3696,6 +3647,96 @@
           document.getElementById('step-login').style.display = 'block';
           document.getElementById('step-section').style.display = 'none';
         }
+      }
+
+      // --- INICIALIZACIÓN ---
+      window.onload = async function() {
+        // 1. Validar sesión de inmediato para que la pantalla de inicio nunca se bloquee
+        applyUserSessionUI();
+
+        const now = new Date();
+        if (document.getElementById('insp-fecha')) document.getElementById('insp-fecha').value = now.toISOString().split('T')[0];
+        if (document.getElementById('insp-hora')) document.getElementById('insp-hora').value = now.toTimeString().split(' ')[0].substring(0, 5);
+        if (document.getElementById('flexo-lavado')) document.getElementById('flexo-lavado').value = now.toTimeString().split(' ')[0].substring(0, 5);
+        if (document.getElementById('flexo-bobina-fecha')) document.getElementById('flexo-bobina-fecha').value = now.toISOString().split('T')[0];
+        if (document.getElementById('add-inv-fecha')) {
+          document.getElementById('add-inv-fecha').value = now.toISOString().split('T')[0];
+        }
+
+        const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+        if (document.getElementById('carga-hora-ini')) document.getElementById('carga-hora-ini').value = thirtyMinsAgo.toTimeString().split(' ')[0].substring(0, 5);
+        if (document.getElementById('carga-hora-fin')) document.getElementById('carga-hora-fin').value = now.toTimeString().split(' ')[0].substring(0, 5);
+
+        if (CLOUD_URL) {
+          const db = await apiFetch(CLOUD_URL);
+          if (db) {
+            state.bobinas = db.bobinas || [];
+            state.inspecciones = db.inspecciones || [];
+            safeLocalStorageSet('calidad_bobinas', JSON.stringify(state.bobinas));
+            safeLocalStorageSet('calidad_inspecciones', JSON.stringify(stripPhotosForLocalCache(state.inspecciones)));
+            safeLocalStorageSet('produccion_personal', JSON.stringify(db.produccion_personal || []));
+            safeLocalStorageSet('calidad_tarimas', JSON.stringify(stripPhotosForLocalCache(db.tarimas || [])));
+          } else {
+            state.bobinas = JSON.parse(localStorage.getItem('calidad_bobinas')) || [];
+            state.inspecciones = JSON.parse(localStorage.getItem('calidad_inspecciones')) || [];
+          }
+        } else if (isOnline) {
+          await syncDataWithServer();
+          setInterval(syncDataWithServer, 4000);
+          // Keep-Alive Ping cada 2 minutos para mantener Render despierto en la planta
+          setInterval(() => { apiFetch('/api/bobinas').catch(() => {}); }, 120000);
+        } else {
+          if (!localStorage.getItem('calidad_bobinas')) {
+            safeLocalStorageSet('calidad_bobinas', JSON.stringify([]));
+          }
+          if (!localStorage.getItem('calidad_inspecciones')) {
+            safeLocalStorageSet('calidad_inspecciones', JSON.stringify([]));
+          }
+          state.bobinas = JSON.parse(localStorage.getItem('calidad_bobinas')) || [];
+          state.inspecciones = JSON.parse(localStorage.getItem('calidad_inspecciones')) || [];
+        }
+
+        // Limpiar duplicados de bobinas si existen
+        if (state.bobinas && state.bobinas.length > 0) {
+          const uniqueMap = {};
+          const cleaned = [];
+          state.bobinas.forEach(b => {
+            const key = String(b?.numero_rollo || '').toLowerCase();
+            if (key && !uniqueMap[key]) {
+              uniqueMap[key] = true;
+              cleaned.push(b);
+            }
+          });
+          if (cleaned.length !== state.bobinas.length) {
+            state.bobinas = cleaned;
+            if (!isOnline) {
+              safeLocalStorageSet('calidad_bobinas', JSON.stringify(cleaned));
+            }
+          }
+        }
+
+        onAreaChange();
+
+        if (state.inspecciones.length > 0) {
+          const dates = state.inspecciones
+            .map(i => String(i?.fecha_registro || i?.fecha_iso || '').split(' ')[0])
+            .filter(Boolean);
+          const uniqueDates = [...new Set(dates)].sort().reverse();
+          state.activeDate = uniqueDates[0] || now.toISOString().split('T')[0];
+        } else {
+          state.activeDate = now.toISOString().split('T')[0];
+        }
+        if (document.getElementById('timeline-manual-date')) {
+          document.getElementById('timeline-manual-date').value = state.activeDate;
+        }
+
+        try {
+          await updatePersonalDatalists();
+        } catch (err) {
+          console.warn('Error actualizando datalists de personal:', err);
+        }
+
+        applyUserSessionUI();
       };
 
       function handleLoginSubmit(event) {
@@ -3711,7 +3752,13 @@
           window.location.href = 'cliente_mcdonalds.html';
           return;
         }
-        try { localStorage.setItem('usuario_actual', name); } catch(e) { console.warn('Local storage full, ignoring login persist'); }
+        if (lowerName === 'prueba' || lowerName === 'usuario prueba') {
+          showToast('Por favor ingresa tu nombre real para poder registrar en el sistema.', 'warning');
+          document.getElementById('login-username').value = '';
+          document.getElementById('login-username').focus();
+          return;
+        }
+        safeLocalStorageSet('usuario_actual', name);
         state.usuarioActual = name;
         document.getElementById('current-user-label').textContent = name;
         document.getElementById('landing-user-label').textContent = name;
@@ -3724,10 +3771,11 @@
       }
 
       function logout() {
-        localStorage.removeItem('usuario_actual');
+        try { localStorage.removeItem('usuario_actual'); } catch (e) {}
         state.usuarioActual = '';
         document.getElementById('current-user-label').textContent = 'Desconocido';
         document.getElementById('landing-user-label').textContent = 'Desconocido';
+        if (document.getElementById('login-username')) document.getElementById('login-username').value = '';
         document.getElementById('landing-session-info').style.display = 'none';
         
         // Regresar a vista de login en landing
@@ -3735,6 +3783,7 @@
         document.getElementById('landing-screen').style.display = 'flex';
         document.getElementById('step-section').style.display = 'none';
         document.getElementById('step-prod-menu').style.display = 'none';
+        if (document.getElementById('step-frias-menu')) document.getElementById('step-frias-menu').style.display = 'none';
         document.getElementById('step-area').style.display = 'none';
         document.getElementById('step-role').style.display = 'none';
         document.getElementById('step-login').style.display = 'block';
@@ -4342,81 +4391,6 @@
               `;
             });
           }
-        }
-
-        // Renderizar Comparativa de Calidad entre 1er Turno y 2do Turno
-        const compWrapper = document.getElementById('wrapper-stat-indep-comparativa-turnos');
-        if (compWrapper) {
-          const allPeriodInsps = [...baseStandardInspections, ...baseFriasInspections];
-          const buildShiftQualMetrics = (shiftKey) => {
-            const sInsps = allPeriodInsps.filter(i => getRecordShift(i) === shiftKey);
-            const qual = sInsps.filter(i => i.es_prueba_carga !== 1);
-            const carga = sInsps.filter(i => i.es_prueba_carga === 1);
-            const qTotal = qual.length;
-            const qOk = qual.filter(i => i.resultado === 'Aprobado').length;
-            const qFail = qual.filter(i => i.resultado === 'Rechazado').length;
-            const qPct = qTotal > 0 ? ((qOk / qTotal) * 100).toFixed(1) : '0.0';
-            const cTotal = carga.length;
-            const cOk = carga.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
-            const sTarimas = baseValidTarimas.filter(t => getRecordShift(t) === shiftKey).length;
-            return { qTotal, qOk, qFail, qPct, cTotal, cOk, sTarimas };
-          };
-          const t1 = buildShiftQualMetrics('Dia');
-          const t2 = buildShiftQualMetrics('Noche');
-
-          compWrapper.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-              <div style="background: ${turnoFilter === 'Dia' ? '#eff6ff' : '#f8fafc'}; border: 2px solid ${turnoFilter === 'Dia' ? '#0284c7' : '#e2e8f0'}; border-radius: 10px; padding: 1rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <strong style="color: #0369a1; font-size: 0.95rem;">☀️ 1er Turno (7:00 AM - 6:59 PM)</strong>
-                  <span style="background: #dcfce7; color: #15803d; font-weight: 800; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px;">${t1.qPct}% Conformidad</span>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; font-size: 0.8rem; margin-top: 10px;">
-                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                    <div style="color: #64748b; font-size: 0.7rem;">Auditorías</div>
-                    <strong style="font-size: 1rem; color: #0f172a;">${t1.qTotal}</strong>
-                  </div>
-                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                    <div style="color: #64748b; font-size: 0.7rem;">Aprobadas</div>
-                    <strong style="font-size: 1rem; color: #16a34a;">${t1.qOk}</strong>
-                  </div>
-                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                    <div style="color: #64748b; font-size: 0.7rem;">Rechazos</div>
-                    <strong style="font-size: 1rem; color: #dc2626;">${t1.qFail}</strong>
-                  </div>
-                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                    <div style="color: #64748b; font-size: 0.7rem;">Tarimas Lib.</div>
-                    <strong style="font-size: 1rem; color: #0284c7;">${t1.sTarimas}</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div style="background: ${turnoFilter === 'Noche' ? '#eef2ff' : '#f8fafc'}; border: 2px solid ${turnoFilter === 'Noche' ? '#4f46e5' : '#e2e8f0'}; border-radius: 10px; padding: 1rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <strong style="color: #3730a3; font-size: 0.95rem;">🌙 2do Turno (7:00 PM - 6:59 AM)</strong>
-                  <span style="background: #dcfce7; color: #15803d; font-weight: 800; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px;">${t2.qPct}% Conformidad</span>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; font-size: 0.8rem; margin-top: 10px;">
-                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                    <div style="color: #64748b; font-size: 0.7rem;">Auditorías</div>
-                    <strong style="font-size: 1rem; color: #0f172a;">${t2.qTotal}</strong>
-                  </div>
-                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                    <div style="color: #64748b; font-size: 0.7rem;">Aprobadas</div>
-                    <strong style="font-size: 1rem; color: #16a34a;">${t2.qOk}</strong>
-                  </div>
-                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                    <div style="color: #64748b; font-size: 0.7rem;">Rechazos</div>
-                    <strong style="font-size: 1rem; color: #dc2626;">${t2.qFail}</strong>
-                  </div>
-                  <div style="background: #fff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                    <div style="color: #64748b; font-size: 0.7rem;">Tarimas Lib.</div>
-                    <strong style="font-size: 1rem; color: #4f46e5;">${t2.sTarimas}</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `;
         }
       }
 
@@ -5108,7 +5082,7 @@
           return;
         }
 
-        const b = state.bobinas.find(x => x.numero_rollo.toLowerCase() === numeroRollo.toLowerCase());
+        const b = state.bobinas.find(x => String(x?.numero_rollo || '').toLowerCase() === numeroRollo.toLowerCase());
         let bobinaId = b ? b.id : null;
 
         if (!b) {
@@ -5681,7 +5655,7 @@
         agregarAlCatalogo(auxiliar_1, 'Auxiliar');
         agregarAlCatalogo(auxiliar_2, 'Auxiliar');
         if (auxiliar_3) agregarAlCatalogo(auxiliar_3, 'Auxiliar');
-        localStorage.setItem('catalogo_personal', JSON.stringify(catalogo));
+        safeLocalStorageSet('catalogo_personal', JSON.stringify(catalogo));
 
         await updatePersonalDatalists();
         renderPersonalOnlyTable();
@@ -6450,7 +6424,7 @@
           { nombre: 'Luis Díaz', rol: 'Auxiliar' }
         ];
         
-        localStorage.setItem('catalogo_personal', JSON.stringify(catalogo));
+        safeLocalStorageSet('catalogo_personal', JSON.stringify(catalogo));
 
         const DLOperadores = document.getElementById('datalist-operadores');
         const DLAuxiliares = document.getElementById('datalist-auxiliares');
@@ -8221,7 +8195,7 @@
             return;
           }
 
-          bobinaObj = state.bobinas.find(b => b.numero_rollo.toLowerCase() === rollo.toLowerCase());
+          bobinaObj = state.bobinas.find(b => String(b?.numero_rollo || '').toLowerCase() === rollo.toLowerCase());
           if (!bobinaObj) {
             bobinaObj = {
               id: Date.now(),
