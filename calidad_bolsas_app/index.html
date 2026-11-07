@@ -7306,21 +7306,57 @@
       // --- EXPORTACIÓN DE ESTADÍSTICAS POR PERIODO (EXCEL Y PDF) ---
       async function getScopedStatsData() {
         const personalList = (await getPersonalList()) || [];
-        const machineEl = document.getElementById('stat-maquina-select');
-        const personaEl = document.getElementById('stat-persona-select');
-        const fechaEl = document.getElementById('stat-fecha-input');
+        const indepView = document.getElementById('view-estadisticas-independiente');
+        const isIndep = !indepView || indepView.style.display !== 'none';
+        const isWalmartUser = String(state?.usuarioActual || '').trim().toUpperCase() === 'WALMART';
 
-        const machineFilter = machineEl ? machineEl.value : '';
-        const personaFilter = personaEl ? personaEl.value : '';
-        const selectedDate = (fechaEl && fechaEl.value) ? fechaEl.value : new Date().toISOString().split('T')[0];
-        const periodo = (typeof currentStatPeriodo !== 'undefined' && currentStatPeriodo) ? currentStatPeriodo : 'dia';
+        let areaFilter = '';
+        let machineFilterRaw = '';
+        let personaFilter = '';
+        let marcaExportFilter = '';
+        let turnoFilter = '';
+        let selectedDate = new Date().toISOString().split('T')[0];
+        let periodo = 'dia';
+
+        if (isIndep) {
+          areaFilter = document.getElementById('stat-indep-area-select')?.value || '';
+          machineFilterRaw = document.getElementById('stat-indep-maquina-select')?.value || '';
+          marcaExportFilter = document.getElementById('stat-indep-marca-select')?.value || '';
+          turnoFilter = document.getElementById('stat-indep-turno-select')?.value || '';
+          selectedDate = document.getElementById('stat-indep-fecha-input')?.value || selectedDate;
+          periodo = (typeof statIndepPeriodo !== 'undefined' && statIndepPeriodo) ? statIndepPeriodo : 'dia';
+        } else {
+          machineFilterRaw = document.getElementById('stat-maquina-select')?.value || '';
+          personaFilter = document.getElementById('stat-persona-select')?.value || '';
+          turnoFilter = document.getElementById('stat-turno-select')?.value || '';
+          selectedDate = document.getElementById('stat-fecha-input')?.value || selectedDate;
+          periodo = (typeof currentStatPeriodo !== 'undefined' && currentStatPeriodo) ? currentStatPeriodo : 'dia';
+        }
+
+        if (isWalmartUser) {
+          marcaExportFilter = 'WALMART';
+        }
+
+        const matchesPeriodo = (isoDate) => {
+          if (!isoDate) return false;
+          if (periodo === 'dia') return isoDate === selectedDate;
+          if (periodo === 'semana') return getWeekNumber(isoDate) === getWeekNumber(selectedDate);
+          if (periodo === 'mes') return isoDate.substring(0, 7) === selectedDate.substring(0, 7);
+          if (periodo === 'ano') return isoDate.substring(0, 4) === selectedDate.substring(0, 4);
+          return false;
+        };
 
         // 1. Filtrar registros de producción (quedándonos con la última actualización de cada turno/día/máquina)
         const uniqueShifts = {};
         personalList.forEach(row => {
-          if (machineFilter) {
-            const [tipo, maq] = machineFilter.split('-');
-            if (row.tipo_maquina !== tipo || row.maquina !== maq) return;
+          if (machineFilterRaw) {
+            if (machineFilterRaw.startsWith('Frias-')) {
+              const maq = machineFilterRaw.replace('Frias-', '');
+              if (row.maquina !== maq) return;
+            } else {
+              const [tipo, maq] = machineFilterRaw.split('-');
+              if ((tipo && row.tipo_maquina && row.tipo_maquina !== tipo) || (maq && row.maquina !== maq)) return;
+            }
           }
           if (personaFilter && row.operador !== personaFilter && row.editado_por !== personaFilter) return;
 
@@ -7338,41 +7374,112 @@
 
         const allHistoryShifts = Object.values(uniqueShifts);
         const scopedProduction = allHistoryShifts.filter(row => {
-          const rowDateStr = row.fecha;
-          if (periodo === 'dia') return rowDateStr === selectedDate;
-          if (periodo === 'semana') return getWeekNumber(rowDateStr) === getWeekNumber(selectedDate);
-          if (periodo === 'mes') return rowDateStr.substring(0, 7) === selectedDate.substring(0, 7);
-          if (periodo === 'ano') return rowDateStr.substring(0, 4) === selectedDate.substring(0, 4);
-          return false;
+          if (!matchesPeriodo(row.fecha)) return false;
+          if (turnoFilter && getRecordShift(row) !== turnoFilter) return false;
+          return true;
         });
 
-        // 2. Filtrar inspecciones de calidad por periodo y fecha
+        // 2. Filtrar inspecciones de calidad General (excluyendo Frías y registros simulados 'Desconocida')
         const allInspections = (state && state.inspecciones) ? state.inspecciones : [];
-        const marcaIndepEl = document.getElementById('stat-indep-marca-select');
-        const marcaExportFilter = marcaIndepEl ? marcaIndepEl.value : '';
 
         const scopedInspections = allInspections.filter(insp => {
-          const inspDate = getInspIsoDate(insp);
+          if (insp.maquina === 'Desconocida') return false;
+          const isFrias = (insp.area === 'Frías') ||
+                          String(insp.maquina || insp.banda || '').toLowerCase().startsWith('banda');
+          if (isFrias) return false;
+          if (areaFilter && insp.area !== areaFilter) return false;
+          if (machineFilterRaw) {
+            if (machineFilterRaw.startsWith('Frias-')) return false;
+            const [tipo, maq] = machineFilterRaw.split('-');
+            if (insp.maquina !== maq && insp.banda !== maq) return false;
+          }
           if (marcaExportFilter) {
             const m = (insp.marca_especificaciones || insp.marca_cliente || insp.marca || '').trim().toUpperCase();
             if (m !== marcaExportFilter) return false;
           }
-          if (machineFilter) {
-            const [tipo, maq] = machineFilter.split('-');
-            if (insp.maquina !== maq) return false;
-          }
           if (personaFilter && insp.operador !== personaFilter) return false;
-
-          if (periodo === 'dia') return inspDate === selectedDate;
-          if (periodo === 'semana') return getWeekNumber(inspDate) === getWeekNumber(selectedDate);
-          if (periodo === 'mes') return inspDate.substring(0, 7) === selectedDate.substring(0, 7);
-          if (periodo === 'ano') return inspDate.substring(0, 4) === selectedDate.substring(0, 4);
-          return false;
+          const inspDate = getInspIsoDate(insp);
+          if (!matchesPeriodo(inspDate)) return false;
+          if (turnoFilter && getRecordShift(insp) !== turnoFilter) return false;
+          return true;
         });
 
-        // 3. Separar por las 4 Secciones
+        // 3. Filtrar inspecciones de Frías (Bandas 1 a 4)
+        const friasInspections = allInspections.filter(insp => {
+          const isFrias = (insp.area === 'Frías') ||
+                          String(insp.maquina || insp.banda || '').toLowerCase().startsWith('banda');
+          if (!isFrias) return false;
+          if (areaFilter && areaFilter !== 'Frías') return false;
+          if (machineFilterRaw) {
+            if (machineFilterRaw.startsWith('Frias-')) {
+              const maq = machineFilterRaw.replace('Frias-', '');
+              if (insp.maquina !== maq && insp.banda !== maq) return false;
+            } else {
+              return false;
+            }
+          }
+          if (marcaExportFilter) {
+            const m = (insp.marca_especificaciones || insp.marca_cliente || insp.marca || '').trim().toUpperCase();
+            if (m !== marcaExportFilter) return false;
+          }
+          if (personaFilter && insp.operador !== personaFilter) return false;
+          const inspDate = getInspIsoDate(insp);
+          if (!matchesPeriodo(inspDate)) return false;
+          if (turnoFilter && getRecordShift(insp) !== turnoFilter) return false;
+          return true;
+        });
+
+        // 4. Filtrar Tarimas Liberadas (General y Frías)
+        let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+        let serverTarimas = [];
+        if (isOnline) {
+          try {
+            serverTarimas = await apiFetch('/api/tarimas') || [];
+          } catch (e) {
+            serverTarimas = [];
+          }
+        }
+        const tarimaMap = new Map();
+        if (Array.isArray(state?.tarimas)) {
+          state.tarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+        }
+        localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+        serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+        let allTarimas = Array.from(tarimaMap.values()).filter(t => t && (t.codigo_liberacion || t.codigo_tarima));
+
+        if (marcaExportFilter) {
+          allTarimas = allTarimas.filter(t => {
+            const m = (typeof getTarimaMarcaResolved === 'function' ? getTarimaMarcaResolved(t) : (t.marca || '')).toUpperCase();
+            return m === marcaExportFilter;
+          });
+        }
+        allTarimas = allTarimas.filter(t => matchesPeriodo(getInspIsoDate(t)));
+        if (machineFilterRaw) {
+          const soloMaq = machineFilterRaw.includes('-') ? machineFilterRaw.split('-').slice(1).join('-') : machineFilterRaw;
+          allTarimas = allTarimas.filter(t => t.maquina === soloMaq || t.banda === soloMaq);
+        }
+        if (turnoFilter) {
+          allTarimas = allTarimas.filter(t => getRecordShift(t) === turnoFilter);
+        }
+
+        const generalTarimas = (areaFilter === 'Frías')
+          ? []
+          : allTarimas.filter(t => !(typeof isFriasTarimaRecord === 'function' && isFriasTarimaRecord(t))).filter(t => {
+              if (!areaFilter) return true;
+              const maq = String(t.maquina || '');
+              if (areaFilter === 'Nanjang') return ['M1','M2','M3','M4','M5'].includes(maq);
+              if (areaFilter === 'Con Asa') return ['M6','M7','M8','M9','M10','M11','M12','M13'].includes(maq);
+              if (areaFilter === 'Flexo') return maq.toLowerCase().includes('flexo');
+              return true;
+            });
+
+        const friasTarimas = (areaFilter && areaFilter !== 'Frías')
+          ? []
+          : allTarimas.filter(t => typeof isFriasTarimaRecord === 'function' && isFriasTarimaRecord(t));
+
+        // 5. Separar por las Secciones
         const flexoProd = scopedProduction.filter(r => r.tipo_maquina === 'Flexo');
-        const flexoInsp = scopedInspections.filter(i => i.area === 'Flexo');
+        const flexoInsp = scopedInspections.filter(i => i.area === 'Flexo' && i.es_prueba_carga !== 1);
 
         const nanjangProd = scopedProduction.filter(r => ['M1','M2','M3','M4','M5'].includes(r.maquina));
         const nanjangInsp = scopedInspections.filter(i => i.area === 'Nanjang' && i.es_prueba_carga !== 1);
@@ -7382,14 +7489,97 @@
 
         const cargaInsp = scopedInspections.filter(i => i.es_prueba_carga === 1);
 
+        const friasQualityInsp = friasInspections.filter(i => i.es_prueba_carga !== 1);
+        const friasCargaInsp = friasInspections.filter(i => i.es_prueba_carga === 1);
+
+        // 6. KPIs de Calidad General (idénticos a renderStatIndepView)
+        const qualityOnly = scopedInspections.filter(i => i.es_prueba_carga !== 1);
+        const kpiTotal = qualityOnly.length;
+        const kpiConformes = qualityOnly.filter(i => i.resultado === 'Aprobado').length;
+        const kpiNoConformes = qualityOnly.filter(i => i.resultado === 'Rechazado').length;
+        const kpiPct = kpiTotal > 0 ? ((kpiConformes / kpiTotal) * 100).toFixed(1) + '%' : '0%';
+
+        // 7. Desglose por Máquina (Inspecciones de Calidad General)
+        const machineMap = {};
+        qualityOnly.forEach(i => {
+          const maq = i.maquina || 'Desconocida';
+          if (!machineMap[maq]) {
+            machineMap[maq] = { maquina: maq, area: i.area || '-', total: 0, conformes: 0, noConformes: 0 };
+          }
+          machineMap[maq].total++;
+          if (i.resultado === 'Aprobado') machineMap[maq].conformes++;
+          else machineMap[maq].noConformes++;
+        });
+        const machineQualityRows = Object.values(machineMap).sort((a, b) => {
+          const getSortKey = (str) => {
+            const s = String(str || '').trim();
+            if (s.toLowerCase().includes('flexo')) return 0;
+            const match = s.match(/(\d+)/);
+            return match ? parseInt(match[1], 10) : 998;
+          };
+          return getSortKey(a.maquina) - getSortKey(b.maquina);
+        }).map(m => ({
+          ...m,
+          pct: m.total > 0 ? ((m.conformes / m.total) * 100).toFixed(1) + '%' : '0%'
+        }));
+
+        // 8. Desglose Tarimas por Máquina (General y Frías)
+        const buildTarimaStatsRows = (list, isFriasList) => {
+          const map = {};
+          list.forEach(t => {
+            let maq = t.maquina || t.banda || (isFriasList ? 'Banda 1' : 'Desconocida');
+            if (isFriasList && !String(maq).toLowerCase().startsWith('banda')) maq = 'Banda ' + maq;
+            if (!map[maq]) map[maq] = { maquina: maq, aprobada: 0, condicionada: 0, rechazada: 0, total: 0 };
+            const est = String(t.estado_liberacion || '').toLowerCase();
+            if (est.includes('condicion')) map[maq].condicionada++;
+            else if (est.includes('rechaz')) map[maq].rechazada++;
+            else map[maq].aprobada++;
+            map[maq].total++;
+          });
+          return Object.values(map).sort((a, b) => a.maquina.localeCompare(b.maquina, undefined, { numeric: true }));
+        };
+
+        const tarimasGeneralStats = buildTarimaStatsRows(generalTarimas, false);
+        const tarimasFriasStats = buildTarimaStatsRows(friasTarimas, true);
+
+        const formatInspectorName = (name) => isWalmartUser ? 'Calidad Dipapel' : (name || 'Desconocido');
+
+        const machineLabel = machineFilterRaw
+          ? (machineFilterRaw.includes('-') ? machineFilterRaw.split('-').slice(1).join('-') : machineFilterRaw)
+          : 'Todas las Máquinas';
+        const areaLabel = areaFilter || 'Todas las Áreas';
+        const turnoLabel = turnoFilter === 'Dia' ? '1er Turno (Día)' : turnoFilter === 'Noche' ? '2do Turno (Noche)' : 'Todos los Turnos';
+
         return {
+          isIndep,
+          isWalmartUser,
+          formatInspectorName,
           periodo: periodo.toUpperCase(),
           selectedDate,
-          machineFilter: machineFilter || 'Todas las Máquinas',
+          areaFilter: areaLabel,
+          machineFilter: machineLabel,
           personaFilter: personaFilter || 'Todas las Personas',
           marcaFilter: marcaExportFilter || 'Todas las Marcas',
+          turnoFilter: turnoLabel,
           scopedProduction,
           scopedInspections,
+          qualityOnly,
+          kpiCalidad: {
+            total: kpiTotal,
+            conformes: kpiConformes,
+            noConformes: kpiNoConformes,
+            pct: kpiPct
+          },
+          machineQualityRows,
+          generalTarimas,
+          friasTarimas,
+          tarimasGeneralStats,
+          tarimasFriasStats,
+          frias: {
+            all: friasInspections,
+            quality: friasQualityInsp,
+            carga: friasCargaInsp
+          },
           flexo: { prod: flexoProd, insp: flexoInsp },
           nanjang: { prod: nanjangProd, insp: nanjangInsp },
           asa: { prod: asaProd, insp: asaInsp },
@@ -7457,54 +7647,142 @@
         let summaryData = [];
         let inconformidadesRows = [];
         let cargaAsaSummaryRows = [];
+        let tarimasRows = [];
         let flexoRows = [];
         let nanjangRows = [];
         let asaRows = [];
+        let friasRows = [];
 
         try {
           if (typeof XLSX !== 'undefined') {
             const wb = XLSX.utils.book_new();
 
+            const cargaPass = data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+            const cargaFail = data.carga.insp.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length;
+            const friasQualPass = data.frias.quality.filter(i => i.resultado === 'Aprobado').length;
+            const friasQualFail = data.frias.quality.filter(i => i.resultado === 'Rechazado').length;
+            const friasCargaPass = data.frias.carga.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+            const friasCargaFail = data.frias.carga.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length;
+
             // 1. HOJA 1: RESUMEN GENERAL Y KPIS
             summaryData = [
-              ["CONTROL DE CALIDAD DIPAPEL - REPORTES DE ESTADÍSTICAS"],
-              ["Periodo de Consulta:", periodoName, "Fecha:", data.selectedDate],
-              ["Filtro de Máquina:", data.machineFilter, "Filtro de Persona:", data.personaFilter],
+              ["CONTROL DE CALIDAD DIPAPEL - REPORTE EJECUTIVO DE ESTADÍSTICAS"],
+              ["Periodo de Consulta:", periodoName, "Fecha Base:", data.selectedDate],
+              ["Filtro Área:", data.areaFilter, "Filtro Máquina:", data.machineFilter],
+              ["Filtro Marca:", data.marcaFilter, "Filtro Turno:", data.turnoFilter],
               ["Generado el:", new Date().toLocaleString()],
               [],
-              ["RESUMEN DE INDICADORES GLOBALES (KPIs)"],
+              ["1. INDICADORES GLOBALES DE CALIDAD (KPIs - GENERAL OMITIENDO FRÍAS)"],
               ["Métrica", "Valor"],
-              ["Bolsas Producidas (Máquinas)", data.scopedProduction.reduce((sum, r) => sum + (parseInt(r.bolsas_producidas) || 0), 0)],
-              ["Bolsas en Tarima (Aprobadas)", data.scopedProduction.reduce((sum, r) => sum + (parseInt(r.bolsas_tarima) || 0), 0)],
-              ["Meta Acumulada Fijada", data.scopedProduction.reduce((sum, r) => sum + (parseInt(r.meta) || 0), 0)],
-              ["Total Inspecciones Realizadas", data.scopedInspections.length],
-              ["Auditorías Conformes (Aprobadas)", data.scopedInspections.filter(i => i.resultado === 'Aprobado' || i.carga_resultado === 'Pasa').length],
-              ["No Conformidades / Defectos (Rechazadas)", data.scopedInspections.filter(i => i.resultado === 'Rechazado' || i.carga_resultado === 'Falla').length],
+              ["Auditorías Totales (Inspecciones de Calidad)", data.kpiCalidad.total],
+              ["Auditorías Conformes (Aprobadas)", data.kpiCalidad.conformes],
+              ["No Conformidades (Rechazadas)", data.kpiCalidad.noConformes],
+              ["% Índice de Conformidad Global", data.kpiCalidad.pct],
+              ["Pruebas de Carga Realizadas (M6-M13)", data.carga.insp.length],
+              ["Pruebas de Carga Aprobadas / Falladas", `${cargaPass} Aprobadas / ${cargaFail} Falladas`],
+              ["Tarimas Liberadas (General M1-M13)", data.generalTarimas.length],
+              ["Tarimas Liberadas (Módulo Frías Bandas 1-4)", data.friasTarimas.length],
+              ["Bolsas Producidas (Registro Producción)", data.scopedProduction.reduce((sum, r) => sum + (parseInt(r.bolsas_producidas) || 0), 0)],
+              ["Bolsas en Tarima (Registro Producción)", data.scopedProduction.reduce((sum, r) => sum + (parseInt(r.bolsas_tarima) || 0), 0)],
               [],
-              ["RESUMEN POR SECCIÓN DE PRODUCCIÓN"],
-              ["Sección", "Inspecciones", "Aprobadas", "Rechazadas", "% Calidad"],
+              ["2. RESUMEN POR SECCIÓN DE PRODUCCIÓN"],
+              ["Sección", "Auditorías / Pruebas", "Conformes (Aprobadas)", "No Conformes (Rechazadas)", "% Índice Calidad"],
               ["1. Flexo (Impresión)", data.flexo.insp.length, data.flexo.insp.filter(i => i.resultado === 'Aprobado').length, data.flexo.insp.filter(i => i.resultado === 'Rechazado').length, data.flexo.insp.length > 0 ? ((data.flexo.insp.filter(i => i.resultado === 'Aprobado').length / data.flexo.insp.length)*100).toFixed(1) + '%' : 'N/A'],
               ["2. Nanjang (Confección M1-M5)", data.nanjang.insp.length, data.nanjang.insp.filter(i => i.resultado === 'Aprobado').length, data.nanjang.insp.filter(i => i.resultado === 'Rechazado').length, data.nanjang.insp.length > 0 ? ((data.nanjang.insp.filter(i => i.resultado === 'Aprobado').length / data.nanjang.insp.length)*100).toFixed(1) + '%' : 'N/A'],
-              ["3. Con Asa (Confección M6-M13)", data.asa.insp.length, data.asa.insp.filter(i => i.resultado === 'Aprobado').length, data.asa.insp.filter(i => i.resultado === 'Rechazado').length, data.asa.insp.length > 0 ? ((data.asa.insp.filter(i => i.resultado === 'Aprobado').length / data.asa.insp.length)*100).toFixed(1) + '%' : 'N/A'],
-              ["4. Pruebas de Carga (Asas)", data.carga.insp.length, data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length, data.carga.insp.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length, data.carga.insp.length > 0 ? ((data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length / data.carga.insp.length)*100).toFixed(1) + '%' : 'N/A']
+              ["3. Con Asa (Confección M6-M13 - Calidad)", data.asa.insp.length, data.asa.insp.filter(i => i.resultado === 'Aprobado').length, data.asa.insp.filter(i => i.resultado === 'Rechazado').length, data.asa.insp.length > 0 ? ((data.asa.insp.filter(i => i.resultado === 'Aprobado').length / data.asa.insp.length)*100).toFixed(1) + '%' : 'N/A'],
+              ["4. Pruebas de Carga (Resistencia M6-M13)", data.carga.insp.length, cargaPass, cargaFail, data.carga.insp.length > 0 ? ((cargaPass / data.carga.insp.length)*100).toFixed(1) + '%' : 'N/A'],
+              ["5. Módulo Frías - Inspecciones (Bandas 1-4)", data.frias.quality.length, friasQualPass, friasQualFail, data.frias.quality.length > 0 ? ((friasQualPass / data.frias.quality.length)*100).toFixed(1) + '%' : 'N/A'],
+              ["6. Módulo Frías - Pruebas de Carga (Bandas 1-4)", data.frias.carga.length, friasCargaPass, friasCargaFail, data.frias.carga.length > 0 ? ((friasCargaPass / data.frias.carga.length)*100).toFixed(1) + '%' : 'N/A'],
+              [],
+              ["3. CONFORMIDAD VS NO CONFORMIDAD POR MÁQUINA (SOLO INSPECCIONES DE CALIDAD)"],
+              ["Máquina", "Área", "Total Inspecciones", "Conformes", "No Conformes", "% Conformidad"]
             ];
+
+            if (data.machineQualityRows.length === 0) {
+              summaryData.push(["Sin inspecciones de calidad para los filtros seleccionados."]);
+            } else {
+              data.machineQualityRows.forEach(m => {
+                summaryData.push([`Máquina ${m.maquina}`, m.area, m.total, m.conformes, m.noConformes, m.pct]);
+              });
+            }
+
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), "Resumen General");
 
-            // 2. HOJA 2: INCONFORMIDADES Y DEFECTOS DETECTADOS (SIN IMÁGENES)
+            // 2. HOJA 2: TARIMAS LIBERADAS (GENERAL Y FRÍAS)
+            tarimasRows = [
+              ["RESUMEN DE TARIMAS LIBERADAS POR MÁQUINA (GENERAL - OMITIENDO FRÍAS)"],
+              ["Periodo:", periodoName, "Fecha:", data.selectedDate],
+              [],
+              ["Máquina", "Aprobadas", "Condicionadas", "Rechazadas", "Total Tarimas"]
+            ];
+            if (data.tarimasGeneralStats.length === 0) {
+              tarimasRows.push(["Sin tarimas liberadas de máquinas generales en este periodo."]);
+            } else {
+              data.tarimasGeneralStats.forEach(st => {
+                tarimasRows.push([st.maquina, st.aprobada, st.condicionada, st.rechazada, st.total]);
+              });
+            }
+            tarimasRows.push([]);
+            tarimasRows.push(["RESUMEN DE TARIMAS LIBERADAS POR BANDA (MÓDULO FRÍAS)"]);
+            tarimasRows.push(["Banda", "Aprobadas", "Condicionadas", "Rechazadas", "Total Tarimas"]);
+            if (data.tarimasFriasStats.length === 0) {
+              tarimasRows.push(["Sin tarimas liberadas de Frías en este periodo."]);
+            } else {
+              data.tarimasFriasStats.forEach(st => {
+                tarimasRows.push([st.maquina, st.aprobada, st.condicionada, st.rechazada, st.total]);
+              });
+            }
+            tarimasRows.push([]);
+            tarimasRows.push(["LISTADO DETALLADO DE TARIMAS LIBERADAS EN EL PERIODO"]);
+            tarimasRows.push(["Fecha / Hora", "Código de Tarima", "Área / Máquina", "Turno", "Operador", "Liberado Por", "Marca", "Nº Rollo", "Dictamen", "Motivo / Observación"]);
+            const combinedTarimas = [...data.generalTarimas, ...data.friasTarimas];
+            if (combinedTarimas.length === 0) {
+              tarimasRows.push(["Sin registros de tarimas liberadas."]);
+            } else {
+              combinedTarimas.forEach(t => {
+                const isFr = typeof isFriasTarimaRecord === 'function' && isFriasTarimaRecord(t);
+                const code = t.codigo_liberacion || t.codigo_tarima || '-';
+                const maq = t.maquina || t.banda || '-';
+                const marca = (typeof getTarimaMarcaResolved === 'function' ? getTarimaMarcaResolved(t) : (t.marca || '-')) || '-';
+                const rollo = t.numero_rollo || t.bobina || '-';
+                const turnoStr = getRecordShift(t) === 'Noche' ? '2do Turno (Noche)' : '1er Turno (Día)';
+                tarimasRows.push([
+                  t.fecha_registro || t.fecha_iso || '-',
+                  code,
+                  isFr ? `Frías - ${maq}` : maq,
+                  turnoStr,
+                  t.operador || '-',
+                  data.formatInspectorName(t.editado_por),
+                  marca,
+                  rollo,
+                  t.estado_liberacion || 'Liberada',
+                  t.motivo || 'Cumple checklist'
+                ]);
+              });
+            }
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tarimasRows), "Tarimas Liberadas");
+
+            // 3. HOJA 3: INCONFORMIDADES Y DEFECTOS DETECTADOS (GENERAL + FRÍAS)
             inconformidadesRows = [
               ["REPORTES DE INCONFORMIDADES Y DEFECTOS EN MÁQUINAS (SIN IMÁGENES)"],
               ["Periodo:", periodoName, "Fecha:", data.selectedDate],
               [],
-              ["Fecha/Hora", "Área", "Máquina", "Operador", "Registrado Por (Auditor)", "Nº Rollo / Ficha", "Defecto / Inconformidad Detectada", "Acción Correctiva Implementada"]
+              ["Fecha/Hora", "Área", "Máquina / Banda", "Operador", "Registrado Por (Auditor)", "Nº Rollo / Marca", "Defecto / Inconformidad Detectada", "Estado", "Acción Correctiva Implementada"]
             ];
 
-            const allDefects = data.scopedInspections.filter(i => 
+            const allCombinedInsp = [...data.scopedInspections, ...data.frias.all];
+            const allDefects = allCombinedInsp.filter(i => 
               i.resultado === 'Rechazado' || 
               i.carga_resultado === 'Falla' || 
               (i.descripcion_defecto && i.descripcion_defecto.trim() !== '') ||
               i.impresion_correcta === 0 ||
               i.registro_correcto === 0 ||
-              i.medidas_dentro_parametro === 0
+              i.medidas_dentro_parametro === 0 ||
+              i.integridad_bolsa === 0 ||
+              i.pva_suficiente === 0 ||
+              i.hotmelt_suficiente === 0 ||
+              i.posicion_asa_correcta === 0 ||
+              i.pegado_correcto === 0
             );
 
             if (allDefects.length === 0) {
@@ -7515,18 +7793,18 @@
                 if (i.impresion_correcta === 0) defectoTexto = 'Fallo en Impresión/Tinta. ' + defectoTexto;
                 if (i.registro_correcto === 0) defectoTexto = 'Fallo en Registro. ' + defectoTexto;
                 if (i.medidas_dentro_parametro === 0) {
-            const u = i.medidas_unidad === 'cm' ? 'cm' : 'in';
-            defectoTexto = `Medidas Fuera de Rango [A: ${i.medida_ancho||'-'}${u}, L: ${i.medida_largo||'-'}${u}, F: ${i.medida_fuelle||'-'}${u}]. ` + defectoTexto;
-          }
+                  const u = i.medidas_unidad === 'cm' ? 'cm' : 'in';
+                  defectoTexto = `Medidas Fuera de Rango [A: ${i.medida_ancho||'-'}${u}, L: ${i.medida_largo||'-'}${u}, F: ${i.medida_fuelle||'-'}${u}]. ` + defectoTexto;
+                }
                 if (i.carga_resultado === 'Falla') defectoTexto = 'Falla en Resistencia de Asas. ' + defectoTexto;
 
                 inconformidadesRows.push([
-                  i.fecha_registro,
-                  i.area,
-                  i.maquina,
+                  i.fecha_registro || '-',
+                  i.area || '-',
+                  i.maquina || i.banda || '-',
                   i.operador || '-',
-                  i.editado_por || 'Desconocido',
-                  i.numero_rollo || '-',
+                  data.formatInspectorName(i.editado_por),
+                  i.numero_rollo || i.marca_especificaciones || i.marca_cliente || '-',
                   defectoTexto,
                   (i.resultado === 'Rechazado' || i.carga_resultado === 'Falla') ? 'RECHAZADO / GRAVE' : 'OBSERVACIÓN',
                   i.accion_correctiva || 'Ajuste de máquina requerido'
@@ -7535,25 +7813,33 @@
             }
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(inconformidadesRows), "Inconformidades y Defectos");
 
-            // 3. HOJA 3: PRUEBAS DE CARGA PARA MÁQUINAS CON ASA (M6 A M13)
+            // 4. HOJA 4: PRUEBAS DE CARGA PARA MÁQUINAS CON ASA (M6 A M13) Y FRÍAS
             const asaMachinesList = ['M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12', 'M13'];
             cargaAsaSummaryRows = [
               ["DIPAPEL - ANÁLISIS DE RESISTENCIA Y PRUEBAS DE CARGA (MÁQUINAS CON ASA M6 A M13)"],
               ["Periodo:", periodoName, "Fecha:", data.selectedDate],
               [],
-              ["Máquina", "Pruebas Realizadas", "Aprobadas (Pasa)", "Rechazadas (Falla)", "% Resistencia Conformidad", "Peso Promedio Probad (kg)"]
+              ["Máquina", "Estática (OK / Falla)", "Dinámica (OK / Falla)", "Total Pruebas", "Aprobadas (Pasa)", "Rechazadas (Falla)", "% Conformidad", "Peso Promedio (kg)"]
             ];
 
             asaMachinesList.forEach(m => {
               const tests = data.carga.insp.filter(c => c.maquina === m);
               const totalTests = tests.length;
+              const ests = tests.filter(c => c.carga_tipo_prueba === 'estatica');
+              const estOk = ests.filter(c => c.carga_resultado === 'Pasa' || c.resultado === 'Aprobado').length;
+              const estFail = ests.filter(c => c.carga_resultado === 'Falla' || c.resultado === 'Rechazado').length;
+              const dins = tests.filter(c => c.carga_tipo_prueba === 'dinamica');
+              const dinOk = dins.filter(c => c.carga_resultado === 'Pasa' || c.resultado === 'Aprobado').length;
+              const dinFail = dins.filter(c => c.carga_resultado === 'Falla' || c.resultado === 'Rechazado').length;
               const pasadas = tests.filter(c => c.carga_resultado === 'Pasa' || c.resultado === 'Aprobado').length;
               const falladas = tests.filter(c => c.carga_resultado === 'Falla' || c.resultado === 'Rechazado').length;
               const pct = totalTests > 0 ? ((pasadas / totalTests) * 100).toFixed(1) + '%' : 'N/A';
-              const avgWeight = totalTests > 0 ? (tests.reduce((sum, t) => sum + (parseFloat(t.carga_peso_kg) || 0), 0) / totalTests).toFixed(1) : 0;
+              const avgWeight = totalTests > 0 ? (tests.reduce((sum, t) => sum + (parseFloat(t.carga_peso_kg || t.peso_colocado_kg) || 0), 0) / totalTests).toFixed(1) : 0;
 
               cargaAsaSummaryRows.push([
                 `Máquina ${m}`,
+                `${estOk} OK / ${estFail} Falla`,
+                `${dinOk} OK / ${dinFail} Falla`,
                 totalTests,
                 pasadas,
                 falladas,
@@ -7563,28 +7849,31 @@
             });
 
             cargaAsaSummaryRows.push([]);
-            cargaAsaSummaryRows.push(["DETALLE COMPLETO DE AUDITORÍAS DE CARGA EN MÁQUINAS CON ASA"]);
-            cargaAsaSummaryRows.push(["Fecha/Hora", "Máquina", "Operador", "Registrado Por", "Nº Rollo", "Tipo Prueba", "Hora Inicio", "Hora Fin", "Peso Carga (kg)", "Resultado Prueba", "Observaciones"]);
+            cargaAsaSummaryRows.push(["DETALLE COMPLETO DE AUDITORÍAS DE CARGA (CON ASA Y FRÍAS)"]);
+            cargaAsaSummaryRows.push(["Fecha/Hora", "Área", "Máquina / Banda", "Operador", "Registrado Por", "Nº Rollo / Marca", "Tipo Prueba", "Hora Inicio", "Hora Fin", "Peso Carga (kg)", "Resultado Prueba", "Observaciones"]);
 
-            data.carga.insp.forEach(c => {
+            [...data.carga.insp, ...data.frias.carga].forEach(c => {
+              const rawT = String(c.carga_tipo_prueba || c.tipo_prueba_carga || '').toLowerCase();
+              const tLabel = (rawT === 'estatica' || rawT.includes('est')) ? 'Estática (30 min)' : 'Dinámica (15 min)';
               cargaAsaSummaryRows.push([
-                c.fecha_registro,
-                c.maquina,
-                c.operador || '-',
-                c.editado_por || 'Desconocido',
-                c.numero_rollo,
-                c.carga_tipo_prueba === 'estatica' ? 'Estática (30 min)' : 'Dinámica (15 min)',
-                c.carga_hora_inicial || '',
-                c.carga_hora_final || '',
-                c.carga_peso_kg || 0,
+                c.fecha_registro || '-',
+                c.area || 'Con Asa',
+                c.maquina || c.banda || '-',
+                c.operador || c.carga_realizado_por || '-',
+                data.formatInspectorName(c.editado_por),
+                c.numero_rollo || c.marca_especificaciones || c.marca_cliente || '-',
+                tLabel,
+                c.carga_hora_inicial || c.hora_inicial || '',
+                c.carga_hora_final || c.hora_final || '',
+                c.carga_peso_kg || c.peso_colocado_kg || 0,
                 c.carga_resultado || (c.resultado === 'Aprobado' ? 'Pasa' : 'Falla'),
-                c.observaciones || ''
+                c.observaciones || c.descripcion_defecto || ''
               ]);
             });
 
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cargaAsaSummaryRows), "Pruebas Carga Con Asa M6-M13");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cargaAsaSummaryRows), "Pruebas Carga");
 
-            // 4. HOJA FLEXO
+            // 5. HOJA FLEXO
             flexoRows = [
               ["SECCIÓN 1: FLEXO (IMPRESIÓN)"],
               ["Fecha/Hora", "Máquina", "Operador", "Registrado Por", "Nº Rollo", "Ficha/Marca", "Tintas", "Impresión OK", "Estado Registro", "Estado Físico", "Resultado", "Observaciones"]
@@ -7594,7 +7883,7 @@
                 i.fecha_registro,
                 i.maquina,
                 i.operador || '-',
-                i.editado_por || 'Desconocido',
+                data.formatInspectorName(i.editado_por),
                 i.numero_rollo,
                 i.marca_especificaciones || '',
                 i.numero_tintas || 0,
@@ -7607,7 +7896,7 @@
             });
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(flexoRows), "1. Flexo");
 
-            // 5. HOJA NANJANG
+            // 6. HOJA NANJANG
             nanjangRows = [
               ["SECCIÓN 2: NANJANG (CONFECCIÓN M1 - M5)"],
               ["Fecha/Hora", "Máquina", "Operador", "Registrado Por", "Nº Rollo", "Marca", "Velocidad (ppm)", "Cantidad Revisada", "Medidas Físicas", "Medidas OK", "Resultado", "Observaciones"]
@@ -7619,7 +7908,7 @@
                 i.fecha_registro,
                 i.maquina,
                 i.operador || '-',
-                i.editado_por || 'Desconocido',
+                data.formatInspectorName(i.editado_por),
                 i.numero_rollo,
                 i.marca_especificaciones || '',
                 i.velocidad_trabajo || 0,
@@ -7632,7 +7921,7 @@
             });
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(nanjangRows), "2. Nanjang");
 
-            // 6. HOJA CON ASA
+            // 7. HOJA CON ASA
             asaRows = [
               ["SECCIÓN 3: CON ASA (CONFECCIÓN M6 - M13)"],
               ["Fecha/Hora", "Máquina", "Operador", "Registrado Por", "Nº Rollo", "Marca", "Pegamiento Asa", "Pegamiento Parche", "Posición Asa", "Temp Pegamento (°C)", "Medidas Físicas", "Resultado", "Observaciones"]
@@ -7644,7 +7933,7 @@
                 i.fecha_registro,
                 i.maquina,
                 i.operador || '-',
-                i.editado_por || 'Desconocido',
+                data.formatInspectorName(i.editado_por),
                 i.numero_rollo,
                 i.marca_especificaciones || '',
                 i.pegamiento_suficiente_asa === 1 ? 'Sí' : 'No',
@@ -7657,6 +7946,25 @@
               ]);
             });
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(asaRows), "3. Con Asa");
+
+            // 8. HOJA MÓDULO FRÍAS
+            friasRows = [
+              ["SECCIÓN 4: MÓDULO FRÍAS (BANDAS 1 A 4)"],
+              ["Fecha/Hora", "Banda", "Tipo Registro", "Operador", "Registrado Por", "Marca / Rollo", "Resultado", "Observaciones / Detalles"]
+            ];
+            data.frias.all.forEach(i => {
+              friasRows.push([
+                i.fecha_registro || '-',
+                i.banda || i.maquina || '-',
+                i.es_prueba_carga === 1 ? 'Prueba de Carga' : 'Inspección Calidad',
+                i.operador || '-',
+                data.formatInspectorName(i.editado_por),
+                i.marca_cliente || i.marca_especificaciones || i.numero_rollo || '-',
+                i.resultado || i.carga_resultado || '-',
+                i.descripcion_defecto || i.observaciones || 'OK'
+              ]);
+            });
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(friasRows), "4. Módulo Frías");
 
             const b64 = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
             const xlsxDataUrl = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + b64;
@@ -7677,9 +7985,11 @@
         // Crear TSV y HTML fallback para modal
         let tsvContent = "CONTROL DE CALIDAD DIPAPEL - REPORTES DE ESTADÍSTICAS\n";
         summaryData.forEach(r => tsvContent += r.join('\t') + '\n');
+        tsvContent += "\nTARIMAS LIBERADAS:\n";
+        tarimasRows.forEach(r => tsvContent += r.join('\t') + '\n');
         tsvContent += "\nINCONFORMIDADES Y DEFECTOS:\n";
         inconformidadesRows.forEach(r => tsvContent += r.join('\t') + '\n');
-        tsvContent += "\nPRUEBAS DE CARGA CON ASA (M6-M13):\n";
+        tsvContent += "\nPRUEBAS DE CARGA:\n";
         cargaAsaSummaryRows.forEach(r => tsvContent += r.join('\t') + '\n');
         currentRawExcelData = tsvContent;
 
@@ -7763,22 +8073,47 @@
           const data = await getScopedStatsData();
           const periodoName = data.periodo === 'DIA' ? 'Día' : data.periodo === 'SEMANA' ? 'Semana' : data.periodo === 'MES' ? 'Mes' : 'Año';
 
-          const totalInsp = data.scopedInspections.length;
-          const conformes = data.scopedInspections.filter(i => i.resultado === 'Aprobado' || i.carga_resultado === 'Pasa').length;
-          const noConformes = data.scopedInspections.filter(i => i.resultado === 'Rechazado' || i.carga_resultado === 'Falla').length;
-          const pctConformidad = totalInsp > 0 ? ((conformes / totalInsp) * 100).toFixed(1) + '%' : '0%';
-          const marcaText = data.marcaFilter ? `Marca: ${data.marcaFilter}` : '';
+          // KPIs principales de Calidad (idénticos a los de la vista de Estadísticas)
+          const totalInsp = data.kpiCalidad.total;
+          const conformes = data.kpiCalidad.conformes;
+          const noConformes = data.kpiCalidad.noConformes;
+          const pctConformidad = data.kpiCalidad.pct;
+
+          const cargaTotal = data.carga.insp.length;
+          const cargaPass = data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+          const cargaFail = data.carga.insp.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length;
+
+          const tarimasGenTotal = data.generalTarimas.length;
+          const tarimasGenAprob = data.generalTarimas.filter(t => {
+            const e = String(t.estado_liberacion || '').toLowerCase();
+            return !e.includes('condicion') && !e.includes('rechaz');
+          }).length;
+          const tarimasGenCond = data.generalTarimas.filter(t => String(t.estado_liberacion || '').toLowerCase().includes('condicion')).length;
+          const tarimasGenRech = data.generalTarimas.filter(t => String(t.estado_liberacion || '').toLowerCase().includes('rechaz')).length;
+
+          const friasQualTotal = data.frias.quality.length;
+          const friasQualPass = data.frias.quality.filter(i => i.resultado === 'Aprobado').length;
+          const friasQualFail = data.frias.quality.filter(i => i.resultado === 'Rechazado').length;
+          const friasCargaTotal = data.frias.carga.length;
+          const friasCargaPass = data.frias.carga.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+          const friasCargaFail = data.frias.carga.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length;
 
           const bolsasProducidas = data.scopedProduction.reduce((sum, r) => sum + (parseInt(r.bolsas_producidas) || 0), 0);
           const bolsasTarima = data.scopedProduction.reduce((sum, r) => sum + (parseInt(r.bolsas_tarima) || 0), 0);
 
-          const allDefects = data.scopedInspections.filter(i => 
+          const allCombinedInsp = [...data.scopedInspections, ...data.frias.all];
+          const allDefects = allCombinedInsp.filter(i => 
             i.resultado === 'Rechazado' || 
             i.carga_resultado === 'Falla' || 
             (i.descripcion_defecto && i.descripcion_defecto.trim() !== '') ||
             i.impresion_correcta === 0 ||
             i.registro_correcto === 0 ||
-            i.medidas_dentro_parametro === 0
+            i.medidas_dentro_parametro === 0 ||
+            i.integridad_bolsa === 0 ||
+            i.pva_suficiente === 0 ||
+            i.hotmelt_suficiente === 0 ||
+            i.posicion_asa_correcta === 0 ||
+            i.pegado_correcto === 0
           );
 
           // 1. Mostrar HTML en el modal de vista previa
@@ -7786,37 +8121,45 @@
           if (bodyContainer) {
             let reportHtml = `
               <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; padding: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #15803d; padding-bottom: 12px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #15803d; padding-bottom: 12px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                   <div>
-                    <h2 style="font-size: 18px; color: #15803d; margin: 0; font-weight: 800;">DIPAPEL - RESUMEN EJECUTIVO DE CALIDAD Y PRODUCCIÓN</h2>
+                    <h2 style="font-size: 18px; color: #15803d; margin: 0; font-weight: 800;">DIPAPEL - REPORTE EJECUTIVO DE CALIDAD Y ESTADÍSTICAS</h2>
                     <p style="margin: 4px 0 0 0; color: #64748b; font-size: 11px;">Planta Lechugueros &bull; Sistema de Gestión Industrial</p>
                   </div>
-                  <div style="text-align: right; font-size: 11px; color: #475569; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                    <strong>Periodo:</strong> ${periodoName}<br/>
-                    <strong>Fecha Consulta:</strong> ${data.selectedDate}<br/>
-                    <strong>Filtro Máquina:</strong> ${data.machineFilter}
+                  <div style="text-align: right; font-size: 11px; color: #475569; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0; line-height: 1.45;">
+                    <strong>Periodo:</strong> ${periodoName} &bull; <strong>Fecha Base:</strong> ${data.selectedDate}<br/>
+                    <strong>Área:</strong> ${data.areaFilter} &bull; <strong>Máquina:</strong> ${data.machineFilter}<br/>
+                    <strong>Marca:</strong> ${data.marcaFilter} &bull; <strong>Turno:</strong> ${data.turnoFilter}
                   </div>
                 </div>
 
                 <h3 style="font-size: 12px; color: #15803d; margin: 0 0 10px 0; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
-                  1. Indicadores Globales de Desempeño (KPIs)
+                  1. Indicadores Globales de Calidad (KPIs - General Omitiendo Frías)
                 </h3>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
-                  <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; text-align: center;">
-                    <div style="font-size: 9px; color: #64748b; font-weight: 700;">BOLSAS PRODUCIDAS</div>
-                    <div style="font-size: 16px; font-weight: 800; color: #15803d; margin-top: 4px;">${bolsasProducidas.toLocaleString()}</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                  <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #15803d; border-radius: 6px; padding: 10px; text-align: center;">
+                    <div style="font-size: 9px; color: #64748b; font-weight: 700;">AUDITORÍAS TOTALES</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #15803d; margin-top: 4px;">${totalInsp}</div>
                   </div>
-                  <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; text-align: center;">
-                    <div style="font-size: 9px; color: #64748b; font-weight: 700;">BOLSAS EN TARIMA</div>
-                    <div style="font-size: 16px; font-weight: 800; color: #16a34a; margin-top: 4px;">${bolsasTarima.toLocaleString()}</div>
+                  <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #16a34a; border-radius: 6px; padding: 10px; text-align: center;">
+                    <div style="font-size: 9px; color: #64748b; font-weight: 700;">CONFORMES (APROBADAS)</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #16a34a; margin-top: 4px;">${conformes}</div>
                   </div>
-                  <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; text-align: center;">
-                    <div style="font-size: 9px; color: #64748b; font-weight: 700;">TOTAL AUDITORÍAS</div>
-                    <div style="font-size: 16px; font-weight: 800; color: #2563eb; margin-top: 4px;">${totalInsp}</div>
+                  <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #dc2626; border-radius: 6px; padding: 10px; text-align: center;">
+                    <div style="font-size: 9px; color: #64748b; font-weight: 700;">NO CONFORMIDADES</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #dc2626; margin-top: 4px;">${noConformes}</div>
                   </div>
-                  <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; text-align: center;">
-                    <div style="font-size: 9px; color: #64748b; font-weight: 700;">% CONFORMIDAD GLOBAL</div>
-                    <div style="font-size: 16px; font-weight: 800; color: #15803d; margin-top: 4px;">${pctConformidad}</div>
+                  <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #2563eb; border-radius: 6px; padding: 10px; text-align: center;">
+                    <div style="font-size: 9px; color: #64748b; font-weight: 700;">% ÍNDICE CONFORMIDAD</div>
+                    <div style="font-size: 18px; font-weight: 800; color: #2563eb; margin-top: 4px;">${pctConformidad}</div>
+                  </div>
+                  <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #0284c7; border-radius: 6px; padding: 10px; text-align: center;">
+                    <div style="font-size: 9px; color: #64748b; font-weight: 700;">PRUEBAS DE CARGA</div>
+                    <div style="font-size: 16px; font-weight: 800; color: #0284c7; margin-top: 4px;">${cargaTotal} <span style="font-size: 10px; color:#475569;">(${cargaPass} OK / ${cargaFail} Falla)</span></div>
+                  </div>
+                  <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #f59e0b; border-radius: 6px; padding: 10px; text-align: center;">
+                    <div style="font-size: 9px; color: #64748b; font-weight: 700;">TARIMAS LIBERADAS</div>
+                    <div style="font-size: 16px; font-weight: 800; color: #d97706; margin-top: 4px;">${tarimasGenTotal} <span style="font-size: 10px; color:#475569;">(${tarimasGenAprob} Aprob.)</span></div>
                   </div>
                 </div>
 
@@ -7827,7 +8170,7 @@
                   <thead>
                     <tr style="background: #15803d; color: white; text-align: left;">
                       <th style="padding: 7px;">Área / Sección</th>
-                      <th style="padding: 7px; text-align: center;">Auditorías Totales</th>
+                      <th style="padding: 7px; text-align: center;">Auditorías / Pruebas</th>
                       <th style="padding: 7px; text-align: center;">Conformes (Aprobadas)</th>
                       <th style="padding: 7px; text-align: center;">No Conformes (Rechazadas)</th>
                       <th style="padding: 7px; text-align: right;">% Índice Calidad</th>
@@ -7849,24 +8192,112 @@
                       <td style="padding: 7px; text-align: right; font-weight: 800;">${data.nanjang.insp.length > 0 ? ((data.nanjang.insp.filter(i => i.resultado === 'Aprobado').length / data.nanjang.insp.length)*100).toFixed(1) + '%' : 'N/A'}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0;">
-                      <td style="padding: 7px; font-weight: 700;">3. Con Asa (Confección M6-M13)</td>
+                      <td style="padding: 7px; font-weight: 700;">3. Con Asa (Confección M6-M13 - Calidad)</td>
                       <td style="padding: 7px; text-align: center;">${data.asa.insp.length}</td>
                       <td style="padding: 7px; text-align: center; color: #16a34a; font-weight: 700;">${data.asa.insp.filter(i => i.resultado === 'Aprobado').length}</td>
                       <td style="padding: 7px; text-align: center; color: #dc2626; font-weight: 700;">${data.asa.insp.filter(i => i.resultado === 'Rechazado').length}</td>
                       <td style="padding: 7px; text-align: right; font-weight: 800;">${data.asa.insp.length > 0 ? ((data.asa.insp.filter(i => i.resultado === 'Aprobado').length / data.asa.insp.length)*100).toFixed(1) + '%' : 'N/A'}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
-                      <td style="padding: 7px; font-weight: 700;">4. Pruebas de Carga (Resistencia)</td>
-                      <td style="padding: 7px; text-align: center;">${data.carga.insp.length}</td>
-                      <td style="padding: 7px; text-align: center; color: #16a34a; font-weight: 700;">${data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length}</td>
-                      <td style="padding: 7px; text-align: center; color: #dc2626; font-weight: 700;">${data.carga.insp.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length}</td>
-                      <td style="padding: 7px; text-align: right; font-weight: 800;">${data.carga.insp.length > 0 ? ((data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length / data.carga.insp.length)*100).toFixed(1) + '%' : 'N/A'}</td>
+                      <td style="padding: 7px; font-weight: 700;">4. Pruebas de Carga (Resistencia M6-M13)</td>
+                      <td style="padding: 7px; text-align: center;">${cargaTotal}</td>
+                      <td style="padding: 7px; text-align: center; color: #16a34a; font-weight: 700;">${cargaPass}</td>
+                      <td style="padding: 7px; text-align: center; color: #dc2626; font-weight: 700;">${cargaFail}</td>
+                      <td style="padding: 7px; text-align: right; font-weight: 800;">${cargaTotal > 0 ? ((cargaPass / cargaTotal)*100).toFixed(1) + '%' : 'N/A'}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 7px; font-weight: 700; color: #0284c7;">5. Módulo Frías - Inspecciones (Bandas 1-4)</td>
+                      <td style="padding: 7px; text-align: center;">${friasQualTotal}</td>
+                      <td style="padding: 7px; text-align: center; color: #16a34a; font-weight: 700;">${friasQualPass}</td>
+                      <td style="padding: 7px; text-align: center; color: #dc2626; font-weight: 700;">${friasQualFail}</td>
+                      <td style="padding: 7px; text-align: right; font-weight: 800;">${friasQualTotal > 0 ? ((friasQualPass / friasQualTotal)*100).toFixed(1) + '%' : 'N/A'}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e2e8f0; background: #f0f9ff;">
+                      <td style="padding: 7px; font-weight: 700; color: #0284c7;">6. Módulo Frías - Pruebas de Carga (Bandas 1-4)</td>
+                      <td style="padding: 7px; text-align: center;">${friasCargaTotal}</td>
+                      <td style="padding: 7px; text-align: center; color: #16a34a; font-weight: 700;">${friasCargaPass}</td>
+                      <td style="padding: 7px; text-align: center; color: #dc2626; font-weight: 700;">${friasCargaFail}</td>
+                      <td style="padding: 7px; text-align: right; font-weight: 800;">${friasCargaTotal > 0 ? ((friasCargaPass / friasCargaTotal)*100).toFixed(1) + '%' : 'N/A'}</td>
                     </tr>
                   </tbody>
                 </table>
 
+                <h3 style="font-size: 12px; color: #15803d; margin: 0 0 10px 0; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
+                  3. Conformidad vs. No Conformidad por Máquina (Inspecciones de Calidad - Omitiendo Frías)
+                </h3>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10px;">
+                  <thead>
+                    <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; text-align: left;">
+                      <th style="padding: 6px;">Máquina</th>
+                      <th style="padding: 6px;">Área</th>
+                      <th style="padding: 6px; text-align: center;">Total Inspecciones</th>
+                      <th style="padding: 6px; text-align: center;">Conformes</th>
+                      <th style="padding: 6px; text-align: center;">No Conformes</th>
+                      <th style="padding: 6px; text-align: right;">% Conformidad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+            `;
+
+            if (data.machineQualityRows.length === 0) {
+              reportHtml += `<tr><td colspan="6" style="padding: 10px; text-align: center; color: #64748b; font-style: italic;">No hay inspecciones de calidad para los filtros seleccionados.</td></tr>`;
+            } else {
+              data.machineQualityRows.forEach(m => {
+                reportHtml += `<tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 6px; font-weight: 800; color: #15803d;">Máquina ${m.maquina}</td>
+                  <td style="padding: 6px;">${m.area}</td>
+                  <td style="padding: 6px; text-align: center; font-weight: 700;">${m.total}</td>
+                  <td style="padding: 6px; text-align: center; color: #16a34a; font-weight: 700;">${m.conformes}</td>
+                  <td style="padding: 6px; text-align: center; color: #dc2626; font-weight: 700;">${m.noConformes}</td>
+                  <td style="padding: 6px; text-align: right; font-weight: 800;">${m.pct}</td>
+                </tr>`;
+              });
+            }
+
+            reportHtml += `
+                  </tbody>
+                </table>
+
+                <h3 style="font-size: 12px; color: #d97706; margin: 0 0 10px 0; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
+                  4. Resumen de Tarimas Liberadas (General M1-M13 y Módulo Frías)
+                </h3>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10px;">
+                  <thead>
+                    <tr style="background: #fffbeb; border-bottom: 2px solid #fcd34d; text-align: left; color: #92400e;">
+                      <th style="padding: 6px;">Máquina / Banda</th>
+                      <th style="padding: 6px; text-align: center;">Aprobadas</th>
+                      <th style="padding: 6px; text-align: center;">Condicionadas</th>
+                      <th style="padding: 6px; text-align: center;">Rechazadas</th>
+                      <th style="padding: 6px; text-align: right;">Total Tarimas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+            `;
+
+            const allTarimaStatsRows = [
+              ...data.tarimasGeneralStats.map(s => ({ ...s, label: `🤖 ${s.maquina} (General)` })),
+              ...data.tarimasFriasStats.map(s => ({ ...s, label: `❄️ ${s.maquina} (Frías)` }))
+            ];
+            if (allTarimaStatsRows.length === 0) {
+              reportHtml += `<tr><td colspan="5" style="padding: 10px; text-align: center; color: #64748b; font-style: italic;">Sin tarimas liberadas registradas en este periodo.</td></tr>`;
+            } else {
+              allTarimaStatsRows.forEach(st => {
+                reportHtml += `<tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 6px; font-weight: 700;">${st.label}</td>
+                  <td style="padding: 6px; text-align: center; color: #16a34a; font-weight: 700;">${st.aprobada}</td>
+                  <td style="padding: 6px; text-align: center; color: #d97706; font-weight: 700;">${st.condicionada}</td>
+                  <td style="padding: 6px; text-align: center; color: #dc2626; font-weight: 700;">${st.rechazada}</td>
+                  <td style="padding: 6px; text-align: right; font-weight: 800;">${st.total}</td>
+                </tr>`;
+              });
+            }
+
+            reportHtml += `
+                  </tbody>
+                </table>
+
                 <h3 style="font-size: 12px; color: #dc2626; margin: 0 0 10px 0; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
-                  3. Resumen de Inconformidades y Defectos Detectados
+                  5. Resumen de Inconformidades y Defectos Detectados (${allDefects.length})
                 </h3>
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 9.5px;">
                   <thead>
@@ -7876,7 +8307,8 @@
                       <th style="padding: 5px;">Operador</th>
                       <th style="padding: 5px;">Registrado Por</th>
                       <th style="padding: 5px;">Defecto / Inconformidad</th>
-                                            <th style="padding: 5px;">Acción Correctiva</th>
+                      <th style="padding: 5px;">Estado</th>
+                      <th style="padding: 5px;">Acción Correctiva</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -7890,16 +8322,16 @@
                 if (i.impresion_correcta === 0) defectoTexto = 'Fallo en Impresión. ' + defectoTexto;
                 if (i.registro_correcto === 0) defectoTexto = 'Fallo en Registro. ' + defectoTexto;
                 if (i.medidas_dentro_parametro === 0) {
-              const u = i.medidas_unidad === 'cm' ? 'cm' : 'in';
-              defectoTexto = `Medidas Fuera de Rango [A: ${i.medida_ancho||'-'}${u}, L: ${i.medida_largo||'-'}${u}, F: ${i.medida_fuelle||'-'}${u}]. ` + defectoTexto;
-            }
+                  const u = i.medidas_unidad === 'cm' ? 'cm' : 'in';
+                  defectoTexto = `Medidas Fuera de Rango [A: ${i.medida_ancho||'-'}${u}, L: ${i.medida_largo||'-'}${u}, F: ${i.medida_fuelle||'-'}${u}]. ` + defectoTexto;
+                }
                 if (i.carga_resultado === 'Falla') defectoTexto = 'Falla en Resistencia de Asas. ' + defectoTexto;
 
                 reportHtml += `<tr style="border-bottom: 1px solid #e2e8f0;">
-                  <td style="padding: 5px;">${i.fecha_registro}</td>
-                  <td style="padding: 5px;"><strong>${i.area} - ${i.maquina}</strong></td>
+                  <td style="padding: 5px;">${i.fecha_registro || '-'}</td>
+                  <td style="padding: 5px;"><strong>${i.area || '-'} - ${i.maquina || i.banda || '-'}</strong></td>
                   <td style="padding: 5px;">${i.operador || '-'}</td>
-                  <td style="padding: 5px;">${i.editado_por || 'Desconocido'}</td>
+                  <td style="padding: 5px;">${data.formatInspectorName(i.editado_por)}</td>
                   <td style="padding: 5px; color:#dc2626; font-weight:600;">${defectoTexto}</td>
                   <td style="padding: 5px;"><span style="background: ${i.resultado==='Rechazado'||i.carga_resultado==='Falla'?'#fee2e2':'#fef3c7'}; color: ${i.resultado==='Rechazado'||i.carga_resultado==='Falla'?'#dc2626':'#d97706'}; font-weight: 700; padding: 2px 5px; border-radius: 3px; font-size: 8px;">${i.resultado==='Rechazado'||i.carga_resultado==='Falla'?'RECHAZADO':'OBSERVACIÓN'}</span></td>
                   <td style="padding: 5px; color:#15803d;">${i.accion_correctiva || 'Ajuste de máquina'}</td>
@@ -7923,7 +8355,7 @@
           if (modal) modal.style.display = 'flex';
 
           // 2. Generar y Descargar Archivo PDF Directamente (.pdf)
-          const fileName = `Reporte_Estadistico_Dipapel_${data.selectedDate}.pdf`;
+          const fileName = `Reporte_Estadistico_Dipapel_${periodoName}_${data.selectedDate}.pdf`;
 
           if (window.jspdf && window.jspdf.jsPDF) {
             generateAndDownloadJSPDF(data, periodoName, totalInsp, conformes, noConformes, pctConformidad, allDefects, bolsasProducidas, bolsasTarima, fileName);
@@ -7947,35 +8379,48 @@
 
           // Encabezado Verde
           doc.setFillColor(...greenPrimary);
-          doc.rect(0, 0, 210, 18, 'F');
+          doc.rect(0, 0, 210, 20, 'F');
 
           doc.setTextColor(255, 255, 255);
           doc.setFont('helvetica', 'bold');
-          doc.setFontSize(13);
-          doc.text('DIPAPEL - RESUMEN EJECUTIVO DE CALIDAD', 14, 12);
+          doc.setFontSize(12.5);
+          doc.text('DIPAPEL - REPORTE EJECUTIVO DE CALIDAD Y ESTADÍSTICAS', 14, 10);
 
-          doc.setFontSize(8.5);
+          doc.setFontSize(8);
           doc.setFont('helvetica', 'normal');
-          doc.text(`Fecha: ${data.selectedDate} | Periodo: ${periodoName}`, 196, 12, { align: 'right' });
+          doc.text(`Periodo: ${periodoName} | Fecha Base: ${data.selectedDate} | Área: ${data.areaFilter} | Máq: ${data.machineFilter} | Marca: ${data.marcaFilter}`, 14, 16);
 
           let y = 26;
 
-          // Sección 1: KPIs
+          const cargaTotal = data.carga.insp.length;
+          const cargaPass = data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+          const cargaFail = data.carga.insp.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length;
+          const tarimasGenTotal = data.generalTarimas.length;
+          const friasQualTotal = data.frias.quality.length;
+          const friasQualPass = data.frias.quality.filter(i => i.resultado === 'Aprobado').length;
+          const friasQualFail = data.frias.quality.filter(i => i.resultado === 'Rechazado').length;
+          const friasCargaTotal = data.frias.carga.length;
+          const friasCargaPass = data.frias.carga.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length;
+          const friasCargaFail = data.frias.carga.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length;
+
+          // Sección 1: KPIs de Calidad
           doc.setTextColor(...greenPrimary);
           doc.setFont('helvetica', 'bold');
-          doc.setFontSize(10.5);
-          doc.text('1. INDICADORES GLOBALES DE DESEMPEÑO (KPIs)', 14, y);
+          doc.setFontSize(10);
+          doc.text('1. INDICADORES GLOBALES DE CALIDAD (KPIs - GENERAL OMITIENDO FRÍAS)', 14, y);
 
-          y += 5;
+          y += 4;
           const kpis = [
-            { label: 'Bolsas Producidas', val: bolsasProducidas.toLocaleString() },
-            { label: 'Bolsas en Tarima', val: bolsasTarima.toLocaleString() },
-            { label: 'Total Auditorías', val: totalInsp.toString() },
-            { label: '% Conformidad', val: pctConformidad }
+            { label: 'Auditorías Calidad', val: totalInsp.toString() },
+            { label: 'Conformes (OK)', val: conformes.toString() },
+            { label: 'No Conformes', val: noConformes.toString() },
+            { label: '% Conformidad', val: pctConformidad },
+            { label: 'Pruebas Carga', val: `${cargaTotal} (${cargaPass} OK)` },
+            { label: 'Tarimas Lib.', val: tarimasGenTotal.toString() }
           ];
 
-          const boxW = 42;
-          const boxH = 15;
+          const boxW = 28.5;
+          const boxH = 14;
           let startX = 14;
 
           kpis.forEach(k => {
@@ -7983,27 +8428,27 @@
             doc.setDrawColor(203, 213, 225);
             doc.rect(startX, y, boxW, boxH, 'FD');
 
-            doc.setFontSize(6.5);
+            doc.setFontSize(5.8);
             doc.setTextColor(...grayMuted);
             doc.setFont('helvetica', 'bold');
             doc.text(k.label.toUpperCase(), startX + boxW / 2, y + 4.5, { align: 'center' });
 
-            doc.setFontSize(10.5);
+            doc.setFontSize(9);
             doc.setTextColor(...greenPrimary);
-            doc.text(k.val, startX + boxW / 2, y + 11.5, { align: 'center' });
+            doc.text(k.val, startX + boxW / 2, y + 11, { align: 'center' });
 
-            startX += boxW + 4;
+            startX += boxW + 2.2;
           });
 
-          y += boxH + 8;
+          y += boxH + 7;
 
           // Sección 2: Tabla Resumen por Área
           doc.setTextColor(...greenPrimary);
           doc.setFont('helvetica', 'bold');
-          doc.setFontSize(10.5);
+          doc.setFontSize(10);
           doc.text('2. RESUMEN POR ÁREA DE PRODUCCIÓN', 14, y);
 
-          y += 3;
+          y += 2.5;
 
           const areaBody = [
             [
@@ -8014,49 +8459,120 @@
               data.flexo.insp.length > 0 ? ((data.flexo.insp.filter(i => i.resultado === 'Aprobado').length / data.flexo.insp.length)*100).toFixed(1) + '%' : 'N/A'
             ],
             [
-              '2. Nanjang (M1-M5)',
+              '2. Nanjang (Confección M1-M5)',
               data.nanjang.insp.length.toString(),
               data.nanjang.insp.filter(i => i.resultado === 'Aprobado').length.toString(),
               data.nanjang.insp.filter(i => i.resultado === 'Rechazado').length.toString(),
               data.nanjang.insp.length > 0 ? ((data.nanjang.insp.filter(i => i.resultado === 'Aprobado').length / data.nanjang.insp.length)*100).toFixed(1) + '%' : 'N/A'
             ],
             [
-              '3. Con Asa (M6-M13)',
+              '3. Con Asa (Confección M6-M13 - Calidad)',
               data.asa.insp.length.toString(),
               data.asa.insp.filter(i => i.resultado === 'Aprobado').length.toString(),
               data.asa.insp.filter(i => i.resultado === 'Rechazado').length.toString(),
               data.asa.insp.length > 0 ? ((data.asa.insp.filter(i => i.resultado === 'Aprobado').length / data.asa.insp.length)*100).toFixed(1) + '%' : 'N/A'
             ],
             [
-              '4. Pruebas de Carga',
-              data.carga.insp.length.toString(),
-              data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length.toString(),
-              data.carga.insp.filter(i => i.carga_resultado === 'Falla' || i.resultado === 'Rechazado').length.toString(),
-              data.carga.insp.length > 0 ? ((data.carga.insp.filter(i => i.carga_resultado === 'Pasa' || i.resultado === 'Aprobado').length / data.carga.insp.length)*100).toFixed(1) + '%' : 'N/A'
+              '4. Pruebas de Carga (Resistencia M6-M13)',
+              cargaTotal.toString(),
+              cargaPass.toString(),
+              cargaFail.toString(),
+              cargaTotal > 0 ? ((cargaPass / cargaTotal)*100).toFixed(1) + '%' : 'N/A'
+            ],
+            [
+              '5. Módulo Frías - Inspecciones (Bandas 1-4)',
+              friasQualTotal.toString(),
+              friasQualPass.toString(),
+              friasQualFail.toString(),
+              friasQualTotal > 0 ? ((friasQualPass / friasQualTotal)*100).toFixed(1) + '%' : 'N/A'
+            ],
+            [
+              '6. Módulo Frías - Pruebas de Carga (Bandas 1-4)',
+              friasCargaTotal.toString(),
+              friasCargaPass.toString(),
+              friasCargaFail.toString(),
+              friasCargaTotal > 0 ? ((friasCargaPass / friasCargaTotal)*100).toFixed(1) + '%' : 'N/A'
             ]
           ];
 
           if (typeof doc.autoTable === 'function') {
             doc.autoTable({
               startY: y,
-              head: [['Área / Sección', 'Auditorías', 'Conformes', 'No Conformes', '% Calidad']],
+              head: [['Área / Sección', 'Auditorías / Pruebas', 'Conformes', 'No Conformes', '% Calidad']],
               body: areaBody,
               theme: 'striped',
-              headStyles: { fillColor: greenPrimary, textColor: 255, fontSize: 8.5, fontStyle: 'bold' },
-              bodyStyles: { fontSize: 8 },
-              styles: { cellPadding: 2 },
+              headStyles: { fillColor: greenPrimary, textColor: 255, fontSize: 8, fontStyle: 'bold' },
+              bodyStyles: { fontSize: 7.5 },
+              styles: { cellPadding: 1.8 },
               margin: { left: 14, right: 14 }
             });
-            y = doc.lastAutoTable.finalY + 8;
+            y = doc.lastAutoTable.finalY + 6;
           }
 
-          // Sección 3: Inconformidades y Defectos
+          // Sección 3: Conformidad por Máquina
+          if (data.machineQualityRows.length > 0 && typeof doc.autoTable === 'function') {
+            doc.setTextColor(...greenPrimary);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text('3. CONFORMIDAD POR MÁQUINA (INSPECCIONES DE CALIDAD - OMITIENDO FRÍAS)', 14, y);
+            y += 2.5;
+
+            const machBody = data.machineQualityRows.map(m => [
+              `Máquina ${m.maquina}`,
+              m.area,
+              m.total.toString(),
+              m.conformes.toString(),
+              m.noConformes.toString(),
+              m.pct
+            ]);
+
+            doc.autoTable({
+              startY: y,
+              head: [['Máquina', 'Área', 'Total Inspecciones', 'Conformes', 'No Conformes', '% Conformidad']],
+              body: machBody,
+              theme: 'grid',
+              headStyles: { fillColor: [2, 132, 199], textColor: 255, fontSize: 8, fontStyle: 'bold' },
+              bodyStyles: { fontSize: 7.5 },
+              styles: { cellPadding: 1.8 },
+              margin: { left: 14, right: 14 }
+            });
+            y = doc.lastAutoTable.finalY + 6;
+          }
+
+          // Sección 4: Tarimas Liberadas
+          const allTarimaStatsRows = [
+            ...data.tarimasGeneralStats.map(s => [`${s.maquina} (General)`, s.aprobada.toString(), s.condicionada.toString(), s.rechazada.toString(), s.total.toString()]),
+            ...data.tarimasFriasStats.map(s => [`${s.maquina} (Frías)`, s.aprobada.toString(), s.condicionada.toString(), s.rechazada.toString(), s.total.toString()])
+          ];
+          if (allTarimaStatsRows.length > 0 && typeof doc.autoTable === 'function') {
+            if (y > 240) { doc.addPage(); y = 20; }
+            doc.setTextColor(180, 83, 9);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text('4. RESUMEN DE TARIMAS LIBERADAS POR MÁQUINA / BANDA', 14, y);
+            y += 2.5;
+
+            doc.autoTable({
+              startY: y,
+              head: [['Máquina / Banda', 'Aprobadas', 'Condicionadas', 'Rechazadas', 'Total Tarimas']],
+              body: allTarimaStatsRows,
+              theme: 'grid',
+              headStyles: { fillColor: [217, 119, 6], textColor: 255, fontSize: 8, fontStyle: 'bold' },
+              bodyStyles: { fontSize: 7.5 },
+              styles: { cellPadding: 1.8 },
+              margin: { left: 14, right: 14 }
+            });
+            y = doc.lastAutoTable.finalY + 6;
+          }
+
+          // Sección 5: Inconformidades y Defectos
+          if (y > 240) { doc.addPage(); y = 20; }
           doc.setTextColor(220, 38, 38);
           doc.setFont('helvetica', 'bold');
-          doc.setFontSize(10.5);
-          doc.text('3. REGISTRO DE INCONFORMIDADES Y DEFECTOS DETECTADOS', 14, y);
+          doc.setFontSize(10);
+          doc.text('5. REGISTRO DE INCONFORMIDADES Y DEFECTOS DETECTADOS', 14, y);
 
-          y += 3;
+          y += 2.5;
 
           const defectBody = allDefects.map(i => {
             let defectoTexto = i.descripcion_defecto || i.observaciones || 'No conformidad detectada';
@@ -8070,9 +8586,9 @@
 
             return [
               i.fecha_registro || '-',
-              `${i.area} - ${i.maquina}`,
+              `${i.area || '-'} - ${i.maquina || i.banda || '-'}`,
               i.operador || '-',
-              i.editado_por || 'Desconocido',
+              data.formatInspectorName(i.editado_por),
               defectoTexto,
               (i.resultado === 'Rechazado' || i.carga_resultado === 'Falla') ? 'RECHAZADO' : 'OBSERVACIÓN',
               i.accion_correctiva || 'Ajuste de máquina'
