@@ -698,13 +698,18 @@
             </div>
           </div>
 
-                    <!-- Resumen de Tarimas Liberadas -->
+          <!-- Resumen de Tarimas Liberadas (General, omitiendo Frías) -->
           <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
-            <div class="card-title" style="margin-bottom: 1rem;">
-              <h3 style="margin: 0; font-size: 1.15rem; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
-                📦 Resumen de Tarimas Liberadas por Máquina
-              </h3>
-              <span style="font-size: 0.8rem; color: var(--text-muted);">Conteo total de tarimas liberadas en el periodo seleccionado (Omitiendo Frías)</span>
+            <div class="card-title" style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="margin: 0; font-size: 1.15rem; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
+                  📦 Resumen de Tarimas Liberadas por Máquina
+                </h3>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Conteo total de tarimas liberadas en el periodo seleccionado (Omitiendo Frías) &bull; Toca cualquier máquina para ver sus tarimas y fotos</span>
+              </div>
+              <button type="button" class="btn-secondary" onclick="showMachineTarimasModal('ALL_GENERAL', false)" style="padding: 6px 12px; font-size: 0.8rem; font-weight: 700; color: #b45309; border-color: #fcd34d; background: #fffbeb; cursor: pointer;">
+                🔍 Ver todas las tarimas
+              </button>
             </div>
             <div class="table-container" style="overflow-x: auto;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
@@ -715,10 +720,11 @@
                     <th style="padding: 10px;">Condicionadas</th>
                     <th style="padding: 10px;">Rechazadas</th>
                     <th style="padding: 10px; font-weight: bold;">Total Tarimas</th>
+                    <th style="padding: 10px; text-align: center;">Detalle</th>
                   </tr>
                 </thead>
                 <tbody id="table-tarimas-stats-body">
-                  <tr><td colspan="5" style="padding: 10px; text-align: center;">Cargando estadísticas de tarimas...</td></tr>
+                  <tr><td colspan="6" style="padding: 10px; text-align: center;">Cargando estadísticas de tarimas...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -743,7 +749,7 @@
                     <th style="padding: 10px;">Registrado Por</th>
                     <th style="padding: 10px;">Nº Rollo / Ficha</th>
                     <th style="padding: 10px;">Defecto / Inconformidad</th>
-                                        <th style="padding: 10px;">Acción Correctiva</th>
+                    <th style="padding: 10px;">Acción Correctiva</th>
                     <th style="padding: 10px;">Evidencia Fotográfica</th>
                   </tr>
                 </thead>
@@ -816,6 +822,38 @@
               </div>
               <div id="wrapper-frias-stat-carga-pie" style="min-height: 120px;">
                 <!-- Carga stats -->
+              </div>
+            </div>
+
+            <!-- Resumen de Tarimas Liberadas Frías -->
+            <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+              <div class="card-title" style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                  <h3 style="margin: 0; font-size: 1.15rem; color: #0284c7; display: flex; align-items: center; gap: 8px;">
+                    📦 Resumen de Tarimas Liberadas por Banda (Frías)
+                  </h3>
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">Conteo de tarimas liberadas en Bandas 1 a 4 &bull; Toca cualquier banda para ver sus tarimas y fotos</span>
+                </div>
+                <button type="button" class="btn-secondary" onclick="showMachineTarimasModal('ALL_FRIAS', true)" style="padding: 6px 12px; font-size: 0.8rem; font-weight: 700; color: #0369a1; border-color: #bae6fd; background: #f0f9ff; cursor: pointer;">
+                  🔍 Ver todas las tarimas (Frías)
+                </button>
+              </div>
+              <div class="table-container" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                  <thead>
+                    <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                      <th style="padding: 10px;">Banda</th>
+                      <th style="padding: 10px;">Aprobadas</th>
+                      <th style="padding: 10px;">Condicionadas</th>
+                      <th style="padding: 10px;">Rechazadas</th>
+                      <th style="padding: 10px; font-weight: bold;">Total Tarimas</th>
+                      <th style="padding: 10px; text-align: center;">Detalle</th>
+                    </tr>
+                  </thead>
+                  <tbody id="frias-table-tarimas-stats-body">
+                    <tr><td colspan="6" style="padding: 10px; text-align: center;">Cargando estadísticas de tarimas de Frías...</td></tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -4315,7 +4353,7 @@
 
         updateFriasStatsView(periodFriasInspections);
 
-        // CALCULAR TARIMAS LIBERADAS POR MÁQUINA
+        // CALCULAR TARIMAS LIBERADAS POR MÁQUINA (Separando General y Frías)
         let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
         let serverTarimas = [];
         if (isOnline) {
@@ -4325,16 +4363,13 @@
         localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
         serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
         let globalTarimas = Array.from(tarimaMap.values());
+        state.tarimas = globalTarimas;
 
         let baseValidTarimas = globalTarimas.filter(t => t && (t.codigo_liberacion || t.codigo_tarima));
 
         if (marcaFilter) {
           baseValidTarimas = baseValidTarimas.filter(t => {
-            let m = (t.marca || t.marca_especificaciones || t.marca_cliente || '').trim().toUpperCase();
-            if (!m && t.bobina_id) {
-              const bObj = state.bobinas.find(b => String(b.id) === String(t.bobina_id));
-              if (bObj) m = (bObj.marca_especificaciones || '').trim().toUpperCase();
-            }
+            const m = getTarimaMarcaResolved(t).toUpperCase();
             return m === marcaFilter;
           });
         }
@@ -4342,7 +4377,7 @@
         const selectedDate = fechaVal;
         const periodo = statIndepPeriodo;
         baseValidTarimas = baseValidTarimas.filter(t => {
-          const rowDateStr = (t.fecha_registro || t.fecha_iso || '').substring(0, 10);
+          const rowDateStr = getInspIsoDate(t);
           if (!rowDateStr) return false;
           if (periodo === 'dia') return rowDateStr === selectedDate;
           if (periodo === 'semana') return getWeekNumber(rowDateStr) === getWeekNumber(selectedDate);
@@ -4360,11 +4395,15 @@
           ? baseValidTarimas.filter(t => getRecordShift(t) === turnoFilter)
           : baseValidTarimas;
 
+        window._currentFilteredTarimas = validTarimas;
+
+        // 1. Tarimas Generales (Omitiendo Frías)
+        const generalValidTarimas = validTarimas.filter(t => !isFriasTarimaRecord(t));
         const tarimasTbody = document.getElementById('table-tarimas-stats-body');
         if (tarimasTbody) {
           const statsTarimas = {};
-          validTarimas.forEach(t => {
-            const maq = t.banda || t.maquina || 'Desconocida';
+          generalValidTarimas.forEach(t => {
+            const maq = t.maquina || t.banda || 'Desconocida';
             if (!statsTarimas[maq]) statsTarimas[maq] = { aprobada: 0, condicionada: 0, rechazada: 0 };
             const est = String(t.estado_liberacion || '').toLowerCase();
             if (est.includes('condicion')) statsTarimas[maq].condicionada++;
@@ -4373,25 +4412,293 @@
           });
 
           tarimasTbody.innerHTML = '';
-          const mqKeys = Object.keys(statsTarimas).sort();
+          const mqKeys = Object.keys(statsTarimas).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
           if (mqKeys.length === 0) {
-            tarimasTbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted);">Sin tarimas liberadas en el periodo/turno seleccionado.</td></tr>`;
+            tarimasTbody.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--text-muted);">Sin tarimas liberadas de máquinas generales en el periodo/turno seleccionado.</td></tr>`;
           } else {
             mqKeys.forEach(m => {
               const st = statsTarimas[m];
               const totalT = st.aprobada + st.condicionada + st.rechazada;
               tarimasTbody.innerHTML += `
-                <tr style="border-bottom: 1px solid var(--border-color);">
-                  <td style="padding: 10px; font-weight: bold;">${m}</td>
-                  <td style="padding: 10px; color: #16a34a; font-weight: 600;">${st.aprobada}</td>
-                  <td style="padding: 10px; color: #f59e0b; font-weight: 600;">${st.condicionada}</td>
-                  <td style="padding: 10px; color: #dc2626; font-weight: 600;">${st.rechazada}</td>
+                <tr onclick="showMachineTarimasModal('${m}', false)" style="border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.15s;" onmouseover="this.style.backgroundColor='#fffbeb'" onmouseout="this.style.backgroundColor='transparent'" title="Toca para ver las tarimas liberadas de ${m}">
+                  <td style="padding: 10px; font-weight: bold; color: var(--color-primary);">
+                    🤖 ${m}
+                  </td>
+                  <td style="padding: 10px; color: #16a34a; font-weight: 700;">${st.aprobada}</td>
+                  <td style="padding: 10px; color: #f59e0b; font-weight: 700;">${st.condicionada}</td>
+                  <td style="padding: 10px; color: #dc2626; font-weight: 700;">${st.rechazada}</td>
                   <td style="padding: 10px; font-weight: 800;">${totalT}</td>
+                  <td style="padding: 10px; text-align: center;">
+                    <span style="font-size: 0.75rem; background: #fef3c7; color: #b45309; padding: 4px 10px; border-radius: 6px; font-weight: 700; border: 1px solid #fde68a;">🔍 Ver tarimas (${totalT})</span>
+                  </td>
                 </tr>
               `;
             });
           }
         }
+
+        // 2. Tarimas de Frías (Banda 1 a 4)
+        const friasValidTarimas = validTarimas.filter(t => isFriasTarimaRecord(t));
+        const friasTarimasTbody = document.getElementById('frias-table-tarimas-stats-body');
+        if (friasTarimasTbody) {
+          const statsFriasTarimas = {};
+          friasValidTarimas.forEach(t => {
+            let maq = t.banda || t.maquina || 'Banda 1';
+            if (!String(maq).toLowerCase().startsWith('banda')) maq = 'Banda ' + maq;
+            if (!statsFriasTarimas[maq]) statsFriasTarimas[maq] = { aprobada: 0, condicionada: 0, rechazada: 0 };
+            const est = String(t.estado_liberacion || '').toLowerCase();
+            if (est.includes('condicion')) statsFriasTarimas[maq].condicionada++;
+            else if (est.includes('rechaz')) statsFriasTarimas[maq].rechazada++;
+            else statsFriasTarimas[maq].aprobada++;
+          });
+
+          friasTarimasTbody.innerHTML = '';
+          const fqKeys = Object.keys(statsFriasTarimas).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+          if (fqKeys.length === 0) {
+            friasTarimasTbody.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: var(--text-muted);">Sin tarimas liberadas de Frías en el periodo/turno seleccionado.</td></tr>`;
+          } else {
+            fqKeys.forEach(m => {
+              const st = statsFriasTarimas[m];
+              const totalT = st.aprobada + st.condicionada + st.rechazada;
+              friasTarimasTbody.innerHTML += `
+                <tr onclick="showMachineTarimasModal('${m}', true)" style="border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.15s;" onmouseover="this.style.backgroundColor='#f0f9ff'" onmouseout="this.style.backgroundColor='transparent'" title="Toca para ver las tarimas liberadas de ${m}">
+                  <td style="padding: 10px; font-weight: bold; color: #0284c7;">
+                    ❄️ ${m}
+                  </td>
+                  <td style="padding: 10px; color: #16a34a; font-weight: 700;">${st.aprobada}</td>
+                  <td style="padding: 10px; color: #f59e0b; font-weight: 700;">${st.condicionada}</td>
+                  <td style="padding: 10px; color: #dc2626; font-weight: 700;">${st.rechazada}</td>
+                  <td style="padding: 10px; font-weight: 800;">${totalT}</td>
+                  <td style="padding: 10px; text-align: center;">
+                    <span style="font-size: 0.75rem; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-weight: 700; border: 1px solid #bae6fd;">🔍 Ver tarimas (${totalT})</span>
+                  </td>
+                </tr>
+              `;
+            });
+          }
+        }
+      }
+
+      function isFriasTarimaRecord(t) {
+        if (!t) return false;
+        const areaStr = String(t.area || '').toLowerCase();
+        if (areaStr === 'frías' || areaStr === 'frias') return true;
+        const maqStr = String(t.banda || t.maquina || '').trim().toLowerCase();
+        if (maqStr.startsWith('banda')) return true;
+        const codStr = String(t.codigo_tarima || t.codigo_liberacion || '').toLowerCase();
+        if (codStr.includes('frías') || codStr.includes('frias') || codStr.includes('banda')) return true;
+        return false;
+      }
+
+      function getTarimaMarcaResolved(t) {
+        if (!t) return '';
+        let m = String(t.marca || t.marca_especificaciones || t.marca_cliente || '').trim();
+        if (!m && t.bobina_id && state.bobinas) {
+          const bObj = state.bobinas.find(b => String(b.id) === String(t.bobina_id));
+          if (bObj) m = String(bObj.marca_especificaciones || bObj.proveedor || '').trim();
+        }
+        const rolloKey = String(t.numero_rollo || t.bobina || '').trim().toLowerCase();
+        if (!m && rolloKey && state.bobinas) {
+          const bObj = state.bobinas.find(b => String(b?.numero_rollo || '').trim().toLowerCase() === rolloKey);
+          if (bObj) m = String(bObj.marca_especificaciones || bObj.proveedor || '').trim();
+        }
+        if (!m && rolloKey && state.inspecciones) {
+          const iObj = state.inspecciones.find(i => String(i?.numero_rollo || '').trim().toLowerCase() === rolloKey && (i.marca_especificaciones || i.marca_cliente || i.marca));
+          if (iObj) m = String(iObj.marca_especificaciones || iObj.marca_cliente || iObj.marca || '').trim();
+        }
+        return m;
+      }
+
+      function showMachineTarimasModal(machineName, isFriasOnly = false) {
+        const modal = document.getElementById('machine-inspections-detail-modal');
+        const title = document.getElementById('machine-modal-title');
+        const subtitle = document.getElementById('machine-modal-subtitle');
+        const tbody = document.getElementById('machine-modal-tbody');
+        if (!modal || !tbody) return;
+
+        const fechaVal = document.getElementById('stat-indep-fecha-input')?.value || new Date().toISOString().split('T')[0];
+        const periodLabel = statIndepPeriodo === 'dia' ? `del Día ${fechaVal}` : statIndepPeriodo === 'semana' ? 'de la Semana' : statIndepPeriodo === 'mes' ? `de ${fechaVal.substring(0, 7)}` : `del Año ${fechaVal.substring(0, 4)}`;
+
+        let list = (window._currentFilteredTarimas || state.tarimas || []).filter(t => {
+          return isFriasOnly ? isFriasTarimaRecord(t) : !isFriasTarimaRecord(t);
+        });
+
+        if (machineName && machineName !== 'ALL_GENERAL' && machineName !== 'ALL_FRIAS') {
+          list = list.filter(t => {
+            let maq = t.banda || t.maquina || 'Desconocida';
+            if (isFriasOnly && !String(maq).toLowerCase().startsWith('banda')) maq = 'Banda ' + maq;
+            return maq === machineName || t.maquina === machineName || t.banda === machineName;
+          });
+        }
+
+        const dispName = machineName === 'ALL_GENERAL'
+          ? 'Todas las Máquinas (General)'
+          : machineName === 'ALL_FRIAS'
+          ? 'Todas las Bandas (Frías)'
+          : machineName.startsWith('Banda')
+          ? machineName
+          : `Máquina ${machineName}`;
+
+        if (title) {
+          title.textContent = `📦 Tarimas Liberadas en ${dispName} (${periodLabel})`;
+        }
+
+        const libCount = list.filter(t => {
+          const e = String(t.estado_liberacion || '').toLowerCase();
+          return !e.includes('condicion') && !e.includes('rechaz');
+        }).length;
+        const condCount = list.filter(t => String(t.estado_liberacion || '').toLowerCase().includes('condicion')).length;
+        const rechCount = list.filter(t => String(t.estado_liberacion || '').toLowerCase().includes('rechaz')).length;
+
+        if (subtitle) {
+          subtitle.textContent = `Total: ${list.length} tarimas | ✅ ${libCount} Liberadas | ⚠️ ${condCount} Condicionadas | 🔴 ${rechCount} Rechazadas (Toca cualquier fila para ver su ficha completa)`;
+        }
+
+        if (list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" style="padding: 20px; text-align: center; color: #64748b; font-style: italic; background: #f8fafc;">No hay tarimas registradas para ${dispName} en este periodo.</td></tr>`;
+        } else {
+          tbody.innerHTML = list.map(t => {
+            const codigo = t.codigo_liberacion || t.codigo_tarima || '-';
+            const fecha = t.fecha_registro || t.fecha_iso || '-';
+            const area = isFriasTarimaRecord(t) ? 'Frías' : 'General';
+            const maq = t.banda || t.maquina || '-';
+            const rollo = t.numero_rollo || t.bobina || '-';
+            const marca = getTarimaMarcaResolved(t) || '-';
+            const foto = t.evidencia_acomodo_url || t.foto_url || '';
+            const estRaw = t.estado_liberacion || 'Liberado';
+            const estLower = String(estRaw).toLowerCase();
+
+            let resBadge = `<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">✅ ${estRaw}</span>`;
+            if (estLower.includes('condicion')) {
+              resBadge = `<span style="background:#fef3c7; color:#b45309; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">⚠️ ${estRaw}</span>`;
+            } else if (estLower.includes('rechaz')) {
+              resBadge = `<span style="background:#fee2e2; color:#dc2626; padding:3px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">❌ ${estRaw}</span>`;
+            }
+
+            const chkOk = (v) => (v === 1 || v === true || v === '1' || v === 'Sí' || v === 'Si') ? '✅' : '❌';
+            const cTarima = t.tarima_correcta !== undefined ? `Tarima: ${chkOk(t.tarima_correcta)} • ` : '';
+            const cEtiq = `Etiq: ${chkOk(t.etiquetado_correcto)}`;
+            const cBolsas = `Bolsas: ${chkOk(t.bolsas_cumplen !== undefined ? t.bolsas_cumplen : t.bolsas_cumplen_condiciones)}`;
+            const cCinta = `Cinta: ${chkOk(t.cinta_correcta !== undefined ? t.cinta_correcta : t.cinta_correctamente_pegada)}`;
+            const motivoTxt = (t.motivo_condicionado || t.motivo) ? ` | Motivo: ${t.motivo_condicionado || t.motivo}` : '';
+            const obs = `<strong>Código: ${codigo}</strong> (${maq})<br/>${cTarima}${cEtiq} • ${cBolsas} • ${cCinta}${motivoTxt}`;
+
+            return `
+              <tr onclick="if(!event.target.closest('button') && !event.target.closest('a')) viewTarimaFullDetail('${t.id || codigo}')" style="cursor:pointer; border-bottom: 1px solid #e2e8f0;" onmouseover="this.style.backgroundColor='#f1f5f9'" onmouseout="this.style.backgroundColor='transparent'" title="Haz clic para ver la ficha completa de la tarima">
+                <td style="padding: 10px; font-weight: 600; color:#0284c7;">${fecha} 🔍</td>
+                <td style="padding: 10px;">
+                  <span class="badge" style="background: ${area === 'Frías' ? '#e0f2fe; color: #0369a1;' : '#fef3c7; color: #b45309;'} font-weight: 700;">
+                    📦 ${area} (${maq})
+                  </span>
+                </td>
+                <td style="padding: 10px;">${t.operador || '-'}</td>
+                <td style="padding: 10px; font-weight: 600; color: #475569;">${t.editado_por || 'Desconocido'}</td>
+                <td style="padding: 10px; font-weight: 600; color: #0f172a;">${marca}</td>
+                <td style="padding: 10px;"><code>${rollo}</code></td>
+                <td style="padding: 10px;">${resBadge}</td>
+                <td style="padding: 10px; font-size: 0.8rem; color: var(--text-main);">${obs}</td>
+                <td style="padding: 10px; text-align: center;">
+                  ${foto ? `<button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="showFullPhoto('${foto}')">📷 Ver Foto</button>` : '<span style="color:#94a3b8; font-size: 0.8rem;">Sin foto</span>'}
+                  <button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; margin-left: 4px;" onclick="viewTarimaFullDetail('${t.id || codigo}')">👁️ Ficha</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        modal.style.display = 'flex';
+      }
+
+      function viewTarimaFullDetail(idOrCode) {
+        const allTarimas = state.tarimas || window._currentFilteredTarimas || [];
+        const t = allTarimas.find(x => String(x.id) === String(idOrCode) || String(x.codigo_liberacion || x.codigo_tarima) === String(idOrCode));
+        if (!t) return;
+
+        const body = document.getElementById('full-inspection-detail-body');
+        if (!body) return;
+
+        const codigo = t.codigo_liberacion || t.codigo_tarima || '-';
+        const fecha = t.fecha_registro || t.fecha_iso || '-';
+        const area = isFriasTarimaRecord(t) ? 'Frías' : 'General';
+        const maq = t.banda || t.maquina || '-';
+        const rollo = t.numero_rollo || t.bobina || '-';
+        const marca = getTarimaMarcaResolved(t) || '-';
+        const foto = t.evidencia_acomodo_url || t.foto_url || '';
+        const estRaw = t.estado_liberacion || 'Liberado';
+        const estLower = String(estRaw).toLowerCase();
+        const estColor = estLower.includes('rechaz') ? '#dc2626' : estLower.includes('condicion') ? '#d97706' : '#15803d';
+
+        const chkLabel = (v) => (v === 1 || v === true || v === '1' || v === 'Sí' || v === 'Si') ? 'Sí / Correcto ✅' : 'No / Incorrecto ❌';
+
+        let html = `
+          <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:15px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+              <div>
+                <span style="font-size:0.75rem; color:#64748b; text-transform:uppercase; font-weight:700;">Código de Liberación de Tarima</span>
+                <div style="font-size:1.3rem; font-weight:800; color:var(--color-primary); font-family:monospace;">🏷️ ${codigo}</div>
+              </div>
+              <span style="background:#fff; border:2px solid ${estColor}; color:${estColor}; padding:5px 12px; border-radius:8px; font-weight:800; font-size:0.9rem;">
+                ${estRaw}
+              </span>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div><span style="color:#64748b; font-size:0.85rem;">Fecha / Hora:</span> <strong style="display:block;">${fecha}</strong></div>
+              <div><span style="color:#64748b; font-size:0.85rem;">Área / Máquina:</span> <strong style="display:block;">${area} — ${maq}</strong></div>
+              <div><span style="color:#64748b; font-size:0.85rem;">Marca:</span> <strong style="display:block; color:#0284c7;">${marca}</strong></div>
+              <div><span style="color:#64748b; font-size:0.85rem;">Nº Rollo / Bobina:</span> <strong style="display:block;">${rollo}</strong></div>
+              <div><span style="color:#64748b; font-size:0.85rem;">Operador:</span> <strong style="display:block;">${t.operador || '-'}</strong></div>
+              <div><span style="color:#64748b; font-size:0.85rem;">Registrado Por:</span> <strong style="display:block;">${t.editado_por || '-'}</strong></div>
+            </div>
+          </div>
+
+          <h3 style="font-size:1rem; color:#0f172a; margin-top:10px; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">Checklist de Liberación de Tarima</h3>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:10px; padding: 10px 0;">
+            ${t.tarima_correcta !== undefined ? `
+              <div style="background:#fff; border:1px solid #e2e8f0; padding:10px 12px; border-radius:6px;">
+                <span style="color:#64748b; font-size:0.75rem; display:block;">Tarima en buen estado</span>
+                <strong style="font-size:0.9rem;">${chkLabel(t.tarima_correcta)}</strong>
+              </div>
+            ` : ''}
+            <div style="background:#fff; border:1px solid #e2e8f0; padding:10px 12px; border-radius:6px;">
+              <span style="color:#64748b; font-size:0.75rem; display:block;">Etiquetado correcto</span>
+              <strong style="font-size:0.9rem;">${chkLabel(t.etiquetado_correcto)}</strong>
+            </div>
+            <div style="background:#fff; border:1px solid #e2e8f0; padding:10px 12px; border-radius:6px;">
+              <span style="color:#64748b; font-size:0.75rem; display:block;">Bolsas cumplen condiciones</span>
+              <strong style="font-size:0.9rem;">${chkLabel(t.bolsas_cumplen !== undefined ? t.bolsas_cumplen : t.bolsas_cumplen_condiciones)}</strong>
+            </div>
+            <div style="background:#fff; border:1px solid #e2e8f0; padding:10px 12px; border-radius:6px;">
+              <span style="color:#64748b; font-size:0.75rem; display:block;">Cinta bien pegada</span>
+              <strong style="font-size:0.9rem;">${chkLabel(t.cinta_correcta !== undefined ? t.cinta_correcta : t.cinta_correctamente_pegada)}</strong>
+            </div>
+          </div>
+        `;
+
+        if (t.motivo_condicionado || t.motivo) {
+          html += `
+            <div style="background:#fff5f5; border:1px solid #fecaca; padding:10px 12px; border-radius:6px; margin-top:8px; color:#dc2626;">
+              <strong>Motivo (${estRaw}):</strong> ${t.motivo_condicionado || t.motivo}
+            </div>
+          `;
+        }
+
+        if (foto) {
+          html += `
+            <div style="margin-top:15px; text-align:center;">
+              <h3 style="font-size:1rem; color:#0f172a; margin-bottom:10px;">Evidencia Fotográfica del Acomodo</h3>
+              <img src="${foto}" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="showFullPhoto('${foto}')" title="Toca para ampliar"/>
+            </div>
+          `;
+        } else {
+          html += `<div style="margin-top:10px; text-align:center; color:#94a3b8; font-style:italic;">Sin fotografía de evidencia adjunta.</div>`;
+        }
+
+        body.innerHTML = html;
+        const btnDel = document.getElementById('btn-delete-full-insp');
+        if (btnDel) {
+          btnDel.style.display = 'none';
+        }
+        document.getElementById('full-inspection-detail-modal').style.display = 'flex';
       }
 
       function renderConformidadSVGChart(inspections) {
@@ -10232,12 +10539,16 @@
          }
          
          body.innerHTML = html;
-         document.getElementById('btn-delete-full-insp').onclick = function() {
-             document.getElementById('full-inspection-detail-modal').style.display = 'none';
-             const m2 = document.getElementById('stat-machine-inspections-modal');
-             if (m2) m2.style.display = 'none';
-             deleteInspection(idStr);
-         };
+         const delBtn = document.getElementById('btn-delete-full-insp');
+         if (delBtn) {
+             delBtn.style.display = 'inline-block';
+             delBtn.onclick = function() {
+                 document.getElementById('full-inspection-detail-modal').style.display = 'none';
+                 const m2 = document.getElementById('stat-machine-inspections-modal');
+                 if (m2) m2.style.display = 'none';
+                 deleteInspection(idStr);
+             };
+         }
          document.getElementById('full-inspection-detail-modal').style.display = 'flex';
       }
       async function optimizarEspacio() {
@@ -10269,7 +10580,7 @@
           }
 
           if (cleanedCount > 0) {
-            localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
+            safeLocalStorageSet('calidad_inspecciones', JSON.stringify(stripPhotosForLocalCache(state.inspecciones)));
             showToast(`¡Éxito! Se liberó el espacio de ${cleanedCount} fotografías antiguas.`, 'success');
           } else {
             showToast('No se encontraron fotografías antiguas (más de 30 días) para limpiar.', 'info');
