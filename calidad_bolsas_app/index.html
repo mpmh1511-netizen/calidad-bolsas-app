@@ -1089,24 +1089,16 @@
                   <label style="font-weight: 700; font-size: 0.85rem;">🏷️ Marca *</label>
                   <select id="emb-form-marca-select" class="form-control" onchange="toggleEmbarqueMarcaOtro()" required>
                     <option value="">-- Selecciona Marca --</option>
-                    <option value="McDonalds">McDonalds</option>
-                    <option value="Walmart">Walmart</option>
-                    <option value="Starbucks">Starbucks</option>
-                    <option value="KFC">KFC</option>
-                    <option value="Burger King">Burger King</option>
-                    <option value="Little Caesars">Little Caesars</option>
-                    <option value="Domino's">Domino's</option>
-                    <option value="Subway">Subway</option>
-                    <option value="Krispy Kreme">Krispy Kreme</option>
-                    <option value="Chili's">Chili's</option>
-                    <option value="Shake Shack">Shake Shack</option>
-                    <option value="Dunkin">Dunkin</option>
-                    <option value="Tim Hortons">Tim Hortons</option>
-                    <option value="Caffenio">Caffenio</option>
-                    <option value="Oxxo">Oxxo</option>
-                    <option value="7-Eleven">7-Eleven</option>
-                    <option value="Dipapel">Dipapel (Genérico)</option>
-                    <option value="OTRO">OTRA MARCA (Escribir...)</option>
+                    <option value="KOHLS">KOHLS</option>
+                    <option value="MENARDS">MENARDS</option>
+                    <option value="KROGER">KROGER</option>
+                    <option value="SUBWAY">SUBWAY</option>
+                    <option value="TARGET">TARGET</option>
+                    <option value="WALMART">WALMART</option>
+                    <option value="BSK">BSK</option>
+                    <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
+                    <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                    <option value="OTRO">OTRO (Escribir manual)</option>
                   </select>
                   <input type="text" id="emb-form-marca-otro" class="form-control" placeholder="Escribe el nombre de la marca..." style="display: none; margin-top: 6px;" />
                 </div>
@@ -12358,15 +12350,16 @@
         const listEl = document.getElementById('embarques-pasadas-list');
         if (!listEl) return;
 
-        // Actualizar selector de marcas dinámicamente
+        // Actualizar selector de marcas dinámicamente con las marcas oficiales + cualquier marca personalizada registrada
         const marcaSelect = document.getElementById('emb-pasadas-filter-marca');
         if (marcaSelect) {
           const currentMarca = marcaSelect.value;
-          const marcasSet = new Set();
+          const marcasOficiales = ['KOHLS', 'MENARDS', 'KROGER', 'SUBWAY', 'TARGET', 'WALMART', 'BSK', 'MCDONALDS SMALL', 'MCDONALDS LARGE'];
+          const marcasSet = new Set(marcasOficiales);
           embarquesState.items.forEach(it => {
             if (it.marca) marcasSet.add(it.marca);
           });
-          const sortedMarcas = Array.from(marcasSet).sort();
+          const sortedMarcas = Array.from(marcasSet);
           marcaSelect.innerHTML = '<option value="">Todas las Marcas</option>' +
             sortedMarcas.map(m => `<option value="${m}">${m}</option>`).join('');
           marcaSelect.value = currentMarca;
