@@ -1360,30 +1360,25 @@
             </div>
           </div>
 
-          <!-- FILA 3: CALENDARIO MENSUAL DE CARGAS PROGRAMADAS Y RASTREADOR EN VIVO DEL DÍA -->
+          <!-- FILA 3: CALENDARIO MENSUAL DE CARGAS PROGRAMADAS -->
           <div class="card" style="padding: 1.5rem; border-top: 4px solid #ea580c;">
             <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 1.25rem; padding-bottom: 0.85rem; border-bottom: 1px solid #e2e8f0;">
               <div>
                 <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.02em;">
-                  Calendario de Cargas Programadas y Estado de Embarques
+                  Calendario de Cargas Programadas
                 </h3>
                 <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #64748b;">
-                  Programación mensual por marca, hora y factura, junto con el avance en tiempo real de los camiones del día
+                  Programación mensual por marca, hora programada y número de factura
                 </p>
               </div>
-              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div id="obs-cal-day-counter-badge" style="background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 800;">
+                  Hoy: 0 programadas | 0 completadas
+                </div>
                 <button type="button" class="btn-secondary" onclick="changeObsCalendarMonth(-1)" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 700;">Mes Anterior</button>
                 <span id="obs-calendar-month-label" style="font-size: 1.05rem; font-weight: 900; color: #0f172a; min-width: 170px; text-align: center; text-transform: uppercase;">MES AÑO</span>
                 <button type="button" class="btn-secondary" onclick="changeObsCalendarMonth(1)" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 700;">Mes Siguiente</button>
               </div>
-            </div>
-
-            <!-- Monitor de Cargas del Día Seleccionado (Avance de los 5 estados y cronómetro en vivo) -->
-            <div style="margin-bottom: 1.5rem;">
-              <div style="font-size: 0.8rem; font-weight: 800; color: #c2410c; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">
-                Estado en Vivo de Cargas del Día (<span id="obs-day-loads-date-label">-</span>)
-              </div>
-              <div id="obs-day-loads-tracker" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px;"></div>
             </div>
 
             <!-- Cuadrícula del Calendario Mensual (Sin emojis) -->
@@ -13376,107 +13371,38 @@
         const targetDate = obsState.selectedDate || getTodayLocalIso();
         const year = obsState.calYear;
         const month = obsState.calMonth;
-        const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
 
         const allLoads = embarquesState.items || [];
         const dayLoads = allLoads.filter(x => x.fecha_programada === targetDate)
           .sort((a, b) => String(a.hora_programada || '').localeCompare(String(b.hora_programada || '')));
-        const monthLoads = allLoads.filter(x => String(x.fecha_programada || '').startsWith(monthPrefix));
 
         const completedToday = dayLoads.filter(x => x.estado === 'EN RUTA A DESTINO FINAL').length;
-        const inProgressToday = dayLoads.filter(x => x.estado !== 'PROGRAMADA' && x.estado !== 'EN RUTA A DESTINO FINAL').length;
 
         const elEmbHoy = document.getElementById('obs-kpi-emb-hoy');
         const elEmbMes = document.getElementById('obs-kpi-emb-mes');
         const elEmbSt = document.getElementById('obs-kpi-emb-status');
         const elEmbBar = document.getElementById('obs-kpi-emb-bar');
-        const elDayLabel = document.getElementById('obs-day-loads-date-label');
+        const elCalDayBadge = document.getElementById('obs-cal-day-counter-badge');
 
         if (elEmbHoy) elEmbHoy.textContent = String(dayLoads.length);
         if (elEmbMes) {
-          elEmbMes.textContent = monthLoads.length === 0
+          elEmbMes.textContent = dayLoads.length === 0
             ? 'Sin cargas programadas'
-            : `${monthLoads.length} en el mes`;
+            : `${dayLoads.length} ${dayLoads.length === 1 ? 'programada' : 'programadas'}`;
         }
         if (elEmbSt) {
           elEmbSt.textContent = dayLoads.length === 0
             ? 'Sin cargas programadas'
-            : `${completedToday} finalizadas / ${inProgressToday} en curso`;
+            : `${completedToday} de ${dayLoads.length} completadas`;
         }
         if (elEmbBar) {
           const pct = dayLoads.length > 0 ? Math.round((completedToday / dayLoads.length) * 100) : 0;
           elEmbBar.style.width = `${pct}%`;
         }
-        if (elDayLabel) elDayLabel.textContent = formatObsHumanDate(targetDate);
-
-        // Renderizar tarjetas de avance de cargas del día (Sin emojis)
-        const trackerEl = document.getElementById('obs-day-loads-tracker');
-        if (trackerEl) {
-          if (dayLoads.length === 0) {
-            trackerEl.innerHTML = `
-              <div style="grid-column: 1 / -1; padding: 18px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: #64748b; font-size: 0.85rem; font-weight: 700;">
-                Sin cargas programadas
-              </div>
-            `;
-          } else {
-            trackerEl.innerHTML = dayLoads.map(item => {
-              const meta = getObsCleanStateMeta(item.estado);
-              const tiempos = item.tiempos_estados || {};
-              const isCargando = item.estado === 'CARGANDO';
-              const elapsedMs = getEmbarqueElapsedCargandoMs(item);
-              const tiempoCargaStr = item.tiempo_carga_texto || (elapsedMs > 0 ? formatDurationHuman(elapsedMs) : '');
-
-              const stagePills = OBS_EMBARQUE_STATES_CLEAN.map((st, idx) => {
-                const isCur = item.estado === st.key;
-                const tHora = tiempos[st.key] || '';
-                const done = Boolean(tHora);
-                return `
-                  <div style="flex: 1; min-width: 90px; padding: 6px 6px; border-radius: 5px; background: ${isCur ? st.bg : (done ? '#f1f5f9' : '#ffffff')}; border: ${isCur ? `2px solid ${st.color}` : '1px solid #cbd5e1'}; text-align: center;">
-                    <div style="font-size: 0.65rem; font-weight: 800; color: ${isCur ? st.color : (done ? '#0f172a' : '#94a3b8')}; text-transform: uppercase;">
-                      ${idx + 1}. ${st.short}
-                    </div>
-                    <div style="font-size: 0.68rem; font-weight: 800; color: ${done ? '#0f172a' : '#cbd5e1'}; margin-top: 2px;">
-                      ${tHora || '--:--'}
-                    </div>
-                  </div>
-                `;
-              }).join('');
-
-              return `
-                <div style="border: 1px solid ${meta.border}; border-left: 5px solid ${meta.color}; border-radius: 8px; padding: 12px 14px; background: #ffffff;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                      <span style="background: #0f172a; color: #ffffff; font-size: 0.78rem; font-weight: 800; padding: 3px 9px; border-radius: 4px;">
-                        ${item.hora_programada || '--:--'}
-                      </span>
-                      <strong style="font-size: 0.95rem; font-weight: 900; color: #0284c7;">${item.marca || '-'}</strong>
-                      <span style="font-size: 0.8rem; font-weight: 800; color: #334155;">Factura: ${item.numero_factura || '-'}</span>
-                    </div>
-                    <span style="background: ${meta.bg}; color: ${meta.color}; border: 1px solid ${meta.border}; font-size: 0.7rem; font-weight: 900; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">
-                      ${meta.label}
-                    </span>
-                  </div>
-
-                  <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px;">
-                    ${stagePills}
-                  </div>
-
-                  ${isCargando ? `
-                    <div style="margin-top: 8px; padding: 8px 10px; background: #fff7ed; border: 1px solid #fb923c; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-                      <span style="font-size: 0.72rem; font-weight: 800; color: #9a3412; text-transform: uppercase;">Tiempo Preparando Camión:</span>
-                      <span style="font-size: 1.1rem; font-weight: 900; color: #c2410c; font-family: monospace;" data-obs-stopwatch-id="${item.id}">
-                        ${formatDurationMs(elapsedMs)}
-                      </span>
-                    </div>
-                  ` : (tiempoCargaStr ? `
-                    <div style="margin-top: 6px; font-size: 0.74rem; font-weight: 800; color: #15803d;">
-                      Tiempo Total de Carga Registrado: ${tiempoCargaStr}
-                    </div>
-                  ` : '')}
-                </div>
-              `;
-            }).join('');
-          }
+        if (elCalDayBadge) {
+          elCalDayBadge.textContent = dayLoads.length === 0
+            ? 'Hoy: Sin cargas programadas'
+            : `Hoy: ${dayLoads.length} programadas | ${completedToday} completadas`;
         }
 
         // Renderizar Cuadrícula del Calendario Mensual (Sin emojis, fecha fija)
