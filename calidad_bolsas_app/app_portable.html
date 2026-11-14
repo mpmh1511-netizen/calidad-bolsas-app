@@ -426,6 +426,11 @@
             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">Calendario de cargas programadas, rastreador de avance, cronómetro y cargas pasadas</p>
             <button class="btn-primary" style="margin-top: auto; width: 100%; justify-content: center; background-color: #ea580c; border-color: #c2410c;">Ingresar</button>
           </div>
+          <div class="role-card" onclick="enterSection('observacion')" style="padding: 2.5rem 1.5rem; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid #0f172a;">
+            <h3 class="role-card-title" style="font-size: 1.3rem; margin-bottom: 1.5rem; color: #0f172a;">Panel de Observación</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">Monitor en vivo de tarimas liberadas, calidad, producción por máquina y calendario de cargas</p>
+            <button class="btn-primary" style="margin-top: auto; width: 100%; justify-content: center; background-color: #0f172a; border-color: #1e293b;">Abrir Monitor</button>
+          </div>
         </div>
       </div>
 
@@ -1188,6 +1193,221 @@
           <div class="modal-content" style="max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto;">
             <button class="modal-close" onclick="document.getElementById('embarque-detail-modal').style.display='none'">×</button>
             <div id="embarque-detail-modal-body"></div>
+          </div>
+        </div>
+
+        <!-- VISTA: PANEL DE OBSERVACIÓN EN VIVO (WALLBOARD INDUSTRIAL SIN EMOJIS) -->
+        <div id="view-panel-observacion" style="display: none; margin-bottom: 2.5rem;">
+          <!-- Barra Superior de Control y Reloj en Vivo -->
+          <div class="card" style="padding: 1.1rem 1.5rem; margin-bottom: 1.25rem; background: #0f172a; color: #f8fafc; border: 1px solid #1e293b; border-radius: 10px;">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25); display: inline-block; flex-shrink: 0;"></span>
+                <div>
+                  <div style="font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; color: #38bdf8; text-transform: uppercase;">
+                    DIPAPEL PLANTA LECHUGUEROS &bull; MONITOR DE OPERACIONES EN TIEMPO REAL
+                  </div>
+                  <h2 style="margin: 2px 0 0 0; font-size: 1.35rem; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">
+                    Panel General de Observación
+                  </h2>
+                </div>
+              </div>
+
+              <!-- Controles de Fecha, Turno y Pantalla Completa -->
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px; background: #1e293b; padding: 6px 12px; border-radius: 8px; border: 1px solid #334155;">
+                  <label style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Fecha:</label>
+                  <input type="date" id="obs-filter-date" onchange="onObsDateFilterChange(this.value)" style="background: transparent; border: none; color: #ffffff; font-weight: 700; font-size: 0.85rem; outline: none;" />
+                  <button type="button" onclick="resetObsDateToLive()" style="background: #0284c7; color: #ffffff; border: none; border-radius: 4px; padding: 3px 8px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
+                    Hoy
+                  </button>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; background: #1e293b; padding: 6px 12px; border-radius: 8px; border: 1px solid #334155;">
+                  <label style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Turno:</label>
+                  <select id="obs-filter-shift" onchange="renderPanelObservacion()" style="background: #1e293b; border: none; color: #ffffff; font-weight: 700; font-size: 0.85rem; outline: none; cursor: pointer;">
+                    <option value="">Día Completo (1er y 2do Turno)</option>
+                    <option value="Dia">1er Turno (07:00 - 18:59)</option>
+                    <option value="Noche">2do Turno (19:00 - 06:59)</option>
+                  </select>
+                </div>
+
+                <div style="text-align: right; padding: 4px 12px; background: #1e293b; border-radius: 8px; border: 1px solid #334155;">
+                  <div id="obs-live-clock" style="font-size: 1.2rem; font-weight: 900; color: #f8fafc; font-family: monospace; line-height: 1.1;">00:00:00</div>
+                  <div id="obs-live-shift-label" style="font-size: 0.68rem; font-weight: 700; color: #10b981; text-transform: uppercase;">ACTUALIZANDO</div>
+                </div>
+
+                <button type="button" id="btn-obs-fullscreen" onclick="toggleObsFullscreen()" style="background: #334155; color: #f8fafc; border: 1px solid #475569; padding: 9px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                  Pantalla Completa
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- FILA 1: 4 KPIS EJECUTIVOS GLOBALES DEL DÍA -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+            <!-- KPI 1: Tarimas Liberadas -->
+            <div class="card" style="padding: 1.25rem; border-top: 4px solid #0284c7; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Tarimas Liberadas (Día)</span>
+                <span id="obs-kpi-tarimas-sub" style="font-size: 0.75rem; font-weight: 700; color: #0284c7;">General + Frías</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 12px; margin: 10px 0;">
+                <div id="obs-kpi-tarimas-total" style="font-size: 2.6rem; font-weight: 900; color: #0f172a; line-height: 1;">0</div>
+                <div id="obs-kpi-tarimas-breakdown" style="font-size: 0.8rem; font-weight: 700; color: #475569;">0 Aprobadas</div>
+              </div>
+              <div style="height: 8px; width: 100%; background: #e2e8f0; border-radius: 999px; overflow: hidden; display: flex;" id="obs-kpi-tarimas-bar">
+                <div style="width: 100%; background: #16a34a;"></div>
+              </div>
+            </div>
+
+            <!-- KPI 2: Porcentaje Global de Calidad -->
+            <div class="card" style="padding: 1.25rem; border-top: 4px solid #16a34a; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Índice Global de Calidad</span>
+                <span id="obs-kpi-calidad-auditorias" style="font-size: 0.75rem; font-weight: 700; color: #16a34a;">0 inspecciones</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 12px; margin: 10px 0;">
+                <div id="obs-kpi-calidad-pct" style="font-size: 2.6rem; font-weight: 900; color: #15803d; line-height: 1;">0%</div>
+                <div id="obs-kpi-calidad-detail" style="font-size: 0.8rem; font-weight: 700; color: #475569;">0 OK / 0 Rech.</div>
+              </div>
+              <div style="height: 8px; width: 100%; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                <div id="obs-kpi-calidad-bar" style="height: 100%; width: 0%; background: #16a34a; transition: width 0.3s ease;"></div>
+              </div>
+            </div>
+
+            <!-- KPI 3: Avance Global de Producción -->
+            <div class="card" style="padding: 1.25rem; border-top: 4px solid #4f46e5; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Avance de Producción</span>
+                <span id="obs-kpi-prod-maquinas" style="font-size: 0.75rem; font-weight: 700; color: #4f46e5;">0 máquinas activas</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 12px; margin: 10px 0;">
+                <div id="obs-kpi-prod-pct" style="font-size: 2.6rem; font-weight: 900; color: #312e81; line-height: 1;">0%</div>
+                <div id="obs-kpi-prod-bolsas" style="font-size: 0.8rem; font-weight: 700; color: #475569;">0 / 0 bolsas</div>
+              </div>
+              <div style="height: 8px; width: 100%; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                <div id="obs-kpi-prod-bar" style="height: 100%; width: 0%; background: #4f46e5; transition: width 0.3s ease;"></div>
+              </div>
+            </div>
+
+            <!-- KPI 4: Embarques y Cargas del Día -->
+            <div class="card" style="padding: 1.25rem; border-top: 4px solid #ea580c; display: flex; flex-direction: column; justify-content: space-between;">
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Cargas Programadas (Día)</span>
+                <span id="obs-kpi-emb-mes" style="font-size: 0.75rem; font-weight: 700; color: #ea580c;">0 en el mes</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 12px; margin: 10px 0;">
+                <div id="obs-kpi-emb-hoy" style="font-size: 2.6rem; font-weight: 900; color: #9a3412; line-height: 1;">0</div>
+                <div id="obs-kpi-emb-status" style="font-size: 0.8rem; font-weight: 700; color: #475569;">0 completadas</div>
+              </div>
+              <div style="height: 8px; width: 100%; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                <div id="obs-kpi-emb-bar" style="height: 100%; width: 0%; background: #ea580c; transition: width 0.3s ease;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FILA 2: AVANCE EN PRODUCCIÓN POR MÁQUINA (IZQUIERDA) + PORCENTAJES DE INSPECCIÓN DE CALIDAD Y TARIMAS LIBERADAS (DERECHA) -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
+            <!-- Bloque A: Avance en Producción por Máquina -->
+            <div class="card" style="padding: 1.35rem; border-top: 4px solid #4f46e5;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;">
+                <div>
+                  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.02em;">
+                    Avance en Producción por Máquina
+                  </h3>
+                  <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #64748b;">
+                    Cumplimiento de meta de bolsas producidas, bolsas en tarima y operador en turno
+                  </p>
+                </div>
+                <span id="obs-prod-summary-badge" style="background: #eef2ff; color: #4338ca; font-weight: 800; font-size: 0.78rem; padding: 5px 10px; border-radius: 6px; border: 1px solid #c7d2fe;">
+                  0 Bolsas
+                </span>
+              </div>
+              <div id="obs-produccion-maquinas-container" style="display: flex; flex-direction: column; gap: 10px; max-height: 540px; overflow-y: auto; padding-right: 4px;"></div>
+            </div>
+
+            <!-- Columna Derecha: Porcentajes de Inspección de Calidad + Resumen de Tarimas Liberadas -->
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+              <!-- Bloque B: Porcentajes de Inspección de Calidad -->
+              <div class="card" style="padding: 1.35rem; border-top: 4px solid #16a34a;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;">
+                  <div>
+                    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.02em;">
+                      Porcentajes de Inspección de Calidad
+                    </h3>
+                    <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #64748b;">
+                      Nivel de conformidad por área operativa y desglose de aprobación por máquina
+                    </p>
+                  </div>
+                  <span id="obs-calidad-summary-badge" style="background: #dcfce7; color: #15803d; font-weight: 800; font-size: 0.78rem; padding: 5px 10px; border-radius: 6px; border: 1px solid #86efac;">
+                    100% Conformidad
+                  </span>
+                </div>
+                <div id="obs-calidad-container"></div>
+              </div>
+
+              <!-- Bloque C: Resumen General de Tarimas Liberadas -->
+              <div class="card" style="padding: 1.35rem; border-top: 4px solid #0284c7;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;">
+                  <div>
+                    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.02em;">
+                      Resumen General de Tarimas Liberadas
+                    </h3>
+                    <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #64748b;">
+                      Cantidad acumulada de tarimas por estado de liberación y máquina
+                    </p>
+                  </div>
+                  <span id="obs-tarimas-summary-badge" style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 0.78rem; padding: 5px 10px; border-radius: 6px; border: 1px solid #bae6fd;">
+                    0 Tarimas
+                  </span>
+                </div>
+                <div id="obs-tarimas-container"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FILA 3: CALENDARIO MENSUAL DE CARGAS PROGRAMADAS Y RASTREADOR EN VIVO DEL DÍA -->
+          <div class="card" style="padding: 1.5rem; border-top: 4px solid #ea580c;">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 1.25rem; padding-bottom: 0.85rem; border-bottom: 1px solid #e2e8f0;">
+              <div>
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.02em;">
+                  Calendario de Cargas Programadas y Estado de Embarques
+                </h3>
+                <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #64748b;">
+                  Programación mensual por marca, hora y factura, junto con el avance en tiempo real de los camiones del día
+                </p>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="btn-secondary" onclick="changeObsCalendarMonth(-1)" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 700;">Mes Anterior</button>
+                <span id="obs-calendar-month-label" style="font-size: 1.05rem; font-weight: 900; color: #0f172a; min-width: 170px; text-align: center; text-transform: uppercase;">MES AÑO</span>
+                <button type="button" class="btn-secondary" onclick="changeObsCalendarMonth(1)" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 700;">Mes Siguiente</button>
+              </div>
+            </div>
+
+            <!-- Monitor de Cargas del Día Seleccionado (Avance de los 5 estados y cronómetro en vivo) -->
+            <div style="margin-bottom: 1.5rem;">
+              <div style="font-size: 0.8rem; font-weight: 800; color: #c2410c; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">
+                Estado en Vivo de Cargas del Día (<span id="obs-day-loads-date-label">-</span>)
+              </div>
+              <div id="obs-day-loads-tracker" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px;"></div>
+            </div>
+
+            <!-- Cuadrícula del Calendario Mensual (Sin emojis) -->
+            <div style="overflow-x: auto;">
+              <div style="min-width: 820px;">
+                <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 6px;">
+                  <div style="text-align: center; font-weight: 800; font-size: 0.75rem; color: #475569; padding: 6px; background: #f1f5f9; border-radius: 4px;">LUNES</div>
+                  <div style="text-align: center; font-weight: 800; font-size: 0.75rem; color: #475569; padding: 6px; background: #f1f5f9; border-radius: 4px;">MARTES</div>
+                  <div style="text-align: center; font-weight: 800; font-size: 0.75rem; color: #475569; padding: 6px; background: #f1f5f9; border-radius: 4px;">MIÉRCOLES</div>
+                  <div style="text-align: center; font-weight: 800; font-size: 0.75rem; color: #475569; padding: 6px; background: #f1f5f9; border-radius: 4px;">JUEVES</div>
+                  <div style="text-align: center; font-weight: 800; font-size: 0.75rem; color: #475569; padding: 6px; background: #f1f5f9; border-radius: 4px;">VIERNES</div>
+                  <div style="text-align: center; font-weight: 800; font-size: 0.75rem; color: #475569; padding: 6px; background: #f1f5f9; border-radius: 4px;">SÁBADO</div>
+                  <div style="text-align: center; font-weight: 800; font-size: 0.75rem; color: #475569; padding: 6px; background: #f1f5f9; border-radius: 4px;">DOMINGO</div>
+                </div>
+                <div id="obs-calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;"></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -3852,6 +4072,7 @@
           if (typeof updateDashboardCounters === 'function') updateDashboardCounters();
           if (typeof renderStatIndepView === 'function') renderStatIndepView();
           if (typeof renderEmbarquesAll === 'function' && state.role === 'embarques') renderEmbarquesAll();
+          if (typeof renderPanelObservacion === 'function' && state.role === 'observacion') renderPanelObservacion();
         } catch (e) {
           console.error('Error rendering active views:', e);
         }
@@ -4331,6 +4552,8 @@
           openFichasTecnicas();
         } else if (sec === 'embarques') {
           openEmbarquesModule();
+        } else if (sec === 'observacion') {
+          openPanelObservacion();
         }
       }
 
@@ -4348,7 +4571,8 @@
           'view-frias-carga',
           'view-frias-tarimas',
           'view-fichas-tecnicas',
-          'view-embarques'
+          'view-embarques',
+          'view-panel-observacion'
         ];
         viewIds.forEach(id => {
           const el = document.getElementById(id);
@@ -12624,6 +12848,702 @@
         `;
 
         modal.style.display = 'flex';
+      }
+
+      // =========================================================================
+      // PANEL DE OBSERVACIÓN EN VIVO (WALLBOARD INDUSTRIAL SIN EMOJIS)
+      // =========================================================================
+      const obsState = {
+        autoFollowToday: true,
+        selectedDate: getTodayLocalIso(),
+        calYear: new Date().getFullYear(),
+        calMonth: new Date().getMonth(),
+        clockTimerId: null
+      };
+
+      const OBS_EMBARQUE_STATES_CLEAN = [
+        { key: 'EN RUTA A PLANTA', label: 'EN RUTA A PLANTA', short: 'Ruta Planta', bg: '#e0f2fe', color: '#0369a1', border: '#7dd3fc' },
+        { key: 'RUTA ATRASADA', label: 'RUTA ATRASADA', short: 'Atrasada', bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5' },
+        { key: 'EN PLANTA', label: 'EN PLANTA', short: 'En Planta', bg: '#ede9fe', color: '#6d28d9', border: '#c4b5fd' },
+        { key: 'CARGANDO', label: 'CARGANDO', short: 'Cargando', bg: '#ffedd5', color: '#c2410c', border: '#fdba74' },
+        { key: 'EN RUTA A DESTINO FINAL', label: 'EN RUTA A DESTINO FINAL', short: 'Destino Final', bg: '#dcfce7', color: '#15803d', border: '#86efac' }
+      ];
+
+      function getObsCleanStateMeta(estado) {
+        const f = OBS_EMBARQUE_STATES_CLEAN.find(s => s.key === estado);
+        if (f) return f;
+        return { key: 'PROGRAMADA', label: 'PROGRAMADA', short: 'Programada', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' };
+      }
+
+      function openPanelObservacion() {
+        state.role = 'observacion';
+        const landing = document.getElementById('landing-screen');
+        const appScreen = document.getElementById('app-screen');
+        if (landing) landing.style.display = 'none';
+        if (appScreen) appScreen.style.display = 'block';
+
+        hideAllViews();
+        const obsView = document.getElementById('view-panel-observacion');
+        if (obsView) obsView.style.display = 'block';
+
+        const badge = document.getElementById('app-badge');
+        if (badge) badge.textContent = 'Panel de Observación';
+        const headerTitle = document.getElementById('header-title');
+        if (headerTitle) headerTitle.textContent = 'Panel General de Observación en Vivo';
+
+        const today = getTodayLocalIso();
+        if (obsState.autoFollowToday || !obsState.selectedDate) {
+          obsState.selectedDate = today;
+        }
+        const dateInput = document.getElementById('obs-filter-date');
+        if (dateInput) dateInput.value = obsState.selectedDate;
+
+        startObsLiveClockAndTimers();
+        renderPanelObservacion();
+      }
+
+      function onObsDateFilterChange(val) {
+        if (!val) return;
+        obsState.selectedDate = val;
+        obsState.autoFollowToday = (val === getTodayLocalIso());
+        const parts = String(val).split('-');
+        if (parts.length === 3) {
+          obsState.calYear = Number(parts[0]);
+          obsState.calMonth = Number(parts[1]) - 1;
+        }
+        renderPanelObservacion();
+      }
+
+      function resetObsDateToLive() {
+        const today = getTodayLocalIso();
+        obsState.autoFollowToday = true;
+        obsState.selectedDate = today;
+        const now = new Date();
+        obsState.calYear = now.getFullYear();
+        obsState.calMonth = now.getMonth();
+        const dateInput = document.getElementById('obs-filter-date');
+        if (dateInput) dateInput.value = today;
+        renderPanelObservacion();
+      }
+
+      function changeObsCalendarMonth(delta) {
+        let m = obsState.calMonth + delta;
+        let y = obsState.calYear;
+        if (m < 0) {
+          m = 11;
+          y--;
+        } else if (m > 11) {
+          m = 0;
+          y++;
+        }
+        obsState.calMonth = m;
+        obsState.calYear = y;
+        renderObsCalendarAndLoads();
+      }
+
+      function toggleObsFullscreen() {
+        const btn = document.getElementById('btn-obs-fullscreen');
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.().catch(() => {});
+          if (btn) btn.textContent = 'Salir de Pantalla Completa';
+        } else {
+          document.exitFullscreen?.().catch(() => {});
+          if (btn) btn.textContent = 'Pantalla Completa';
+        }
+      }
+
+      function startObsLiveClockAndTimers() {
+        if (obsState.clockTimerId) return;
+        const tick = () => {
+          const now = new Date();
+          const clockEl = document.getElementById('obs-live-clock');
+          const shiftEl = document.getElementById('obs-live-shift-label');
+          if (clockEl) {
+            clockEl.textContent = now.toTimeString().split(' ')[0];
+          }
+          if (shiftEl) {
+            const h = now.getHours();
+            const turnoTxt = (h >= 7 && h < 19) ? '1ER TURNO EN CURSO' : '2DO TURNO EN CURSO';
+            shiftEl.textContent = `${getTodayLocalIso()} | ${turnoTxt}`;
+          }
+
+          // Si pasa medianoche y está en seguimiento automático, actualizar fecha del monitor
+          if (obsState.autoFollowToday) {
+            const currentIso = getTodayLocalIso();
+            if (obsState.selectedDate !== currentIso) {
+              obsState.selectedDate = currentIso;
+              const dateInput = document.getElementById('obs-filter-date');
+              if (dateInput) dateInput.value = currentIso;
+              if (state.role === 'observacion') renderPanelObservacion();
+            }
+          }
+
+          // Actualizar cronómetros de camiones en estado CARGANDO dentro del Panel de Observación
+          if (state.role === 'observacion') {
+            const nodes = document.querySelectorAll('[data-obs-stopwatch-id]');
+            nodes.forEach(node => {
+              const id = node.getAttribute('data-obs-stopwatch-id');
+              const item = embarquesState.items.find(x => String(x.id) === String(id));
+              if (item && item.estado === 'CARGANDO') {
+                const ms = getEmbarqueElapsedCargandoMs(item);
+                node.textContent = formatDurationMs(ms);
+              }
+            });
+          }
+        };
+        tick();
+        obsState.clockTimerId = setInterval(tick, 1000);
+      }
+
+      async function renderPanelObservacion() {
+        const targetDate = obsState.selectedDate || getTodayLocalIso();
+        const shiftFilter = document.getElementById('obs-filter-shift')?.value || '';
+
+        // ---------------------------------------------------------------------
+        // 1. RESUMEN DE TARIMAS LIBERADAS
+        // ---------------------------------------------------------------------
+        let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+        const tarimaMap = new Map();
+        if (Array.isArray(state.tarimas)) {
+          state.tarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+        }
+        localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+
+        const dayTarimas = Array.from(tarimaMap.values()).filter(t => {
+          if (!t || (!t.codigo_liberacion && !t.codigo_tarima)) return false;
+          if (t._record_type === 'embarque' || t.maquina === '__EMBARQUE__') return false;
+          const dStr = getInspIsoDate(t);
+          if (dStr !== targetDate) return false;
+          if (shiftFilter && getRecordShift(t) !== shiftFilter) return false;
+          return true;
+        });
+
+        let tarAprobadas = 0;
+        let tarCondicionadas = 0;
+        let tarRechazadas = 0;
+        let tarGeneralCount = 0;
+        let tarFriasCount = 0;
+        const tarimasPorMaquina = {};
+
+        dayTarimas.forEach(t => {
+          const est = String(t.estado_liberacion || 'Liberado').toLowerCase();
+          if (est.includes('condicion')) tarCondicionadas++;
+          else if (est.includes('rechaz')) tarRechazadas++;
+          else tarAprobadas++;
+
+          const isFrias = isFriasTarimaRecord(t);
+          if (isFrias) tarFriasCount++;
+          else tarGeneralCount++;
+
+          let maq = t.banda || t.maquina || 'Sin Máquina';
+          if (isFrias && !String(maq).toLowerCase().startsWith('banda')) maq = 'Banda ' + maq;
+          if (!tarimasPorMaquina[maq]) {
+            tarimasPorMaquina[maq] = { total: 0, aprobadas: 0, condicionadas: 0, rechazadas: 0, isFrias };
+          }
+          tarimasPorMaquina[maq].total++;
+          if (est.includes('condicion')) tarimasPorMaquina[maq].condicionadas++;
+          else if (est.includes('rechaz')) tarimasPorMaquina[maq].rechazadas++;
+          else tarimasPorMaquina[maq].aprobadas++;
+        });
+
+        const totalTarimasDia = dayTarimas.length;
+        const elTarTotal = document.getElementById('obs-kpi-tarimas-total');
+        const elTarSub = document.getElementById('obs-kpi-tarimas-sub');
+        const elTarBreak = document.getElementById('obs-kpi-tarimas-breakdown');
+        const elTarBar = document.getElementById('obs-kpi-tarimas-bar');
+        const elTarBadge = document.getElementById('obs-tarimas-summary-badge');
+
+        if (elTarTotal) elTarTotal.textContent = String(totalTarimasDia);
+        if (elTarSub) elTarSub.textContent = `General: ${tarGeneralCount} | Frías: ${tarFriasCount}`;
+        if (elTarBreak) elTarBreak.textContent = `${tarAprobadas} Lib. / ${tarCondicionadas} Cond. / ${tarRechazadas} Rech.`;
+        if (elTarBadge) elTarBadge.textContent = `${totalTarimasDia} Tarimas en el Día`;
+
+        if (elTarBar) {
+          if (totalTarimasDia === 0) {
+            elTarBar.innerHTML = `<div style="width: 100%; background: #cbd5e1;"></div>`;
+          } else {
+            const pA = (tarAprobadas / totalTarimasDia) * 100;
+            const pC = (tarCondicionadas / totalTarimasDia) * 100;
+            const pR = (tarRechazadas / totalTarimasDia) * 100;
+            elTarBar.innerHTML = `
+              <div style="width: ${pA}%; background: #16a34a;"></div>
+              <div style="width: ${pC}%; background: #f59e0b;"></div>
+              <div style="width: ${pR}%; background: #dc2626;"></div>
+            `;
+          }
+        }
+
+        const obsTarimasContainer = document.getElementById('obs-tarimas-container');
+        if (obsTarimasContainer) {
+          const maqKeys = Object.keys(tarimasPorMaquina).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+          const maxMaqTar = Math.max(...maqKeys.map(k => tarimasPorMaquina[k].total), 1);
+
+          let maqRows = '';
+          if (maqKeys.length === 0) {
+            maqRows = `<div style="padding: 18px; text-align: center; color: #64748b; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; font-size: 0.85rem;">Sin tarimas liberadas registradas en la fecha y turno seleccionados.</div>`;
+          } else {
+            maqKeys.forEach(m => {
+              const st = tarimasPorMaquina[m];
+              const widthPct = Math.round((st.total / maxMaqTar) * 100);
+              const barColor = st.isFrias ? '#0284c7' : '#0f172a';
+              maqRows += `
+                <div style="display: grid; grid-template-columns: 110px 1fr 145px; align-items: center; gap: 10px; padding: 6px 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">
+                  <div style="font-weight: 800; font-size: 0.82rem; color: #0f172a;">${m}</div>
+                  <div style="height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                    <div style="height: 100%; width: ${widthPct}%; background: ${barColor}; border-radius: 999px;"></div>
+                  </div>
+                  <div style="text-align: right; font-size: 0.78rem; font-weight: 700; color: #334155;">
+                    <strong>${st.total}</strong> (${st.aprobadas} OK${st.condicionadas ? ` / ${st.condicionadas} Cond` : ''}${st.rechazadas ? ` / ${st.rechazadas} Rech` : ''})
+                  </div>
+                </div>
+              `;
+            });
+          }
+
+          obsTarimasContainer.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px;">
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 12px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 0.7rem; font-weight: 800; color: #166534; text-transform: uppercase;">Liberadas</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: #15803d;">${tarAprobadas}</div>
+              </div>
+              <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 10px 12px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 0.7rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Condicionadas</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: #b45309;">${tarCondicionadas}</div>
+              </div>
+              <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 10px 12px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 0.7rem; font-weight: 800; color: #991b1b; text-transform: uppercase;">Rechazadas</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: #dc2626;">${tarRechazadas}</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; max-height: 210px; overflow-y: auto;">
+              ${maqRows}
+            </div>
+          `;
+        }
+
+        // ---------------------------------------------------------------------
+        // 2. PORCENTAJES DE INSPECCIÓN DE CALIDAD
+        // ---------------------------------------------------------------------
+        const allInsps = (state && Array.isArray(state.inspecciones)) ? state.inspecciones : [];
+        const dayInsps = allInsps.filter(insp => {
+          if (!insp || insp.maquina === 'Desconocida') return false;
+          const dStr = getInspIsoDate(insp);
+          if (dStr !== targetDate) return false;
+          if (shiftFilter && getRecordShift(insp) !== shiftFilter) return false;
+          return true;
+        });
+
+        let totalAudits = 0;
+        let totalApproved = 0;
+        let totalRejected = 0;
+
+        const areasCalidad = [
+          { key: 'Flexo', label: 'Flexo (Impresión)', total: 0, ok: 0 },
+          { key: 'Nanjang', label: 'Nanjang (M1 a M5)', total: 0, ok: 0 },
+          { key: 'Con Asa', label: 'Con Asa (M6 a M13)', total: 0, ok: 0 },
+          { key: 'Frías', label: 'Frías (Banda 1 a 4)', total: 0, ok: 0 },
+          { key: 'Carga', label: 'Pruebas de Carga', total: 0, ok: 0 }
+        ];
+
+        const maqCalidadMap = {};
+
+        dayInsps.forEach(insp => {
+          const isCarga = insp.es_prueba_carga === 1 || Boolean(insp.carga_resultado);
+          const isFrias = insp.area === 'Frías' || String(insp.maquina || insp.banda || '').toLowerCase().startsWith('banda');
+          const passed = isCarga
+            ? (insp.carga_resultado === 'Pasa' || insp.resultado === 'Aprobado')
+            : (insp.resultado === 'Aprobado');
+
+          totalAudits++;
+          if (passed) totalApproved++;
+          else totalRejected++;
+
+          let areaBucket = null;
+          if (isCarga) areaBucket = areasCalidad[4];
+          else if (isFrias) areaBucket = areasCalidad[3];
+          else if (insp.area === 'Flexo') areaBucket = areasCalidad[0];
+          else if (insp.area === 'Nanjang') areaBucket = areasCalidad[1];
+          else if (insp.area === 'Con Asa') areaBucket = areasCalidad[2];
+
+          if (areaBucket) {
+            areaBucket.total++;
+            if (passed) areaBucket.ok++;
+          }
+
+          const maqName = insp.banda || insp.maquina || 'General';
+          if (!maqCalidadMap[maqName]) maqCalidadMap[maqName] = { total: 0, ok: 0 };
+          maqCalidadMap[maqName].total++;
+          if (passed) maqCalidadMap[maqName].ok++;
+        });
+
+        const globalCalidadPct = totalAudits > 0 ? Math.round((totalApproved / totalAudits) * 100) : 0;
+        const elCalPct = document.getElementById('obs-kpi-calidad-pct');
+        const elCalAud = document.getElementById('obs-kpi-calidad-auditorias');
+        const elCalDet = document.getElementById('obs-kpi-calidad-detail');
+        const elCalBar = document.getElementById('obs-kpi-calidad-bar');
+        const elCalBadge = document.getElementById('obs-calidad-summary-badge');
+
+        if (elCalPct) {
+          elCalPct.textContent = totalAudits > 0 ? `${globalCalidadPct}%` : 'S/D';
+          elCalPct.style.color = totalAudits === 0 ? '#64748b' : (globalCalidadPct >= 90 ? '#15803d' : (globalCalidadPct >= 75 ? '#d97706' : '#dc2626'));
+        }
+        if (elCalAud) elCalAud.textContent = `${totalAudits} auditorías`;
+        if (elCalDet) elCalDet.textContent = `${totalApproved} Conformes / ${totalRejected} Rechazadas`;
+        if (elCalBar) {
+          elCalBar.style.width = `${globalCalidadPct}%`;
+          elCalBar.style.background = globalCalidadPct >= 90 ? '#16a34a' : (globalCalidadPct >= 75 ? '#f59e0b' : '#dc2626');
+        }
+        if (elCalBadge) {
+          elCalBadge.textContent = totalAudits > 0 ? `${globalCalidadPct}% Conformidad (${totalAudits} Aud.)` : 'Sin Auditorías';
+        }
+
+        const obsCalidadContainer = document.getElementById('obs-calidad-container');
+        if (obsCalidadContainer) {
+          let areaBarsHtml = '';
+          areasCalidad.forEach(a => {
+            const pct = a.total > 0 ? Math.round((a.ok / a.total) * 100) : 0;
+            const color = a.total === 0 ? '#94a3b8' : (pct >= 90 ? '#16a34a' : (pct >= 75 ? '#f59e0b' : '#dc2626'));
+            areaBarsHtml += `
+              <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">
+                  <span style="color: #0f172a;">${a.label}</span>
+                  <span style="color: ${color}; font-weight: 800;">
+                    ${a.total > 0 ? `${pct}% (${a.ok}/${a.total})` : 'Sin registros'}
+                  </span>
+                </div>
+                <div style="height: 10px; width: 100%; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                  <div style="height: 100%; width: ${pct}%; background: ${color}; border-radius: 999px; transition: width 0.3s ease;"></div>
+                </div>
+              </div>
+            `;
+          });
+
+          const maqCalKeys = Object.keys(maqCalidadMap).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+          let maqPillsHtml = '';
+          if (maqCalKeys.length > 0) {
+            maqPillsHtml = `
+              <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #e2e8f0;">
+                <div style="font-size: 0.72rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">
+                  Porcentaje de Conformidad por Máquina Auditada
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 6px;">
+                  ${maqCalKeys.map(m => {
+                    const st = maqCalidadMap[m];
+                    const p = st.total > 0 ? Math.round((st.ok / st.total) * 100) : 0;
+                    const bg = p >= 90 ? '#f0fdf4' : (p >= 75 ? '#fffbeb' : '#fef2f2');
+                    const br = p >= 90 ? '#86efac' : (p >= 75 ? '#fde68a' : '#fca5a5');
+                    const cl = p >= 90 ? '#15803d' : (p >= 75 ? '#b45309' : '#dc2626');
+                    return `
+                      <div style="background: ${bg}; border: 1px solid ${br}; border-radius: 6px; padding: 6px 8px; text-align: center;">
+                        <div style="font-size: 0.74rem; font-weight: 800; color: #0f172a;">${m}</div>
+                        <div style="font-size: 1.05rem; font-weight: 900; color: ${cl};">${p}%</div>
+                        <div style="font-size: 0.65rem; color: #64748b; font-weight: 700;">${st.ok}/${st.total} OK</div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          }
+
+          obsCalidadContainer.innerHTML = areaBarsHtml + maqPillsHtml;
+        }
+
+        // ---------------------------------------------------------------------
+        // 3. AVANCE EN PRODUCCIÓN POR MÁQUINA
+        // ---------------------------------------------------------------------
+        const personalList = await getPersonalList();
+        const latestByMachineShift = {};
+        personalList.forEach(row => {
+          if (!row || row.fecha !== targetDate) return;
+          const rShift = getRecordShift(row);
+          if (shiftFilter && rShift !== shiftFilter) return;
+
+          const key = `${row.tipo_maquina || 'Armado'}_${row.maquina}_${rShift}`;
+          if (!latestByMachineShift[key]) {
+            latestByMachineShift[key] = row;
+          } else {
+            const curT = String(row.hora_actualizacion || '00:00');
+            const exT = String(latestByMachineShift[key].hora_actualizacion || '00:00');
+            if (curT.localeCompare(exT) >= 0) {
+              latestByMachineShift[key] = row;
+            }
+          }
+        });
+
+        // Agregar por máquina para vista consolidada del día
+        const prodByMachine = {};
+        Object.values(latestByMachineShift).forEach(r => {
+          const maqKey = `${r.tipo_maquina || 'Armado'}-${r.maquina}`;
+          if (!prodByMachine[maqKey]) {
+            prodByMachine[maqKey] = {
+              tipo: r.tipo_maquina || 'Armado',
+              maquina: r.maquina,
+              producidas: 0,
+              tarima: 0,
+              meta: 0,
+              operadores: new Set(),
+              marcas: new Set(),
+              ultima_hora: r.hora_actualizacion || ''
+            };
+          }
+          const entry = prodByMachine[maqKey];
+          entry.producidas += parseInt(r.bolsas_producidas, 10) || 0;
+          entry.tarima += parseInt(r.bolsas_tarima, 10) || 0;
+          entry.meta += parseInt(r.meta, 10) || 0;
+          if (r.operador && r.operador !== 'Sin Asignar') entry.operadores.add(r.operador);
+          if (r.marca_trabajada) entry.marcas.add(r.marca_trabajada);
+          if (String(r.hora_actualizacion || '') > entry.ultima_hora) {
+            entry.ultima_hora = r.hora_actualizacion || '';
+          }
+        });
+
+        const prodMachinesList = Object.values(prodByMachine).sort((a, b) => {
+          if (a.tipo !== b.tipo) return a.tipo === 'Flexo' ? -1 : 1;
+          return String(a.maquina).localeCompare(String(b.maquina), undefined, { numeric: true });
+        });
+
+        let totalProdBolsas = 0;
+        let totalProdMeta = 0;
+        prodMachinesList.forEach(m => {
+          totalProdBolsas += m.producidas;
+          totalProdMeta += m.meta;
+        });
+
+        const globalProdPct = totalProdMeta > 0 ? Math.min(999, Math.round((totalProdBolsas / totalProdMeta) * 100)) : 0;
+        const elProdPct = document.getElementById('obs-kpi-prod-pct');
+        const elProdMaq = document.getElementById('obs-kpi-prod-maquinas');
+        const elProdBol = document.getElementById('obs-kpi-prod-bolsas');
+        const elProdBar = document.getElementById('obs-kpi-prod-bar');
+        const elProdBadge = document.getElementById('obs-prod-summary-badge');
+
+        if (elProdPct) elProdPct.textContent = totalProdMeta > 0 ? `${globalProdPct}%` : (totalProdBolsas > 0 ? 'ACTIVO' : '0%');
+        if (elProdMaq) elProdMaq.textContent = `${prodMachinesList.length} máquinas con registro`;
+        if (elProdBol) elProdBol.textContent = `${totalProdBolsas.toLocaleString()} / ${totalProdMeta.toLocaleString()} bolsas`;
+        if (elProdBar) elProdBar.style.width = `${Math.min(100, globalProdPct)}%`;
+        if (elProdBadge) elProdBadge.textContent = `${totalProdBolsas.toLocaleString()} Bolsas Producidas`;
+
+        const obsProdContainer = document.getElementById('obs-produccion-maquinas-container');
+        if (obsProdContainer) {
+          if (prodMachinesList.length === 0) {
+            obsProdContainer.innerHTML = `
+              <div style="padding: 2.5rem 1rem; text-align: center; color: #64748b; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; font-size: 0.88rem;">
+                No hay capturas de avance de producción por máquina registradas para el día ${targetDate}.
+              </div>
+            `;
+          } else {
+            obsProdContainer.innerHTML = prodMachinesList.map(m => {
+              const pct = m.meta > 0 ? Math.round((m.producidas / m.meta) * 100) : 0;
+              const barWidth = m.meta > 0 ? Math.min(100, pct) : (m.producidas > 0 ? 100 : 0);
+              const barColor = m.meta === 0 ? '#0284c7' : (pct >= 95 ? '#16a34a' : (pct >= 75 ? '#4f46e5' : '#f59e0b'));
+              const ops = Array.from(m.operadores).join(', ') || 'Sin operador';
+              const marcas = Array.from(m.marcas).join(', ');
+              return `
+                <div style="padding: 12px 14px; border: 1px solid #e2e8f0; border-left: 5px solid ${barColor}; border-radius: 8px; background: #ffffff;">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; background: #f1f5f9; color: #334155;">
+                        ${m.tipo}
+                      </span>
+                      <strong style="font-size: 1rem; font-weight: 900; color: #0f172a;">${m.maquina}</strong>
+                      ${marcas ? `<span style="font-size: 0.75rem; font-weight: 800; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 4px;">${marcas}</span>` : ''}
+                    </div>
+                    <div style="font-size: 1.1rem; font-weight: 900; color: ${barColor};">
+                      ${m.meta > 0 ? `${pct}%` : `${m.producidas.toLocaleString()} bolsas`}
+                    </div>
+                  </div>
+
+                  <div style="height: 10px; width: 100%; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
+                    <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; border-radius: 999px; transition: width 0.3s ease;"></div>
+                  </div>
+
+                  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 0.76rem; color: #475569; font-weight: 700;">
+                    <span>Operador: <strong style="color: #0f172a;">${ops}</strong></span>
+                    <span>Producidas: <strong style="color: #0f172a;">${m.producidas.toLocaleString()}</strong> / Meta: <strong>${m.meta > 0 ? m.meta.toLocaleString() : 'N/A'}</strong></span>
+                    ${m.tarima > 0 ? `<span>En Tarima: <strong style="color: #15803d;">${m.tarima.toLocaleString()}</strong></span>` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+        }
+
+        // ---------------------------------------------------------------------
+        // 4. CALENDARIO DE CARGAS Y RASTREADOR EN VIVO DEL DÍA
+        // ---------------------------------------------------------------------
+        renderObsCalendarAndLoads();
+      }
+
+      function renderObsCalendarAndLoads() {
+        const targetDate = obsState.selectedDate || getTodayLocalIso();
+        const year = obsState.calYear;
+        const month = obsState.calMonth;
+        const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+        const allLoads = embarquesState.items || [];
+        const dayLoads = allLoads.filter(x => x.fecha_programada === targetDate)
+          .sort((a, b) => String(a.hora_programada || '').localeCompare(String(b.hora_programada || '')));
+        const monthLoads = allLoads.filter(x => String(x.fecha_programada || '').startsWith(monthPrefix));
+
+        const completedToday = dayLoads.filter(x => x.estado === 'EN RUTA A DESTINO FINAL').length;
+        const inProgressToday = dayLoads.filter(x => x.estado !== 'PROGRAMADA' && x.estado !== 'EN RUTA A DESTINO FINAL').length;
+
+        const elEmbHoy = document.getElementById('obs-kpi-emb-hoy');
+        const elEmbMes = document.getElementById('obs-kpi-emb-mes');
+        const elEmbSt = document.getElementById('obs-kpi-emb-status');
+        const elEmbBar = document.getElementById('obs-kpi-emb-bar');
+        const elDayLabel = document.getElementById('obs-day-loads-date-label');
+
+        if (elEmbHoy) elEmbHoy.textContent = String(dayLoads.length);
+        if (elEmbMes) elEmbMes.textContent = `${monthLoads.length} programadas en el mes`;
+        if (elEmbSt) elEmbSt.textContent = `${completedToday} finalizadas / ${inProgressToday} en tránsito o carga`;
+        if (elEmbBar) {
+          const pct = dayLoads.length > 0 ? Math.round((completedToday / dayLoads.length) * 100) : 0;
+          elEmbBar.style.width = `${pct}%`;
+        }
+        if (elDayLabel) elDayLabel.textContent = targetDate;
+
+        // Renderizar tarjetas de avance de cargas del día (Sin emojis)
+        const trackerEl = document.getElementById('obs-day-loads-tracker');
+        if (trackerEl) {
+          if (dayLoads.length === 0) {
+            trackerEl.innerHTML = `
+              <div style="grid-column: 1 / -1; padding: 18px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: #64748b; font-size: 0.85rem; font-weight: 600;">
+                Sin cargas programadas para el día ${targetDate}.
+              </div>
+            `;
+          } else {
+            trackerEl.innerHTML = dayLoads.map(item => {
+              const meta = getObsCleanStateMeta(item.estado);
+              const tiempos = item.tiempos_estados || {};
+              const isCargando = item.estado === 'CARGANDO';
+              const elapsedMs = getEmbarqueElapsedCargandoMs(item);
+              const tiempoCargaStr = item.tiempo_carga_texto || (elapsedMs > 0 ? formatDurationHuman(elapsedMs) : '');
+
+              const stagePills = OBS_EMBARQUE_STATES_CLEAN.map((st, idx) => {
+                const isCur = item.estado === st.key;
+                const tHora = tiempos[st.key] || '';
+                const done = Boolean(tHora);
+                return `
+                  <div style="flex: 1; min-width: 90px; padding: 6px 6px; border-radius: 5px; background: ${isCur ? st.bg : (done ? '#f1f5f9' : '#ffffff')}; border: ${isCur ? `2px solid ${st.color}` : '1px solid #cbd5e1'}; text-align: center;">
+                    <div style="font-size: 0.65rem; font-weight: 800; color: ${isCur ? st.color : (done ? '#0f172a' : '#94a3b8')}; text-transform: uppercase;">
+                      ${idx + 1}. ${st.short}
+                    </div>
+                    <div style="font-size: 0.68rem; font-weight: 800; color: ${done ? '#0f172a' : '#cbd5e1'}; margin-top: 2px;">
+                      ${tHora || '--:--'}
+                    </div>
+                  </div>
+                `;
+              }).join('');
+
+              return `
+                <div style="border: 1px solid ${meta.border}; border-left: 5px solid ${meta.color}; border-radius: 8px; padding: 12px 14px; background: #ffffff;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <span style="background: #0f172a; color: #ffffff; font-size: 0.78rem; font-weight: 800; padding: 3px 9px; border-radius: 4px;">
+                        ${item.hora_programada || '--:--'}
+                      </span>
+                      <strong style="font-size: 0.95rem; font-weight: 900; color: #0284c7;">${item.marca || '-'}</strong>
+                      <span style="font-size: 0.8rem; font-weight: 800; color: #334155;">Factura: ${item.numero_factura || '-'}</span>
+                    </div>
+                    <span style="background: ${meta.bg}; color: ${meta.color}; border: 1px solid ${meta.border}; font-size: 0.7rem; font-weight: 900; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">
+                      ${meta.label}
+                    </span>
+                  </div>
+
+                  <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px;">
+                    ${stagePills}
+                  </div>
+
+                  ${isCargando ? `
+                    <div style="margin-top: 8px; padding: 8px 10px; background: #fff7ed; border: 1px solid #fb923c; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                      <span style="font-size: 0.72rem; font-weight: 800; color: #9a3412; text-transform: uppercase;">Tiempo Preparando Camión:</span>
+                      <span style="font-size: 1.1rem; font-weight: 900; color: #c2410c; font-family: monospace;" data-obs-stopwatch-id="${item.id}">
+                        ${formatDurationMs(elapsedMs)}
+                      </span>
+                    </div>
+                  ` : (tiempoCargaStr ? `
+                    <div style="margin-top: 6px; font-size: 0.74rem; font-weight: 800; color: #15803d;">
+                      Tiempo Total de Carga Registrado: ${tiempoCargaStr}
+                    </div>
+                  ` : '')}
+                </div>
+              `;
+            }).join('');
+          }
+        }
+
+        // Renderizar Cuadrícula del Calendario Mensual (Sin emojis)
+        const calGrid = document.getElementById('obs-calendar-grid');
+        const calLabel = document.getElementById('obs-calendar-month-label');
+        if (!calGrid || !calLabel) return;
+
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+
+        calLabel.textContent = firstDay.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }).toUpperCase();
+
+        let startWeekday = firstDay.getDay() - 1;
+        if (startWeekday < 0) startWeekday = 6;
+
+        const loadsByDate = {};
+        allLoads.forEach(ld => {
+          const f = ld.fecha_programada || '';
+          if (!f) return;
+          if (!loadsByDate[f]) loadsByDate[f] = [];
+          loadsByDate[f].push(ld);
+        });
+        Object.keys(loadsByDate).forEach(f => {
+          loadsByDate[f].sort((a, b) => String(a.hora_programada || '').localeCompare(String(b.hora_programada || '')));
+        });
+
+        const todayIso = getTodayLocalIso();
+        let gridHtml = '';
+
+        for (let i = 0; i < startWeekday; i++) {
+          gridHtml += `<div style="min-height: 92px; background: #f8fafc; border: 1px dashed #e2e8f0; border-radius: 6px; opacity: 0.5;"></div>`;
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const list = loadsByDate[iso] || [];
+          const isToday = iso === todayIso;
+          const isSelected = iso === targetDate;
+
+          const border = isSelected ? '2px solid #ea580c' : (isToday ? '2px solid #0284c7' : '1px solid #cbd5e1');
+          const bg = isSelected ? '#fff7ed' : (isToday ? '#f0f9ff' : '#ffffff');
+
+          const itemsHtml = list.map(ld => {
+            const m = getObsCleanStateMeta(ld.estado);
+            return `
+              <div style="padding: 3px 6px; border-radius: 4px; background: ${m.bg}; color: ${m.color}; border-left: 3px solid ${m.color}; font-size: 0.68rem; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${ld.hora_programada || '--:--'} | ${ld.marca || '-'} | F:${ld.numero_factura || '-'}
+              </div>
+            `;
+          }).join('');
+
+          gridHtml += `
+            <div onclick="onObsDateFilterChange('${iso}')"
+                 style="min-height: 95px; padding: 6px; border-radius: 6px; border: ${border}; background: ${bg}; display: flex; flex-direction: column; gap: 4px; cursor: pointer;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.8rem; font-weight: 900; color: ${isSelected ? '#c2410c' : (isToday ? '#0369a1' : '#1e293b')};">${day}</span>
+                ${list.length > 0 ? `<span style="font-size: 0.65rem; font-weight: 800; background: #0f172a; color: #ffffff; padding: 1px 5px; border-radius: 999px;">${list.length}</span>` : ''}
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 3px;">
+                ${itemsHtml}
+              </div>
+            </div>
+          `;
+        }
+
+        const totalCells = startWeekday + daysInMonth;
+        const trailing = (7 - (totalCells % 7)) % 7;
+        for (let i = 0; i < trailing; i++) {
+          gridHtml += `<div style="min-height: 92px; background: #f8fafc; border: 1px dashed #e2e8f0; border-radius: 6px; opacity: 0.5;"></div>`;
+        }
+
+        calGrid.innerHTML = gridHtml;
       }
     </script>
 </body>
