@@ -1198,66 +1198,59 @@
 
         <!-- VISTA: PANEL DE OBSERVACIÓN EN VIVO (WALLBOARD INDUSTRIAL SIN EMOJIS) -->
         <div id="view-panel-observacion" style="display: none; margin-bottom: 2.5rem;">
-          <!-- Barra Superior de Control y Reloj en Vivo -->
-          <div class="card" style="padding: 1.1rem 1.5rem; margin-bottom: 1.25rem; background: #0f172a; color: #f8fafc; border: 1px solid #1e293b; border-radius: 10px;">
+          <!-- Barra Superior de Control y Reloj en Vivo (Diseño Claro Corporativo Dipapel, Fecha y Turno Fijos) -->
+          <div class="card" style="padding: 1.15rem 1.5rem; margin-bottom: 1.25rem; background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%); color: #0f172a; border: 1px solid #bbf7d0; border-left: 6px solid var(--color-primary); border-radius: 12px; box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);">
             <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
               <div style="display: flex; align-items: center; gap: 14px;">
-                <span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25); display: inline-block; flex-shrink: 0;"></span>
+                <span style="width: 12px; height: 12px; border-radius: 50%; background: #16a34a; box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.2); display: inline-block; flex-shrink: 0;"></span>
                 <div>
-                  <div style="font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; color: #38bdf8; text-transform: uppercase;">
+                  <div style="font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; color: var(--color-primary); text-transform: uppercase;">
                     DIPAPEL PLANTA LECHUGUEROS &bull; MONITOR DE OPERACIONES EN TIEMPO REAL
                   </div>
-                  <h2 style="margin: 2px 0 0 0; font-size: 1.35rem; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">
+                  <h2 style="margin: 2px 0 0 0; font-size: 1.38rem; font-weight: 900; color: #0f172a; letter-spacing: -0.01em;">
                     Panel General de Observación
                   </h2>
                 </div>
               </div>
 
-              <!-- Controles de Fecha, Turno y Pantalla Completa -->
-              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 8px; background: #1e293b; padding: 6px 12px; border-radius: 8px; border: 1px solid #334155;">
-                  <label style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Fecha:</label>
-                  <input type="date" id="obs-filter-date" onchange="onObsDateFilterChange(this.value)" style="background: transparent; border: none; color: #ffffff; font-weight: 700; font-size: 0.85rem; outline: none;" />
-                  <button type="button" onclick="resetObsDateToLive()" style="background: #0284c7; color: #ffffff; border: none; border-radius: 4px; padding: 3px 8px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
-                    Hoy
-                  </button>
+              <!-- Indicadores Fijos de Fecha Actual, Turno Actual en Curso y Reloj -->
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px; background: #ffffff; padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                  <span style="font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Fecha:</span>
+                  <span id="obs-static-date-label" style="font-size: 0.88rem; font-weight: 900; color: #0f172a;">--</span>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 8px; background: #1e293b; padding: 6px 12px; border-radius: 8px; border: 1px solid #334155;">
-                  <label style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Turno:</label>
-                  <select id="obs-filter-shift" onchange="renderPanelObservacion()" style="background: #1e293b; border: none; color: #ffffff; font-weight: 700; font-size: 0.85rem; outline: none; cursor: pointer;">
-                    <option value="">Día Completo (1er y 2do Turno)</option>
-                    <option value="Dia">1er Turno (07:00 - 18:59)</option>
-                    <option value="Noche">2do Turno (19:00 - 06:59)</option>
-                  </select>
+                <div style="display: flex; align-items: center; gap: 8px; background: #dcfce7; padding: 8px 14px; border-radius: 8px; border: 1px solid #86efac;">
+                  <span style="font-size: 0.74rem; font-weight: 800; color: #166534; text-transform: uppercase;">Turno Actual:</span>
+                  <span id="obs-static-shift-label" style="font-size: 0.88rem; font-weight: 900; color: #15803d;">--</span>
                 </div>
 
-                <div style="text-align: right; padding: 4px 12px; background: #1e293b; border-radius: 8px; border: 1px solid #334155;">
-                  <div id="obs-live-clock" style="font-size: 1.2rem; font-weight: 900; color: #f8fafc; font-family: monospace; line-height: 1.1;">00:00:00</div>
-                  <div id="obs-live-shift-label" style="font-size: 0.68rem; font-weight: 700; color: #10b981; text-transform: uppercase;">ACTUALIZANDO</div>
+                <div style="text-align: right; padding: 5px 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #cbd5e1;">
+                  <div id="obs-live-clock" style="font-size: 1.2rem; font-weight: 900; color: #0f172a; font-family: monospace; line-height: 1.1;">00:00:00</div>
+                  <div id="obs-live-shift-label" style="font-size: 0.66rem; font-weight: 800; color: var(--color-primary); text-transform: uppercase;">EN VIVO</div>
                 </div>
 
-                <button type="button" id="btn-obs-fullscreen" onclick="toggleObsFullscreen()" style="background: #334155; color: #f8fafc; border: 1px solid #475569; padding: 9px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                <button type="button" id="btn-obs-fullscreen" onclick="toggleObsFullscreen()" style="background: var(--color-primary); color: #ffffff; border: 1px solid #15803d; padding: 9px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);">
                   Pantalla Completa
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- FILA 1: 4 KPIS EJECUTIVOS GLOBALES DEL DÍA -->
+          <!-- FILA 1: 4 KPIS EJECUTIVOS GLOBALES DEL TURNO ACTUAL -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
-            <!-- KPI 1: Tarimas Liberadas -->
+            <!-- KPI 1: Tarimas Liberadas (Sin Frías) -->
             <div class="card" style="padding: 1.25rem; border-top: 4px solid #0284c7; display: flex; flex-direction: column; justify-content: space-between;">
               <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                <span style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Tarimas Liberadas (Día)</span>
-                <span id="obs-kpi-tarimas-sub" style="font-size: 0.75rem; font-weight: 700; color: #0284c7;">General + Frías</span>
+                <span style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Tarimas Liberadas (Turno)</span>
+                <span id="obs-kpi-tarimas-sub" style="font-size: 0.75rem; font-weight: 700; color: #0284c7;">Planta General</span>
               </div>
               <div style="display: flex; align-items: baseline; gap: 12px; margin: 10px 0;">
                 <div id="obs-kpi-tarimas-total" style="font-size: 2.6rem; font-weight: 900; color: #0f172a; line-height: 1;">0</div>
-                <div id="obs-kpi-tarimas-breakdown" style="font-size: 0.8rem; font-weight: 700; color: #475569;">0 Aprobadas</div>
+                <div id="obs-kpi-tarimas-breakdown" style="font-size: 0.8rem; font-weight: 700; color: #475569;">0 Lib. / 0 Cond. / 0 Rech.</div>
               </div>
               <div style="height: 8px; width: 100%; background: #e2e8f0; border-radius: 999px; overflow: hidden; display: flex;" id="obs-kpi-tarimas-bar">
-                <div style="width: 100%; background: #16a34a;"></div>
+                <div style="width: 100%; background: #cbd5e1;"></div>
               </div>
             </div>
 
@@ -1265,11 +1258,11 @@
             <div class="card" style="padding: 1.25rem; border-top: 4px solid #16a34a; display: flex; flex-direction: column; justify-content: space-between;">
               <div style="display: flex; justify-content: space-between; align-items: baseline;">
                 <span style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Índice Global de Calidad</span>
-                <span id="obs-kpi-calidad-auditorias" style="font-size: 0.75rem; font-weight: 700; color: #16a34a;">0 inspecciones</span>
+                <span id="obs-kpi-calidad-auditorias" style="font-size: 0.75rem; font-weight: 700; color: #16a34a;">0 auditorías</span>
               </div>
               <div style="display: flex; align-items: baseline; gap: 12px; margin: 10px 0;">
-                <div id="obs-kpi-calidad-pct" style="font-size: 2.6rem; font-weight: 900; color: #15803d; line-height: 1;">0%</div>
-                <div id="obs-kpi-calidad-detail" style="font-size: 0.8rem; font-weight: 700; color: #475569;">0 OK / 0 Rech.</div>
+                <div id="obs-kpi-calidad-pct" style="font-size: 2.6rem; font-weight: 900; color: #64748b; line-height: 1;">S/D</div>
+                <div id="obs-kpi-calidad-detail" style="font-size: 0.8rem; font-weight: 700; color: #475569;">0 Conformes / 0 Rechazadas</div>
               </div>
               <div style="height: 8px; width: 100%; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
                 <div id="obs-kpi-calidad-bar" style="height: 100%; width: 0%; background: #16a34a; transition: width 0.3s ease;"></div>
@@ -1295,11 +1288,11 @@
             <div class="card" style="padding: 1.25rem; border-top: 4px solid #ea580c; display: flex; flex-direction: column; justify-content: space-between;">
               <div style="display: flex; justify-content: space-between; align-items: baseline;">
                 <span style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Cargas Programadas (Día)</span>
-                <span id="obs-kpi-emb-mes" style="font-size: 0.75rem; font-weight: 700; color: #ea580c;">0 en el mes</span>
+                <span id="obs-kpi-emb-mes" style="font-size: 0.75rem; font-weight: 700; color: #ea580c;">Sin cargas programadas</span>
               </div>
               <div style="display: flex; align-items: baseline; gap: 12px; margin: 10px 0;">
                 <div id="obs-kpi-emb-hoy" style="font-size: 2.6rem; font-weight: 900; color: #9a3412; line-height: 1;">0</div>
-                <div id="obs-kpi-emb-status" style="font-size: 0.8rem; font-weight: 700; color: #475569;">0 completadas</div>
+                <div id="obs-kpi-emb-status" style="font-size: 0.8rem; font-weight: 700; color: #475569;">Sin cargas programadas</div>
               </div>
               <div style="height: 8px; width: 100%; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
                 <div id="obs-kpi-emb-bar" style="height: 100%; width: 0%; background: #ea580c; transition: width 0.3s ease;"></div>
@@ -12855,10 +12848,31 @@
       const obsState = {
         autoFollowToday: true,
         selectedDate: getTodayLocalIso(),
+        activeShift: '',
         calYear: new Date().getFullYear(),
         calMonth: new Date().getMonth(),
         clockTimerId: null
       };
+
+      const OBS_ALL_PLANT_MACHINES = [
+        { tipo: 'Armado', maquina: 'M1', label: 'M1' },
+        { tipo: 'Armado', maquina: 'M2', label: 'M2' },
+        { tipo: 'Armado', maquina: 'M3', label: 'M3' },
+        { tipo: 'Armado', maquina: 'M4', label: 'M4' },
+        { tipo: 'Armado', maquina: 'M5', label: 'M5' },
+        { tipo: 'Armado', maquina: 'M6', label: 'M6' },
+        { tipo: 'Armado', maquina: 'M7', label: 'M7' },
+        { tipo: 'Armado', maquina: 'M8', label: 'M8' },
+        { tipo: 'Armado', maquina: 'M9', label: 'M9' },
+        { tipo: 'Armado', maquina: 'M10', label: 'M10' },
+        { tipo: 'Armado', maquina: 'M11', label: 'M11' },
+        { tipo: 'Armado', maquina: 'M12', label: 'M12' },
+        { tipo: 'Armado', maquina: 'M13', label: 'M13' },
+        { tipo: 'Flexo', maquina: 'Flexo 1', label: 'Flexo 1' },
+        { tipo: 'Flexo', maquina: 'Flexo 2', label: 'Flexo 2' },
+        { tipo: 'Flexo', maquina: 'Flexo 3', label: 'Flexo 3' },
+        { tipo: 'Flexo', maquina: 'Flexo 4', label: 'Flexo 4' }
+      ];
 
       const OBS_EMBARQUE_STATES_CLEAN = [
         { key: 'EN RUTA A PLANTA', label: 'EN RUTA A PLANTA', short: 'Ruta Planta', bg: '#e0f2fe', color: '#0369a1', border: '#7dd3fc' },
@@ -12872,6 +12886,33 @@
         const f = OBS_EMBARQUE_STATES_CLEAN.find(s => s.key === estado);
         if (f) return f;
         return { key: 'PROGRAMADA', label: 'PROGRAMADA', short: 'Programada', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' };
+      }
+
+      function formatObsHumanDate(isoStr) {
+        if (!isoStr) return '--';
+        const parts = String(isoStr).split('-');
+        if (parts.length !== 3) return isoStr;
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        if (isNaN(d.getTime())) return isoStr;
+        return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+      }
+
+      function syncObsStaticHeaderLabels() {
+        const activeInfo = getCurrentActiveShiftAndDate();
+        obsState.selectedDate = activeInfo.fecha;
+        obsState.activeShift = activeInfo.turno;
+
+        const dateEl = document.getElementById('obs-static-date-label');
+        if (dateEl) {
+          dateEl.textContent = formatObsHumanDate(activeInfo.fecha);
+        }
+        const shiftEl = document.getElementById('obs-static-shift-label');
+        if (shiftEl) {
+          shiftEl.textContent = activeInfo.turno === 'Dia'
+            ? '1er Turno (07:00 - 18:59)'
+            : '2do Turno (19:00 - 06:59)';
+        }
+        return activeInfo;
       }
 
       function openPanelObservacion() {
@@ -12890,38 +12931,8 @@
         const headerTitle = document.getElementById('header-title');
         if (headerTitle) headerTitle.textContent = 'Panel General de Observación en Vivo';
 
-        const today = getTodayLocalIso();
-        if (obsState.autoFollowToday || !obsState.selectedDate) {
-          obsState.selectedDate = today;
-        }
-        const dateInput = document.getElementById('obs-filter-date');
-        if (dateInput) dateInput.value = obsState.selectedDate;
-
+        syncObsStaticHeaderLabels();
         startObsLiveClockAndTimers();
-        renderPanelObservacion();
-      }
-
-      function onObsDateFilterChange(val) {
-        if (!val) return;
-        obsState.selectedDate = val;
-        obsState.autoFollowToday = (val === getTodayLocalIso());
-        const parts = String(val).split('-');
-        if (parts.length === 3) {
-          obsState.calYear = Number(parts[0]);
-          obsState.calMonth = Number(parts[1]) - 1;
-        }
-        renderPanelObservacion();
-      }
-
-      function resetObsDateToLive() {
-        const today = getTodayLocalIso();
-        obsState.autoFollowToday = true;
-        obsState.selectedDate = today;
-        const now = new Date();
-        obsState.calYear = now.getFullYear();
-        obsState.calMonth = now.getMonth();
-        const dateInput = document.getElementById('obs-filter-date');
-        if (dateInput) dateInput.value = today;
         renderPanelObservacion();
       }
 
@@ -12960,21 +12971,16 @@
           if (clockEl) {
             clockEl.textContent = now.toTimeString().split(' ')[0];
           }
+          const activeInfo = getCurrentActiveShiftAndDate();
           if (shiftEl) {
-            const h = now.getHours();
-            const turnoTxt = (h >= 7 && h < 19) ? '1ER TURNO EN CURSO' : '2DO TURNO EN CURSO';
-            shiftEl.textContent = `${getTodayLocalIso()} | ${turnoTxt}`;
+            const turnoTxt = activeInfo.turno === 'Dia' ? '1ER TURNO EN CURSO' : '2DO TURNO EN CURSO';
+            shiftEl.textContent = turnoTxt;
           }
 
-          // Si pasa medianoche y está en seguimiento automático, actualizar fecha del monitor
-          if (obsState.autoFollowToday) {
-            const currentIso = getTodayLocalIso();
-            if (obsState.selectedDate !== currentIso) {
-              obsState.selectedDate = currentIso;
-              const dateInput = document.getElementById('obs-filter-date');
-              if (dateInput) dateInput.value = currentIso;
-              if (state.role === 'observacion') renderPanelObservacion();
-            }
+          // Si cambia la fecha operativa o el turno activo, actualizar automáticamente el panel
+          if (obsState.selectedDate !== activeInfo.fecha || obsState.activeShift !== activeInfo.turno) {
+            syncObsStaticHeaderLabels();
+            if (state.role === 'observacion') renderPanelObservacion();
           }
 
           // Actualizar cronómetros de camiones en estado CARGANDO dentro del Panel de Observación
@@ -12995,11 +13001,12 @@
       }
 
       async function renderPanelObservacion() {
-        const targetDate = obsState.selectedDate || getTodayLocalIso();
-        const shiftFilter = document.getElementById('obs-filter-shift')?.value || '';
+        const activeInfo = syncObsStaticHeaderLabels();
+        const targetDate = activeInfo.fecha;
+        const shiftFilter = activeInfo.turno;
 
         // ---------------------------------------------------------------------
-        // 1. RESUMEN DE TARIMAS LIBERADAS
+        // 1. RESUMEN DE TARIMAS LIBERADAS (EXCLUYENDO FRÍAS, SOLO TURNO ACTUAL)
         // ---------------------------------------------------------------------
         let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
         const tarimaMap = new Map();
@@ -13011,6 +13018,7 @@
         const dayTarimas = Array.from(tarimaMap.values()).filter(t => {
           if (!t || (!t.codigo_liberacion && !t.codigo_tarima)) return false;
           if (t._record_type === 'embarque' || t.maquina === '__EMBARQUE__') return false;
+          if (isFriasTarimaRecord(t)) return false;
           const dStr = getInspIsoDate(t);
           if (dStr !== targetDate) return false;
           if (shiftFilter && getRecordShift(t) !== shiftFilter) return false;
@@ -13020,8 +13028,6 @@
         let tarAprobadas = 0;
         let tarCondicionadas = 0;
         let tarRechazadas = 0;
-        let tarGeneralCount = 0;
-        let tarFriasCount = 0;
         const tarimasPorMaquina = {};
 
         dayTarimas.forEach(t => {
@@ -13030,14 +13036,9 @@
           else if (est.includes('rechaz')) tarRechazadas++;
           else tarAprobadas++;
 
-          const isFrias = isFriasTarimaRecord(t);
-          if (isFrias) tarFriasCount++;
-          else tarGeneralCount++;
-
-          let maq = t.banda || t.maquina || 'Sin Máquina';
-          if (isFrias && !String(maq).toLowerCase().startsWith('banda')) maq = 'Banda ' + maq;
+          const maq = t.maquina || 'Sin Máquina';
           if (!tarimasPorMaquina[maq]) {
-            tarimasPorMaquina[maq] = { total: 0, aprobadas: 0, condicionadas: 0, rechazadas: 0, isFrias };
+            tarimasPorMaquina[maq] = { total: 0, aprobadas: 0, condicionadas: 0, rechazadas: 0 };
           }
           tarimasPorMaquina[maq].total++;
           if (est.includes('condicion')) tarimasPorMaquina[maq].condicionadas++;
@@ -13053,9 +13054,9 @@
         const elTarBadge = document.getElementById('obs-tarimas-summary-badge');
 
         if (elTarTotal) elTarTotal.textContent = String(totalTarimasDia);
-        if (elTarSub) elTarSub.textContent = `General: ${tarGeneralCount} | Frías: ${tarFriasCount}`;
+        if (elTarSub) elTarSub.textContent = `Planta General (M1 a M13)`;
         if (elTarBreak) elTarBreak.textContent = `${tarAprobadas} Lib. / ${tarCondicionadas} Cond. / ${tarRechazadas} Rech.`;
-        if (elTarBadge) elTarBadge.textContent = `${totalTarimasDia} Tarimas en el Día`;
+        if (elTarBadge) elTarBadge.textContent = `${totalTarimasDia} Tarimas en el Turno`;
 
         if (elTarBar) {
           if (totalTarimasDia === 0) {
@@ -13079,17 +13080,16 @@
 
           let maqRows = '';
           if (maqKeys.length === 0) {
-            maqRows = `<div style="padding: 18px; text-align: center; color: #64748b; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; font-size: 0.85rem;">Sin tarimas liberadas registradas en la fecha y turno seleccionados.</div>`;
+            maqRows = `<div style="padding: 18px; text-align: center; color: #64748b; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; font-size: 0.85rem;">Sin tarimas liberadas registradas en el turno actual.</div>`;
           } else {
             maqKeys.forEach(m => {
               const st = tarimasPorMaquina[m];
               const widthPct = Math.round((st.total / maxMaqTar) * 100);
-              const barColor = st.isFrias ? '#0284c7' : '#0f172a';
               maqRows += `
                 <div style="display: grid; grid-template-columns: 110px 1fr 145px; align-items: center; gap: 10px; padding: 6px 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">
                   <div style="font-weight: 800; font-size: 0.82rem; color: #0f172a;">${m}</div>
                   <div style="height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
-                    <div style="height: 100%; width: ${widthPct}%; background: ${barColor}; border-radius: 999px;"></div>
+                    <div style="height: 100%; width: ${widthPct}%; background: #0284c7; border-radius: 999px;"></div>
                   </div>
                   <div style="text-align: right; font-size: 0.78rem; font-weight: 700; color: #334155;">
                     <strong>${st.total}</strong> (${st.aprobadas} OK${st.condicionadas ? ` / ${st.condicionadas} Cond` : ''}${st.rechazadas ? ` / ${st.rechazadas} Rech` : ''})
@@ -13121,11 +13121,13 @@
         }
 
         // ---------------------------------------------------------------------
-        // 2. PORCENTAJES DE INSPECCIÓN DE CALIDAD
+        // 2. PORCENTAJES DE INSPECCIÓN DE CALIDAD (SIN FRÍAS, SOLO TURNO ACTUAL)
         // ---------------------------------------------------------------------
         const allInsps = (state && Array.isArray(state.inspecciones)) ? state.inspecciones : [];
         const dayInsps = allInsps.filter(insp => {
           if (!insp || insp.maquina === 'Desconocida') return false;
+          const isFrias = insp.area === 'Frías' || String(insp.maquina || insp.banda || '').toLowerCase().startsWith('banda');
+          if (isFrias) return false;
           const dStr = getInspIsoDate(insp);
           if (dStr !== targetDate) return false;
           if (shiftFilter && getRecordShift(insp) !== shiftFilter) return false;
@@ -13140,7 +13142,6 @@
           { key: 'Flexo', label: 'Flexo (Impresión)', total: 0, ok: 0 },
           { key: 'Nanjang', label: 'Nanjang (M1 a M5)', total: 0, ok: 0 },
           { key: 'Con Asa', label: 'Con Asa (M6 a M13)', total: 0, ok: 0 },
-          { key: 'Frías', label: 'Frías (Banda 1 a 4)', total: 0, ok: 0 },
           { key: 'Carga', label: 'Pruebas de Carga', total: 0, ok: 0 }
         ];
 
@@ -13148,7 +13149,6 @@
 
         dayInsps.forEach(insp => {
           const isCarga = insp.es_prueba_carga === 1 || Boolean(insp.carga_resultado);
-          const isFrias = insp.area === 'Frías' || String(insp.maquina || insp.banda || '').toLowerCase().startsWith('banda');
           const passed = isCarga
             ? (insp.carga_resultado === 'Pasa' || insp.resultado === 'Aprobado')
             : (insp.resultado === 'Aprobado');
@@ -13158,8 +13158,7 @@
           else totalRejected++;
 
           let areaBucket = null;
-          if (isCarga) areaBucket = areasCalidad[4];
-          else if (isFrias) areaBucket = areasCalidad[3];
+          if (isCarga) areaBucket = areasCalidad[3];
           else if (insp.area === 'Flexo') areaBucket = areasCalidad[0];
           else if (insp.area === 'Nanjang') areaBucket = areasCalidad[1];
           else if (insp.area === 'Con Asa') areaBucket = areasCalidad[2];
@@ -13169,7 +13168,7 @@
             if (passed) areaBucket.ok++;
           }
 
-          const maqName = insp.banda || insp.maquina || 'General';
+          const maqName = insp.maquina || 'General';
           if (!maqCalidadMap[maqName]) maqCalidadMap[maqName] = { total: 0, ok: 0 };
           maqCalidadMap[maqName].total++;
           if (passed) maqCalidadMap[maqName].ok++;
@@ -13249,7 +13248,7 @@
         }
 
         // ---------------------------------------------------------------------
-        // 3. AVANCE EN PRODUCCIÓN POR MÁQUINA
+        // 3. AVANCE EN PRODUCCIÓN POR MÁQUINA (MOSTRAR BARRAS AUNQUE NO HAYA REGISTROS)
         // ---------------------------------------------------------------------
         const personalList = await getPersonalList();
         const latestByMachineShift = {};
@@ -13270,23 +13269,24 @@
           }
         });
 
-        // Agregar por máquina para vista consolidada del día
         const prodByMachine = {};
         Object.values(latestByMachineShift).forEach(r => {
-          const maqKey = `${r.tipo_maquina || 'Armado'}-${r.maquina}`;
-          if (!prodByMachine[maqKey]) {
-            prodByMachine[maqKey] = {
-              tipo: r.tipo_maquina || 'Armado',
-              maquina: r.maquina,
+          const maqName = String(r.maquina || '').trim();
+          if (!maqName) return;
+          if (!prodByMachine[maqName]) {
+            prodByMachine[maqName] = {
+              tipo: r.tipo_maquina || (maqName.toLowerCase().startsWith('flexo') ? 'Flexo' : 'Armado'),
+              maquina: maqName,
               producidas: 0,
               tarima: 0,
               meta: 0,
               operadores: new Set(),
               marcas: new Set(),
-              ultima_hora: r.hora_actualizacion || ''
+              ultima_hora: r.hora_actualizacion || '',
+              hasRecord: true
             };
           }
-          const entry = prodByMachine[maqKey];
+          const entry = prodByMachine[maqName];
           entry.producidas += parseInt(r.bolsas_producidas, 10) || 0;
           entry.tarima += parseInt(r.bolsas_tarima, 10) || 0;
           entry.meta += parseInt(r.meta, 10) || 0;
@@ -13297,14 +13297,10 @@
           }
         });
 
-        const prodMachinesList = Object.values(prodByMachine).sort((a, b) => {
-          if (a.tipo !== b.tipo) return a.tipo === 'Flexo' ? -1 : 1;
-          return String(a.maquina).localeCompare(String(b.maquina), undefined, { numeric: true });
-        });
-
+        const activeMachinesCount = Object.keys(prodByMachine).length;
         let totalProdBolsas = 0;
         let totalProdMeta = 0;
-        prodMachinesList.forEach(m => {
+        Object.values(prodByMachine).forEach(m => {
           totalProdBolsas += m.producidas;
           totalProdMeta += m.meta;
         });
@@ -13317,54 +13313,57 @@
         const elProdBadge = document.getElementById('obs-prod-summary-badge');
 
         if (elProdPct) elProdPct.textContent = totalProdMeta > 0 ? `${globalProdPct}%` : (totalProdBolsas > 0 ? 'ACTIVO' : '0%');
-        if (elProdMaq) elProdMaq.textContent = `${prodMachinesList.length} máquinas con registro`;
+        if (elProdMaq) elProdMaq.textContent = `${activeMachinesCount} máquinas activas`;
         if (elProdBol) elProdBol.textContent = `${totalProdBolsas.toLocaleString()} / ${totalProdMeta.toLocaleString()} bolsas`;
         if (elProdBar) elProdBar.style.width = `${Math.min(100, globalProdPct)}%`;
         if (elProdBadge) elProdBadge.textContent = `${totalProdBolsas.toLocaleString()} Bolsas Producidas`;
 
         const obsProdContainer = document.getElementById('obs-produccion-maquinas-container');
         if (obsProdContainer) {
-          if (prodMachinesList.length === 0) {
-            obsProdContainer.innerHTML = `
-              <div style="padding: 2.5rem 1rem; text-align: center; color: #64748b; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; font-size: 0.88rem;">
-                No hay capturas de avance de producción por máquina registradas para el día ${targetDate}.
-              </div>
-            `;
-          } else {
-            obsProdContainer.innerHTML = prodMachinesList.map(m => {
-              const pct = m.meta > 0 ? Math.round((m.producidas / m.meta) * 100) : 0;
-              const barWidth = m.meta > 0 ? Math.min(100, pct) : (m.producidas > 0 ? 100 : 0);
-              const barColor = m.meta === 0 ? '#0284c7' : (pct >= 95 ? '#16a34a' : (pct >= 75 ? '#4f46e5' : '#f59e0b'));
-              const ops = Array.from(m.operadores).join(', ') || 'Sin operador';
-              const marcas = Array.from(m.marcas).join(', ');
+          obsProdContainer.innerHTML = OBS_ALL_PLANT_MACHINES.map(baseMaq => {
+            const m = prodByMachine[baseMaq.maquina];
+            if (!m) {
               return `
-                <div style="padding: 12px 14px; border: 1px solid #e2e8f0; border-left: 5px solid ${barColor}; border-radius: 8px; background: #ffffff;">
-                  <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px;">
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                      <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; background: #f1f5f9; color: #334155;">
-                        ${m.tipo}
-                      </span>
-                      <strong style="font-size: 1rem; font-weight: 900; color: #0f172a;">${m.maquina}</strong>
-                      ${marcas ? `<span style="font-size: 0.75rem; font-weight: 800; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 4px;">${marcas}</span>` : ''}
-                    </div>
-                    <div style="font-size: 1.1rem; font-weight: 900; color: ${barColor};">
-                      ${m.meta > 0 ? `${pct}%` : `${m.producidas.toLocaleString()} bolsas`}
-                    </div>
+                <div style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.84rem; font-weight: 800; margin-bottom: 5px;">
+                    <span style="color: #0f172a;">${baseMaq.label}</span>
+                    <span style="color: #94a3b8; font-size: 0.78rem; font-weight: 700;">Sin registros</span>
                   </div>
-
-                  <div style="height: 10px; width: 100%; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-bottom: 8px;">
-                    <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; border-radius: 999px; transition: width 0.3s ease;"></div>
-                  </div>
-
-                  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 0.76rem; color: #475569; font-weight: 700;">
-                    <span>Operador: <strong style="color: #0f172a;">${ops}</strong></span>
-                    <span>Producidas: <strong style="color: #0f172a;">${m.producidas.toLocaleString()}</strong> / Meta: <strong>${m.meta > 0 ? m.meta.toLocaleString() : 'N/A'}</strong></span>
-                    ${m.tarima > 0 ? `<span>En Tarima: <strong style="color: #15803d;">${m.tarima.toLocaleString()}</strong></span>` : ''}
+                  <div style="height: 10px; width: 100%; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                    <div style="height: 100%; width: 0%; background: #94a3b8; border-radius: 999px;"></div>
                   </div>
                 </div>
               `;
-            }).join('');
-          }
+            }
+
+            const pct = m.meta > 0 ? Math.round((m.producidas / m.meta) * 100) : 0;
+            const barWidth = m.meta > 0 ? Math.min(100, pct) : (m.producidas > 0 ? 100 : 0);
+            const barColor = m.meta === 0 ? '#0284c7' : (pct >= 95 ? '#16a34a' : (pct >= 75 ? '#4f46e5' : '#f59e0b'));
+            const ops = Array.from(m.operadores).join(', ') || 'Sin operador';
+            const marcas = Array.from(m.marcas).join(', ');
+            return `
+              <div style="padding: 10px 12px; border: 1px solid #cbd5e1; border-left: 5px solid ${barColor}; border-radius: 8px; background: #ffffff;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 5px;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <strong style="font-size: 0.92rem; font-weight: 900; color: #0f172a;">${m.maquina}</strong>
+                    ${marcas ? `<span style="font-size: 0.72rem; font-weight: 800; color: #0284c7; background: #e0f2fe; padding: 2px 7px; border-radius: 4px;">${marcas}</span>` : ''}
+                  </div>
+                  <div style="font-size: 0.95rem; font-weight: 900; color: ${barColor};">
+                    ${m.meta > 0 ? `${pct}% (${m.producidas.toLocaleString()}/${m.meta.toLocaleString()})` : `${m.producidas.toLocaleString()} bolsas`}
+                  </div>
+                </div>
+
+                <div style="height: 10px; width: 100%; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-bottom: 6px;">
+                  <div style="height: 100%; width: ${barWidth}%; background: ${barColor}; border-radius: 999px; transition: width 0.3s ease;"></div>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 0.74rem; color: #475569; font-weight: 700;">
+                  <span>Operador: <strong style="color: #0f172a;">${ops}</strong></span>
+                  ${m.tarima > 0 ? `<span>En Tarima: <strong style="color: #15803d;">${m.tarima.toLocaleString()}</strong></span>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('');
         }
 
         // ---------------------------------------------------------------------
@@ -13394,21 +13393,29 @@
         const elDayLabel = document.getElementById('obs-day-loads-date-label');
 
         if (elEmbHoy) elEmbHoy.textContent = String(dayLoads.length);
-        if (elEmbMes) elEmbMes.textContent = `${monthLoads.length} programadas en el mes`;
-        if (elEmbSt) elEmbSt.textContent = `${completedToday} finalizadas / ${inProgressToday} en tránsito o carga`;
+        if (elEmbMes) {
+          elEmbMes.textContent = monthLoads.length === 0
+            ? 'Sin cargas programadas'
+            : `${monthLoads.length} en el mes`;
+        }
+        if (elEmbSt) {
+          elEmbSt.textContent = dayLoads.length === 0
+            ? 'Sin cargas programadas'
+            : `${completedToday} finalizadas / ${inProgressToday} en curso`;
+        }
         if (elEmbBar) {
           const pct = dayLoads.length > 0 ? Math.round((completedToday / dayLoads.length) * 100) : 0;
           elEmbBar.style.width = `${pct}%`;
         }
-        if (elDayLabel) elDayLabel.textContent = targetDate;
+        if (elDayLabel) elDayLabel.textContent = formatObsHumanDate(targetDate);
 
         // Renderizar tarjetas de avance de cargas del día (Sin emojis)
         const trackerEl = document.getElementById('obs-day-loads-tracker');
         if (trackerEl) {
           if (dayLoads.length === 0) {
             trackerEl.innerHTML = `
-              <div style="grid-column: 1 / -1; padding: 18px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: #64748b; font-size: 0.85rem; font-weight: 600;">
-                Sin cargas programadas para el día ${targetDate}.
+              <div style="grid-column: 1 / -1; padding: 18px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: #64748b; font-size: 0.85rem; font-weight: 700;">
+                Sin cargas programadas
               </div>
             `;
           } else {
@@ -13472,7 +13479,7 @@
           }
         }
 
-        // Renderizar Cuadrícula del Calendario Mensual (Sin emojis)
+        // Renderizar Cuadrícula del Calendario Mensual (Sin emojis, fecha fija)
         const calGrid = document.getElementById('obs-calendar-grid');
         const calLabel = document.getElementById('obs-calendar-month-label');
         if (!calGrid || !calLabel) return;
@@ -13523,8 +13530,7 @@
           }).join('');
 
           gridHtml += `
-            <div onclick="onObsDateFilterChange('${iso}')"
-                 style="min-height: 95px; padding: 6px; border-radius: 6px; border: ${border}; background: ${bg}; display: flex; flex-direction: column; gap: 4px; cursor: pointer;">
+            <div style="min-height: 95px; padding: 6px; border-radius: 6px; border: ${border}; background: ${bg}; display: flex; flex-direction: column; gap: 4px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 0.8rem; font-weight: 900; color: ${isSelected ? '#c2410c' : (isToday ? '#0369a1' : '#1e293b')};">${day}</span>
                 ${list.length > 0 ? `<span style="font-size: 0.65rem; font-weight: 800; background: #0f172a; color: #ffffff; padding: 1px 5px; border-radius: 999px;">${list.length}</span>` : ''}
