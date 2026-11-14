@@ -421,6 +421,11 @@
             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">Catálogo de especificaciones en PDF por marca</p>
             <button class="btn-primary" style="margin-top: auto; width: 100%; justify-content: center; background-color: #8b5cf6; border-color: #7c3aed;">Ingresar</button>
           </div>
+          <div class="role-card" onclick="enterSection('embarques')" style="padding: 2.5rem 1.5rem; display: flex; flex-direction: column; justify-content: space-between; border-top: 4px solid #ea580c;">
+            <h3 class="role-card-title" style="font-size: 1.3rem; margin-bottom: 1.5rem; color: #ea580c;">🚚 Embarques</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">Calendario de cargas programadas, rastreador de avance, cronómetro y cargas pasadas</p>
+            <button class="btn-primary" style="margin-top: auto; width: 100%; justify-content: center; background-color: #ea580c; border-color: #c2410c;">Ingresar</button>
+          </div>
         </div>
       </div>
 
@@ -906,6 +911,291 @@
             <div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #f8fafc; display: flex;">
               <iframe src="https://drive.google.com/embeddedfolderview?id=1UoaO0rfrWbLAISwraWicTK-cIJu9aju9#grid" width="100%" height="100%" style="border: none; flex: 1;"></iframe>
             </div>
+          </div>
+        </div>
+
+        <!-- VISTA DE EMBARQUES (CALENDARIO MENSUAL, RASTREADOR DE AVANCE, CRONÓMETRO Y CARGAS PASADAS) -->
+        <div id="view-embarques" style="display: none; margin-bottom: 2.5rem;">
+          <!-- Barra superior de navegación de Embarques -->
+          <div class="card" style="padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; border-left: 5px solid #ea580c;">
+            <div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; align-items: center;">
+              <div>
+                <h2 style="margin: 0; font-size: 1.35rem; color: #c2410c; display: flex; align-items: center; gap: 8px;">
+                  🚚 Gestión y Control de Embarques
+                </h2>
+                <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
+                  Calendario mensual de cargas programadas, rastreador de estados en vivo, cronómetro de preparación de camión e historial por factura.
+                </p>
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                <button id="btn-emb-tab-calendario" class="btn-secondary active-tab" onclick="switchEmbarquesSubTab('calendario')" style="padding: 9px 16px; font-weight: 700;">
+                  📅 Calendario y Rastreador del Día
+                </button>
+                <button id="btn-emb-tab-pasadas" class="btn-secondary" onclick="switchEmbarquesSubTab('pasadas')" style="padding: 9px 16px; font-weight: 700;">
+                  📦 Cargas Pasadas (Por Factura)
+                </button>
+                <button class="btn-primary" onclick="openEmbarqueFormModal()" style="background: #ea580c; border-color: #c2410c; padding: 9px 18px; font-weight: 800;">
+                  ➕ Programar Nueva Carga
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUB-VISTA 1: CALENDARIO GRANDE MENSUAL + RASTREADOR DE AVANCE POR DÍA -->
+          <div id="embarques-subview-calendario" style="display: block;">
+            <!-- Calendario Grande Mensual -->
+            <div class="card" style="padding: 1.5rem; margin-bottom: 1.75rem;">
+              <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <button class="btn-secondary" onclick="changeEmbarquesMonth(-1)" style="padding: 8px 14px; font-weight: 700;">◀ Mes Anterior</button>
+                  <h3 id="embarques-calendar-month-label" style="margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--color-primary-dark); min-width: 220px; text-align: center; text-transform: capitalize;">
+                    Mes Año
+                  </h3>
+                  <button class="btn-secondary" onclick="changeEmbarquesMonth(1)" style="padding: 8px 14px; font-weight: 700;">Mes Siguiente ▶</button>
+                  <button class="btn-secondary" onclick="goEmbarquesToday()" style="padding: 8px 14px; font-weight: 700; color: #ea580c; border-color: #fdba74; background: #fff7ed;">📍 Hoy</button>
+                </div>
+
+                <!-- Leyenda de estados -->
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.75rem; font-weight: 700;">
+                  <span style="padding: 4px 8px; border-radius: 999px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">📅 Programada</span>
+                  <span style="padding: 4px 8px; border-radius: 999px; background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc;">🚚 En Ruta a Planta</span>
+                  <span style="padding: 4px 8px; border-radius: 999px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5;">⚠️ Ruta Atrasada</span>
+                  <span style="padding: 4px 8px; border-radius: 999px; background: #ede9fe; color: #6d28d9; border: 1px solid #c4b5fd;">🏭 En Planta</span>
+                  <span style="padding: 4px 8px; border-radius: 999px; background: #ffedd5; color: #c2410c; border: 1px solid #fdba74;">⏱️ Cargando</span>
+                  <span style="padding: 4px 8px; border-radius: 999px; background: #dcfce7; color: #15803d; border: 1px solid #86efac;">✅ En Ruta a Destino Final</span>
+                </div>
+              </div>
+
+              <!-- Encabezados de días de la semana -->
+              <div style="overflow-x: auto;">
+                <div style="min-width: 840px;">
+                  <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px;">
+                    <div style="text-align: center; font-weight: 800; font-size: 0.85rem; color: #475569; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">LUNES</div>
+                    <div style="text-align: center; font-weight: 800; font-size: 0.85rem; color: #475569; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">MARTES</div>
+                    <div style="text-align: center; font-weight: 800; font-size: 0.85rem; color: #475569; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">MIÉRCOLES</div>
+                    <div style="text-align: center; font-weight: 800; font-size: 0.85rem; color: #475569; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">JUEVES</div>
+                    <div style="text-align: center; font-weight: 800; font-size: 0.85rem; color: #475569; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">VIERNES</div>
+                    <div style="text-align: center; font-weight: 800; font-size: 0.85rem; color: #475569; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">SÁBADO</div>
+                    <div style="text-align: center; font-weight: 800; font-size: 0.85rem; color: #475569; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0;">DOMINGO</div>
+                  </div>
+                  <!-- Celdas del mes -->
+                  <div id="embarques-calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rastreador de Avance de Carga según el Día Seleccionado -->
+            <div class="card" id="embarques-day-tracker-section" style="padding: 1.5rem; border-top: 4px solid #ea580c;">
+              <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+                <div>
+                  <h3 style="margin: 0; font-size: 1.25rem; color: var(--color-primary-dark); display: flex; align-items: center; gap: 10px;">
+                    📍 Rastreador de Avance de Carga — <span id="embarques-selected-day-title" style="color: #ea580c;">Hoy</span>
+                  </h3>
+                  <p style="margin: 4px 0 0 0; font-size: 0.83rem; color: var(--text-muted);">
+                    Actualiza el estado de cada camión en tiempo real. Al pasar a <strong>CARGANDO</strong> inicia el cronómetro automáticamente; al finalizar, sube la foto de cómo se va el camión.
+                  </p>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">Día:</label>
+                    <input type="date" id="embarques-tracker-date-picker" class="form-control" style="width: 155px; padding: 6px 10px;" onchange="onEmbarquesTrackerDateChange(this.value)" />
+                  </div>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: #475569; background: #f8fafc; padding: 7px 12px; border-radius: 6px; border: 1px solid #cbd5e1; cursor: pointer;">
+                    <input type="checkbox" id="embarques-show-all-active" onchange="renderEmbarquesDayTracker()" />
+                    Incluir cargas en curso de otros días
+                  </label>
+                  <button class="btn-primary" onclick="openEmbarqueFormModal(embarquesState.selectedDate)" style="background: #ea580c; border-color: #c2410c; padding: 8px 14px; font-weight: 700;">
+                    ➕ Agregar Carga en este Día
+                  </button>
+                </div>
+              </div>
+
+              <div id="embarques-day-tracker-list" style="display: flex; flex-direction: column; gap: 1.25rem;"></div>
+            </div>
+          </div>
+
+          <!-- SUB-VISTA 2: CARGAS PASADAS (CONSULTA POR NÚMERO DE FACTURA, TIEMPO DE CARGA, AVANCE POR HORAS Y FOTO) -->
+          <div id="embarques-subview-pasadas" style="display: none;">
+            <!-- KPIs de Cargas Pasadas -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+              <div class="card" style="padding: 1.25rem; border-left: 4px solid #16a34a;">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Cargas Completadas (Pasadas)</div>
+                <div id="emb-kpi-total-pasadas" style="font-size: 2rem; font-weight: 800; color: #15803d; margin-top: 4px;">0</div>
+              </div>
+              <div class="card" style="padding: 1.25rem; border-left: 4px solid #ea580c;">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Tiempo Promedio de Carga</div>
+                <div id="emb-kpi-promedio-tiempo" style="font-size: 1.8rem; font-weight: 800; color: #c2410c; margin-top: 4px;">00:00:00</div>
+              </div>
+              <div class="card" style="padding: 1.25rem; border-left: 4px solid #0284c7;">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Cargas con Fotografía</div>
+                <div id="emb-kpi-con-foto" style="font-size: 2rem; font-weight: 800; color: #0369a1; margin-top: 4px;">0</div>
+              </div>
+            </div>
+
+            <!-- Filtros y Buscador por Factura -->
+            <div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; align-items: end;">
+                <div>
+                  <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">🧾 Buscar por Número de Factura</label>
+                  <input type="text" id="emb-pasadas-search-factura" class="form-control" placeholder="Ej. F-1045, 88920..." oninput="renderEmbarquesPasadas()" />
+                </div>
+                <div>
+                  <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">🏷️ Filtrar por Marca</label>
+                  <select id="emb-pasadas-filter-marca" class="form-control" onchange="renderEmbarquesPasadas()">
+                    <option value="">Todas las Marcas</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">📅 Filtrar por Fecha Programada</label>
+                  <input type="date" id="emb-pasadas-filter-fecha" class="form-control" onchange="renderEmbarquesPasadas()" />
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700; color: #475569; cursor: pointer;">
+                    <input type="checkbox" id="emb-pasadas-incluir-en-curso" onchange="renderEmbarquesPasadas()" />
+                    Ver también cargas en curso
+                  </label>
+                  <button class="btn-secondary" onclick="clearEmbarquesPasadasFilters()" style="padding: 8px 12px; margin-left: auto;">🔄 Limpiar</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lista de Cargas Pasadas -->
+            <div id="embarques-pasadas-list" style="display: flex; flex-direction: column; gap: 1.25rem;"></div>
+          </div>
+        </div>
+
+        <!-- MODAL: PROGRAMAR O EDITAR CARGA DE EMBARQUE -->
+        <div id="embarque-form-modal" class="modal-overlay" style="display: none; z-index: 9999;">
+          <div class="modal-content" style="max-width: 560px; width: 95%;">
+            <button class="modal-close" onclick="closeEmbarqueFormModal()">×</button>
+            <h3 id="embarque-form-modal-title" style="margin-bottom: 1rem; color: #c2410c; font-size: 1.3rem; display: flex; align-items: center; gap: 8px;">
+              🚚 Programar Carga de Embarque
+            </h3>
+            <form id="embarque-form" onsubmit="submitEmbarqueForm(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+              <input type="hidden" id="emb-form-id" value="" />
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label style="font-weight: 700; font-size: 0.85rem;">📅 Fecha Programada *</label>
+                  <input type="date" id="emb-form-fecha" class="form-control" required />
+                </div>
+                <div class="form-group">
+                  <label style="font-weight: 700; font-size: 0.85rem;">🕒 Hora Programada *</label>
+                  <input type="time" id="emb-form-hora" class="form-control" required />
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label style="font-weight: 700; font-size: 0.85rem;">🏷️ Marca *</label>
+                  <select id="emb-form-marca-select" class="form-control" onchange="toggleEmbarqueMarcaOtro()" required>
+                    <option value="">-- Selecciona Marca --</option>
+                    <option value="McDonalds">McDonalds</option>
+                    <option value="Walmart">Walmart</option>
+                    <option value="Starbucks">Starbucks</option>
+                    <option value="KFC">KFC</option>
+                    <option value="Burger King">Burger King</option>
+                    <option value="Little Caesars">Little Caesars</option>
+                    <option value="Domino's">Domino's</option>
+                    <option value="Subway">Subway</option>
+                    <option value="Krispy Kreme">Krispy Kreme</option>
+                    <option value="Chili's">Chili's</option>
+                    <option value="Shake Shack">Shake Shack</option>
+                    <option value="Dunkin">Dunkin</option>
+                    <option value="Tim Hortons">Tim Hortons</option>
+                    <option value="Caffenio">Caffenio</option>
+                    <option value="Oxxo">Oxxo</option>
+                    <option value="7-Eleven">7-Eleven</option>
+                    <option value="Dipapel">Dipapel (Genérico)</option>
+                    <option value="OTRO">OTRA MARCA (Escribir...)</option>
+                  </select>
+                  <input type="text" id="emb-form-marca-otro" class="form-control" placeholder="Escribe el nombre de la marca..." style="display: none; margin-top: 6px;" />
+                </div>
+                <div class="form-group">
+                  <label style="font-weight: 700; font-size: 0.85rem;">🧾 Número de Factura *</label>
+                  <input type="text" id="emb-form-factura" class="form-control" placeholder="Ej. F-10420 o Pendiente" required />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label style="font-weight: 700; font-size: 0.85rem;">📍 Estado Actual de la Carga</label>
+                <select id="emb-form-estado" class="form-control">
+                  <option value="PROGRAMADA">📅 PROGRAMADA (En espera de salida)</option>
+                  <option value="EN RUTA A PLANTA">🚚 EN RUTA A PLANTA</option>
+                  <option value="RUTA ATRASADA">⚠️ RUTA ATRASADA</option>
+                  <option value="EN PLANTA">🏭 EN PLANTA</option>
+                  <option value="CARGANDO">⏱️ CARGANDO (Inicia cronómetro de carga)</option>
+                  <option value="EN RUTA A DESTINO FINAL">✅ EN RUTA A DESTINO FINAL (Carga terminada)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label style="font-weight: 700; font-size: 0.85rem;">📝 Notas / Transporte / Chofer / Placas (Opcional)</label>
+                <input type="text" id="emb-form-notas" class="form-control" placeholder="Ej. Tráiler Caja Seca 53', Placas 45-AB-9, Chofer Juan..." />
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 0.5rem;">
+                <button type="button" class="btn-secondary" onclick="closeEmbarqueFormModal()">Cancelar</button>
+                <button type="submit" class="btn-primary" style="background: #ea580c; border-color: #c2410c; font-weight: 800; padding: 10px 20px;">
+                  💾 Guardar Carga
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- MODAL: FINALIZAR CARGA Y SUBIR FOTO DEL CAMIÓN -->
+        <div id="embarque-finish-modal" class="modal-overlay" style="display: none; z-index: 9999;">
+          <div class="modal-content" style="max-width: 540px; width: 95%;">
+            <button class="modal-close" onclick="closeEmbarqueFinishModal()">×</button>
+            <h3 style="margin-bottom: 0.5rem; color: #15803d; font-size: 1.3rem; display: flex; align-items: center; gap: 8px;">
+              ✅ Finalizar Carga y Despachar Camión
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+              La carga pasará al estado <strong>EN RUTA A DESTINO FINAL</strong> y quedará registrada en <strong>CARGAS PASADAS</strong> con su número de factura, tiempos por hora y fotografía de cómo se va el camión.
+            </p>
+            <input type="hidden" id="emb-finish-id" value="" />
+
+            <div id="emb-finish-summary-box" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 1rem; font-size: 0.88rem;"></div>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+              <label style="font-weight: 700; font-size: 0.85rem; color: #c2410c;">⏱️ Tiempo Total Preparando / Cargando el Camión (Editable si requieres ajustar)</label>
+              <input type="text" id="emb-finish-tiempo-texto" class="form-control" placeholder="Ej. 01h 12m 30s" style="font-weight: 800; font-size: 1.05rem; color: #c2410c;" />
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+              <label style="font-weight: 700; font-size: 0.88rem; display: block; margin-bottom: 6px;">
+                📸 Fotografía de Referencia de Cómo se va el Camión *
+              </label>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                <label class="btn-primary" style="background: #0284c7; border-color: #0369a1; cursor: pointer; padding: 9px 16px;">
+                  📷 Tomar Foto con Cámara
+                  <input type="file" accept="image/*" capture="environment" style="display: none;" onchange="handleEmbarqueFinishPhoto(event)" />
+                </label>
+                <label class="btn-secondary" style="cursor: pointer; padding: 9px 16px;">
+                  🖼️ Subir de Galería / Archivo
+                  <input type="file" accept="image/*" style="display: none;" onchange="handleEmbarqueFinishPhoto(event)" />
+                </label>
+              </div>
+              <div id="emb-finish-photo-preview-wrap" style="display: none; text-align: center; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #94a3b8;">
+                <img id="emb-finish-photo-preview" src="" alt="Vista previa camión" style="max-width: 100%; max-height: 240px; border-radius: 6px; object-fit: contain;" />
+                <div style="margin-top: 6px; font-size: 0.78rem; color: #15803d; font-weight: 700;">✅ Fotografía lista para guardar</div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+              <button type="button" class="btn-secondary" onclick="closeEmbarqueFinishModal()">Cancelar</button>
+              <button type="button" class="btn-primary" onclick="confirmEmbarqueFinish()" style="background: #16a34a; border-color: #15803d; font-weight: 800; padding: 10px 20px;">
+                ✅ Confirmar Salida a Destino Final
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODAL: FICHA COMPLETA DE LA CARGA (HISTORIAL POR HORAS, TIEMPO DE CARGA Y FOTO) -->
+        <div id="embarque-detail-modal" class="modal-overlay" style="display: none; z-index: 9999;">
+          <div class="modal-content" style="max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto;">
+            <button class="modal-close" onclick="document.getElementById('embarque-detail-modal').style.display='none'">×</button>
+            <div id="embarque-detail-modal-body"></div>
           </div>
         </div>
 
@@ -3486,11 +3776,12 @@
       async function syncDataWithServer() {
         if (!isOnline) return;
         try {
-          const [b, i, p, t] = await Promise.all([
+          const [b, i, p, t, emb] = await Promise.all([
             apiFetch('/api/bobinas'),
             apiFetch('/api/inspecciones'),
             apiFetch('/api/produccion/personal'),
-            apiFetch('/api/tarimas')
+            apiFetch('/api/tarimas'),
+            apiFetch('/api/embarques')
           ]);
 
           let needsReRender = false;
@@ -3530,11 +3821,22 @@
             }
           }
           if (t && Array.isArray(t)) {
-            const strT = JSON.stringify(stripPhotosForLocalCache(t));
+            const onlyTarimas = t.filter(item => item && item._record_type !== 'embarque' && item.maquina !== '__EMBARQUE__');
+            const strT = JSON.stringify(stripPhotosForLocalCache(onlyTarimas));
             if (localStorage.getItem('calidad_tarimas') !== strT) {
               safeLocalStorageSet('calidad_tarimas', strT);
               needsReRender = true;
             }
+            // Si /api/embarques aún no está activo en el servidor remoto, rescatar embarques guardados en bolsas/tarimas
+            if (!emb) {
+              const embFromTarimas = t.filter(item => item && (item._record_type === 'embarque' || item.maquina === '__EMBARQUE__'));
+              if (embFromTarimas.length > 0 && typeof mergeRemoteEmbarques === 'function') {
+                if (mergeRemoteEmbarques(embFromTarimas)) needsReRender = true;
+              }
+            }
+          }
+          if (emb && Array.isArray(emb) && typeof mergeRemoteEmbarques === 'function') {
+            if (mergeRemoteEmbarques(emb)) needsReRender = true;
           }
 
           if (needsReRender) {
@@ -3557,6 +3859,7 @@
           if (typeof renderFriasTarimasConsulta === 'function') renderFriasTarimasConsulta();
           if (typeof updateDashboardCounters === 'function') updateDashboardCounters();
           if (typeof renderStatIndepView === 'function') renderStatIndepView();
+          if (typeof renderEmbarquesAll === 'function' && state.role === 'embarques') renderEmbarquesAll();
         } catch (e) {
           console.error('Error rendering active views:', e);
         }
@@ -4034,6 +4337,8 @@
           openIndependentEstadisticas();
         } else if (sec === 'fichas') {
           openFichasTecnicas();
+        } else if (sec === 'embarques') {
+          openEmbarquesModule();
         }
       }
 
@@ -4050,7 +4355,8 @@
           'view-frias-inspeccion',
           'view-frias-carga',
           'view-frias-tarimas',
-          'view-fichas-tecnicas'
+          'view-fichas-tecnicas',
+          'view-embarques'
         ];
         viewIds.forEach(id => {
           const el = document.getElementById(id);
@@ -11105,6 +11411,1225 @@
           console.error(e);
           showToast('Hubo un error al optimizar el espacio. Revisa tu conexión.', 'error');
         }
+      }
+
+      // =========================================================================
+      // MÓDULO DE EMBARQUES (CALENDARIO MENSUAL, RASTREADOR DE ESTADOS, CRONÓMETRO Y CARGAS PASADAS)
+      // =========================================================================
+      const EMBARQUE_STATES = [
+        { key: 'EN RUTA A PLANTA', label: 'EN RUTA A PLANTA', shortLabel: 'En Ruta a Planta', icon: '🚚', bg: '#e0f2fe', color: '#0369a1', border: '#7dd3fc' },
+        { key: 'RUTA ATRASADA', label: 'RUTA ATRASADA', shortLabel: 'Ruta Atrasada', icon: '⚠️', bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5' },
+        { key: 'EN PLANTA', label: 'EN PLANTA', shortLabel: 'En Planta', icon: '🏭', bg: '#ede9fe', color: '#6d28d9', border: '#c4b5fd' },
+        { key: 'CARGANDO', label: 'CARGANDO', shortLabel: 'Cargando', icon: '⏱️', bg: '#ffedd5', color: '#c2410c', border: '#fdba74' },
+        { key: 'EN RUTA A DESTINO FINAL', label: 'EN RUTA A DESTINO FINAL', shortLabel: 'En Ruta a Destino Final', icon: '✅', bg: '#dcfce7', color: '#15803d', border: '#86efac' }
+      ];
+
+      function getTodayLocalIso() {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      }
+
+      function getNowTimeHHMMSS() {
+        const d = new Date();
+        return d.toTimeString().split(' ')[0];
+      }
+
+      const embarquesState = {
+        subTab: 'calendario', // 'calendario' | 'pasadas'
+        calYear: new Date().getFullYear(),
+        calMonth: new Date().getMonth(), // 0-11
+        selectedDate: getTodayLocalIso(),
+        items: [],
+        finishTempPhotoBase64: '',
+        stopwatchTimerId: null
+      };
+
+      function loadEmbarquesFromLocal() {
+        try {
+          const raw = localStorage.getItem('calidad_embarques');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              embarquesState.items = parsed;
+            }
+          }
+        } catch (e) {
+          console.warn('Error leyendo calidad_embarques:', e);
+        }
+      }
+      loadEmbarquesFromLocal();
+
+      function saveEmbarquesToLocalCache() {
+        try {
+          safeLocalStorageSet('calidad_embarques', JSON.stringify( embarquesState.items ));
+        } catch (e) {
+          // Si excede cuota por fotos base64, guardar versión ligera en localStorage manteniendo las fotos en memoria y servidor
+          const light = embarquesState.items.map(it => {
+            const copy = { ...it };
+            if (copy.foto_camion_url && copy.foto_camion_url.length > 180000) {
+              delete copy.foto_camion_url;
+            }
+            return copy;
+          });
+          safeLocalStorageSet('calidad_embarques', JSON.stringify(light));
+        }
+      }
+
+      function mergeRemoteEmbarques(remoteList) {
+        if (!Array.isArray(remoteList)) return false;
+        const localById = {};
+        embarquesState.items.forEach(item => {
+          if (item && item.id) localById[String(item.id)] = item;
+        });
+
+        let changed = false;
+        const mergedMap = { ...localById };
+
+        remoteList.forEach(rem => {
+          if (!rem || !rem.id) return;
+          const id = String(rem.id);
+          const loc = mergedMap[id];
+          if (!loc) {
+            mergedMap[id] = rem;
+            changed = true;
+          } else {
+            const remUpd = Number(rem.updated_at || 0);
+            const locUpd = Number(loc.updated_at || 0);
+            if (remUpd > locUpd) {
+              // Conservar foto local si el remoto viene sin ella accidentalmente
+              mergedMap[id] = {
+                ...loc,
+                ...rem,
+                foto_camion_url: rem.foto_camion_url || loc.foto_camion_url || ''
+              };
+              changed = true;
+            } else if (!loc.foto_camion_url && rem.foto_camion_url) {
+              mergedMap[id].foto_camion_url = rem.foto_camion_url;
+              changed = true;
+            }
+          }
+        });
+
+        if (changed || embarquesState.items.length !== Object.keys(mergedMap).length) {
+          embarquesState.items = Object.values(mergedMap).sort((a, b) => {
+            const dA = (a.fecha_programada || '') + ' ' + (a.hora_programada || '');
+            const dB = (b.fecha_programada || '') + ' ' + (b.hora_programada || '');
+            return dA.localeCompare(dB);
+          });
+          saveEmbarquesToLocalCache();
+          return true;
+        }
+        return false;
+      }
+
+      async function persistEmbarqueItem(item) {
+        item.updated_at = Date.now();
+        item._record_type = 'embarque';
+        item.maquina = '__EMBARQUE__';
+
+        const idx = embarquesState.items.findIndex(x => String(x.id) === String(item.id));
+        if (idx >= 0) {
+          embarquesState.items[idx] = { ...embarquesState.items[idx], ...item };
+        } else {
+          embarquesState.items.push(item);
+        }
+        saveEmbarquesToLocalCache();
+        renderEmbarquesAll();
+
+        if (isOnline) {
+          const res = await apiFetch('/api/embarques', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+          });
+          // Fallback automático a /api/tarimas si /api/embarques aún no está desplegado en Render
+          if (!res) {
+            await apiFetch('/api/tarimas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(item)
+            });
+          }
+        }
+      }
+
+      async function deleteEmbarqueItem(id) {
+        if (!confirm('¿Estás seguro de que deseas eliminar esta carga programada?')) return;
+        embarquesState.items = embarquesState.items.filter(x => String(x.id) !== String(id));
+        saveEmbarquesToLocalCache();
+        renderEmbarquesAll();
+        showToast('Carga eliminada correctamente.', 'info');
+
+        if (isOnline) {
+          const res = await apiFetch(`/api/embarques?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+          if (!res) {
+            await apiFetch(`/api/tarimas?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+          }
+        }
+      }
+
+      function openEmbarquesModule() {
+        state.role = 'embarques';
+        const landing = document.getElementById('landing-screen');
+        const appScreen = document.getElementById('app-screen');
+        if (landing) landing.style.display = 'none';
+        if (appScreen) appScreen.style.display = 'block';
+
+        hideAllViews();
+        const embView = document.getElementById('view-embarques');
+        if (embView) embView.style.display = 'block';
+
+        const badge = document.getElementById('app-badge');
+        if (badge) badge.textContent = 'Embarques';
+        const headerTitle = document.getElementById('header-title');
+        if (headerTitle) headerTitle.textContent = 'Calendario y Control de Embarques';
+
+        if (!embarquesState.selectedDate) {
+          embarquesState.selectedDate = getTodayLocalIso();
+        }
+        const picker = document.getElementById('embarques-tracker-date-picker');
+        if (picker) picker.value = embarquesState.selectedDate;
+
+        startEmbarquesLiveStopwatch();
+        renderEmbarquesAll();
+      }
+
+      function switchEmbarquesSubTab(tab) {
+        embarquesState.subTab = tab;
+        const btnCal = document.getElementById('btn-emb-tab-calendario');
+        const btnPas = document.getElementById('btn-emb-tab-pasadas');
+        const viewCal = document.getElementById('embarques-subview-calendario');
+        const viewPas = document.getElementById('embarques-subview-pasadas');
+
+        if (tab === 'pasadas') {
+          if (btnCal) btnCal.classList.remove('active-tab');
+          if (btnPas) btnPas.classList.add('active-tab');
+          if (viewCal) viewCal.style.display = 'none';
+          if (viewPas) viewPas.style.display = 'block';
+          renderEmbarquesPasadas();
+        } else {
+          if (btnCal) btnCal.classList.add('active-tab');
+          if (btnPas) btnPas.classList.remove('active-tab');
+          if (viewCal) viewCal.style.display = 'block';
+          if (viewPas) viewPas.style.display = 'none';
+          renderEmbarquesCalendar();
+          renderEmbarquesDayTracker();
+        }
+      }
+
+      function renderEmbarquesAll() {
+        renderEmbarquesCalendar();
+        renderEmbarquesDayTracker();
+        renderEmbarquesPasadas();
+      }
+
+      function formatDurationMs(ms) {
+        if (!ms || isNaN(ms) || ms < 0) ms = 0;
+        const totalSec = Math.floor(ms / 1000);
+        const hrs = Math.floor(totalSec / 3600);
+        const mins = Math.floor((totalSec % 3600) / 60);
+        const secs = totalSec % 60;
+        return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+
+      function formatDurationHuman(ms) {
+        if (!ms || isNaN(ms) || ms <= 0) return '00:00:00';
+        const totalSec = Math.floor(ms / 1000);
+        const hrs = Math.floor(totalSec / 3600);
+        const mins = Math.floor((totalSec % 3600) / 60);
+        const secs = totalSec % 60;
+        if (hrs > 0) {
+          return `${hrs}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
+        }
+        return `${mins}m ${String(secs).padStart(2, '0')}s`;
+      }
+
+      function getEmbarqueElapsedCargandoMs(item) {
+        if (!item) return 0;
+        let baseMs = Number(item.tiempo_carga_ms || 0);
+        if (item.estado === 'CARGANDO' && item.cargando_inicio_ts) {
+          const delta = Math.max(0, Date.now() - Number(item.cargando_inicio_ts));
+          return baseMs + delta;
+        }
+        return baseMs;
+      }
+
+      function startEmbarquesLiveStopwatch() {
+        if (embarquesState.stopwatchTimerId) return;
+        embarquesState.stopwatchTimerId = setInterval(() => {
+          if (state.role !== 'embarques') return;
+          const nodes = document.querySelectorAll('[data-emb-stopwatch-id]');
+          nodes.forEach(node => {
+            const id = node.getAttribute('data-emb-stopwatch-id');
+            const item = embarquesState.items.find(x => String(x.id) === String(id));
+            if (item && item.estado === 'CARGANDO') {
+              const ms = getEmbarqueElapsedCargandoMs(item);
+              node.textContent = formatDurationMs(ms);
+            }
+          });
+        }, 1000);
+      }
+
+      function getEmbarqueStateMeta(estado) {
+        const found = EMBARQUE_STATES.find(s => s.key === estado);
+        if (found) return found;
+        return {
+          key: 'PROGRAMADA',
+          label: 'PROGRAMADA',
+          shortLabel: 'Programada',
+          icon: '📅',
+          bg: '#f1f5f9',
+          color: '#475569',
+          border: '#cbd5e1'
+        };
+      }
+
+      function formatSpanishDateLong(isoDate) {
+        if (!isoDate) return '-';
+        const parts = String(isoDate).split('-');
+        if (parts.length !== 3) return isoDate;
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        if (isNaN(d.getTime())) return isoDate;
+        return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      }
+
+      function changeEmbarquesMonth(delta) {
+        let m = embarquesState.calMonth + delta;
+        let y = embarquesState.calYear;
+        if (m < 0) {
+          m = 11;
+          y--;
+        } else if (m > 11) {
+          m = 0;
+          y++;
+        }
+        embarquesState.calMonth = m;
+        embarquesState.calYear = y;
+        renderEmbarquesCalendar();
+      }
+
+      function goEmbarquesToday() {
+        const now = new Date();
+        embarquesState.calYear = now.getFullYear();
+        embarquesState.calMonth = now.getMonth();
+        embarquesState.selectedDate = getTodayLocalIso();
+        const picker = document.getElementById('embarques-tracker-date-picker');
+        if (picker) picker.value = embarquesState.selectedDate;
+        renderEmbarquesCalendar();
+        renderEmbarquesDayTracker();
+      }
+
+      function selectEmbarquesDay(isoDate, scrollToTracker = false) {
+        embarquesState.selectedDate = isoDate;
+        const parts = String(isoDate).split('-');
+        if (parts.length === 3) {
+          embarquesState.calYear = Number(parts[0]);
+          embarquesState.calMonth = Number(parts[1]) - 1;
+        }
+        const picker = document.getElementById('embarques-tracker-date-picker');
+        if (picker) picker.value = isoDate;
+        renderEmbarquesCalendar();
+        renderEmbarquesDayTracker();
+        if (scrollToTracker) {
+          const trackerEl = document.getElementById('embarques-day-tracker-section');
+          if (trackerEl) trackerEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+
+      function onEmbarquesTrackerDateChange(val) {
+        if (!val) return;
+        selectEmbarquesDay(val, false);
+      }
+
+      function renderEmbarquesCalendar() {
+        const grid = document.getElementById('embarques-calendar-grid');
+        const monthLabel = document.getElementById('embarques-calendar-month-label');
+        if (!grid || !monthLabel) return;
+
+        const year = embarquesState.calYear;
+        const month = embarquesState.calMonth;
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+        const daysInMonth = lastDayOfMonth.getDate();
+
+        const monthName = firstDayOfMonth.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+        monthLabel.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+        // Lunes = 0 ... Domingo = 6
+        let startWeekday = firstDayOfMonth.getDay() - 1;
+        if (startWeekday < 0) startWeekday = 6;
+
+        const todayIso = getTodayLocalIso();
+        const selectedIso = embarquesState.selectedDate;
+
+        // Agrupar cargas por fecha_programada
+        const loadsByDate = {};
+        embarquesState.items.forEach(item => {
+          const f = item.fecha_programada || '';
+          if (!f) return;
+          if (!loadsByDate[f]) loadsByDate[f].push(item);
+        });
+        Object.keys(loadsByDate).forEach(f => {
+          loadsByDate[f].sort((a, b) => String(a.hora_programada || '').localeCompare(String(b.hora_programada || '')));
+        });
+
+        let html = '';
+
+        // Celdas vacías previas al día 1
+        for (let i = 0; i < startWeekday; i++) {
+          html += `<div style="min-height: 130px; background: #f8fafc; border: 1px dashed #e2e8f0; border-radius: 8px; opacity: 0.55;"></div>`;
+        }
+
+        // Días del mes
+        for (let day = 1; day <= daysInMonth; day++) {
+          const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const dayLoads = loadsByDate[iso] || [];
+          const isToday = iso === todayIso;
+          const isSelected = iso === selectedIso;
+
+          const borderColor = isSelected ? '#ea580c' : (isToday ? '#0284c7' : '#cbd5e1');
+          const borderWidth = (isSelected || isToday) ? '2px' : '1px';
+          const bgCell = isSelected ? '#fff7ed' : (isToday ? '#f0f9ff' : '#ffffff');
+
+          let loadsHtml = '';
+          dayLoads.forEach(ld => {
+            const meta = getEmbarqueStateMeta(ld.estado);
+            const hora = ld.hora_programada || '--:--';
+            const marca = ld.marca || 'Sin Marca';
+            const factura = ld.numero_factura || 'S/F';
+            loadsHtml += `
+              <div onclick="event.stopPropagation(); selectEmbarquesDay('${iso}', true);" 
+                   title="${hora} | ${marca} | Factura: ${factura} | Estado: ${meta.label}"
+                   style="padding: 5px 7px; border-radius: 6px; background: ${meta.bg}; color: ${meta.color}; border-left: 4px solid ${meta.color}; font-size: 0.74rem; line-height: 1.25; cursor: pointer; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 800;">
+                  <span>🕒 ${hora}</span>
+                  <span>${meta.icon}</span>
+                </div>
+                <div style="font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  🏷️ ${marca}
+                </div>
+                <div style="font-size: 0.7rem; font-weight: 700; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  🧾 Fact: ${factura}
+                </div>
+              </div>
+            `;
+          });
+
+          html += `
+            <div onclick="selectEmbarquesDay('${iso}', false)"
+                 style="min-height: 135px; background: ${bgCell}; border: ${borderWidth} solid ${borderColor}; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: all 0.15s ease;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                  <span style="font-weight: 800; font-size: 0.95rem; color: ${isSelected ? '#c2410c' : (isToday ? '#0369a1' : '#1e293b')};">
+                    ${day}
+                  </span>
+                  ${isToday ? '<span style="font-size: 0.65rem; font-weight: 800; background: #0284c7; color: #fff; padding: 1px 5px; border-radius: 4px;">HOY</span>' : ''}
+                  ${dayLoads.length > 0 ? `<span style="font-size: 0.68rem; font-weight: 800; background: #e2e8f0; color: #334155; padding: 1px 6px; border-radius: 999px;">${dayLoads.length}</span>` : ''}
+                </div>
+                <button type="button" onclick="event.stopPropagation(); openEmbarqueFormModal('${iso}')" title="Programar carga el ${iso}"
+                        style="border: 1px solid #cbd5e1; background: #ffffff; color: #475569; border-radius: 4px; width: 22px; height: 22px; font-size: 0.85rem; font-weight: 800; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                  +
+                </button>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 5px; flex: 1;">
+                ${loadsHtml || '<div style="margin-top: auto; font-size: 0.7rem; color: #94a3b8; text-align: center; padding: 6px 0;">Sin cargas</div>'}
+              </div>
+            </div>
+          `;
+        }
+
+        // Celdas finales para completar múltiplo de 7
+        const totalCells = startWeekday + daysInMonth;
+        const trailing = (7 - (totalCells % 7)) % 7;
+        for (let i = 0; i < trailing; i++) {
+          html += `<div style="min-height: 130px; background: #f8fafc; border: 1px dashed #e2e8f0; border-radius: 8px; opacity: 0.55;"></div>`;
+        }
+
+        grid.innerHTML = html;
+      }
+
+      function renderEmbarquesDayTracker() {
+        const listEl = document.getElementById('embarques-day-tracker-list');
+        const titleEl = document.getElementById('embarques-selected-day-title');
+        const includeActiveChk = document.getElementById('embarques-show-all-active');
+        if (!listEl) return;
+
+        const selDate = embarquesState.selectedDate || getTodayLocalIso();
+        if (titleEl) {
+          const formatted = formatSpanishDateLong(selDate);
+          titleEl.textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+        }
+
+        const includeOtherActive = includeActiveChk ? includeActiveChk.checked : false;
+
+        const filtered = embarquesState.items.filter(item => {
+          if (item.fecha_programada === selDate) return true;
+          if (includeOtherActive && item.estado !== 'EN RUTA A DESTINO FINAL') return true;
+          return false;
+        }).sort((a, b) => {
+          const dA = (a.fecha_programada || '') + ' ' + (a.hora_programada || '');
+          const dB = (b.fecha_programada || '') + ' ' + (b.hora_programada || '');
+          return dA.localeCompare(dB);
+        });
+
+        if (filtered.length === 0) {
+          listEl.innerHTML = `
+            <div style="text-align: center; padding: 2.5rem 1rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; color: var(--text-muted);">
+              <div style="font-size: 2.2rem; margin-bottom: 8px;">🚚</div>
+              <div style="font-weight: 700; font-size: 1rem; color: #334155; margin-bottom: 4px;">
+                No hay cargas programadas para el día ${selDate}
+              </div>
+              <p style="font-size: 0.85rem; margin-bottom: 14px;">
+                Los chicos pueden programar nuevas cargas o seleccionar otro día en el calendario mensual.
+              </p>
+              <button class="btn-primary" onclick="openEmbarqueFormModal('${selDate}')" style="background: #ea580c; border-color: #c2410c;">
+                ➕ Programar Carga para este Día
+              </button>
+            </div>
+          `;
+          return;
+        }
+
+        let html = '';
+        filtered.forEach(item => {
+          const meta = getEmbarqueStateMeta(item.estado);
+          const tiempos = item.tiempos_estados || {};
+          const isCargando = item.estado === 'CARGANDO';
+          const isFinished = item.estado === 'EN RUTA A DESTINO FINAL';
+          const elapsedMs = getEmbarqueElapsedCargandoMs(item);
+          const tiempoTexto = item.tiempo_carga_texto || formatDurationHuman(elapsedMs);
+
+          // Construir botonera de los 5 estados del rastreador
+          let stepsHtml = '';
+          EMBARQUE_STATES.forEach((st, idx) => {
+            const isCurrent = item.estado === st.key;
+            const recordedTime = tiempos[st.key] || '';
+            const wasVisited = Boolean(recordedTime);
+
+            const bgBtn = isCurrent ? st.bg : (wasVisited ? '#f8fafc' : '#ffffff');
+            const borderBtn = isCurrent ? `2px solid ${st.color}` : (wasVisited ? '1px solid #94a3b8' : '1px solid #cbd5e1');
+            const textColor = isCurrent ? st.color : (wasVisited ? '#0f172a' : '#64748b');
+
+            stepsHtml += `
+              <button type="button"
+                      onclick="onEmbarqueStateStepClick('${item.id}', '${st.key}')"
+                      style="flex: 1; min-width: 145px; padding: 10px 8px; border-radius: 8px; background: ${bgBtn}; border: ${borderBtn}; color: ${textColor}; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s ease; box-shadow: ${isCurrent ? '0 3px 8px rgba(0,0,0,0.08)' : 'none'};">
+                <div style="font-size: 1.15rem;">${st.icon}</div>
+                <div style="font-size: 0.75rem; font-weight: 800; text-align: center; line-height: 1.2;">
+                  ${idx + 1}. ${st.label}
+                </div>
+                <div style="font-size: 0.72rem; font-weight: 700; color: ${wasVisited ? '#0f172a' : '#94a3b8'}; background: ${wasVisited ? 'rgba(255,255,255,0.85)' : 'transparent'}; padding: 2px 6px; border-radius: 4px;">
+                  ${recordedTime ? `🕒 ${recordedTime}` : 'Sin registrar'}
+                </div>
+              </button>
+            `;
+          });
+
+          html += `
+            <div style="border: 1px solid ${meta.border}; border-left: 6px solid ${meta.color}; border-radius: 10px; background: #ffffff; padding: 1.25rem; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+              <!-- Encabezado de la carga -->
+              <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 1rem;">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                  <span style="background: ${meta.bg}; color: ${meta.color}; border: 1px solid ${meta.border}; font-weight: 800; font-size: 0.82rem; padding: 5px 12px; border-radius: 999px;">
+                    ${meta.icon} ${meta.label}
+                  </span>
+                  <span style="background: #f1f5f9; color: #0f172a; font-weight: 800; font-size: 0.95rem; padding: 5px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    🏷️ Marca: <strong style="color: #0284c7;">${item.marca || '-'}</strong>
+                  </span>
+                  <span style="background: #fff7ed; color: #9a3412; font-weight: 800; font-size: 0.95rem; padding: 5px 12px; border-radius: 6px; border: 1px solid #fed7aa;">
+                    🕒 Hora Prog.: <strong>${item.hora_programada || '--:--'}</strong>
+                  </span>
+                  <span style="background: #f0fdf4; color: #166534; font-weight: 800; font-size: 0.95rem; padding: 5px 12px; border-radius: 6px; border: 1px solid #bbf7d0;">
+                    🧾 Factura: <strong>${item.numero_factura || 'Pendiente'}</strong>
+                  </span>
+                  ${item.fecha_programada !== selDate ? `<span style="background:#fef2f2; color:#991b1b; font-size:0.78rem; font-weight:700; padding:4px 8px; border-radius:6px;">📅 Fecha: ${item.fecha_programada}</span>` : ''}
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                  <button type="button" class="btn-secondary" onclick="openEmbarqueFormModal(null, '${item.id}')" style="padding: 6px 12px; font-size: 0.8rem; font-weight: 700;">
+                    ✏️ Editar Carga
+                  </button>
+                  <button type="button" class="btn-secondary" onclick="viewEmbarqueDetailModal('${item.id}')" style="padding: 6px 12px; font-size: 0.8rem; font-weight: 700;">
+                    👁️ Ficha / Horas
+                  </button>
+                  <button type="button" class="btn-secondary" onclick="deleteEmbarqueItem('${item.id}')" style="padding: 6px 10px; font-size: 0.8rem; color: #dc2626; border-color: #fecaca;">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+
+              ${item.notas ? `<div style="margin-bottom: 10px; font-size: 0.83rem; color: #475569; background: #f8fafc; padding: 6px 10px; border-radius: 6px;">📝 <strong>Notas / Transporte:</strong> ${item.notas}</div>` : ''}
+
+              <!-- Rastreador interactivo de los 5 estados -->
+              <div style="margin-bottom: 8px; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                Haz clic en el estado actual para registrar el avance y la hora exacta:
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                ${stepsHtml}
+              </div>
+
+              <!-- Banner en vivo cuando está CARGANDO -->
+              ${isCargando ? `
+                <div style="margin-top: 12px; padding: 14px 16px; border-radius: 8px; background: linear-gradient(90deg, #fff7ed 0%, #ffedd5 100%); border: 2px solid #fb923c; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 1.8rem;">⏱️</span>
+                    <div>
+                      <div style="font-size: 0.78rem; font-weight: 800; color: #9a3412; text-transform: uppercase;">
+                        Contabilizando Tiempo de Preparación y Carga de Camión
+                      </div>
+                      <div style="font-size: 1.55rem; font-weight: 900; color: #c2410c; font-family: monospace;" data-emb-stopwatch-id="${item.id}">
+                        ${formatDurationMs(elapsedMs)}
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-primary" onclick="openEmbarqueFinishModal('${item.id}')" style="background: #16a34a; border-color: #15803d; padding: 10px 18px; font-weight: 800; font-size: 0.92rem;">
+                    📸 Terminar Carga y Subir Foto del Camión
+                  </button>
+                </div>
+              ` : ''}
+
+              <!-- Resumen cuando ya terminó (EN RUTA A DESTINO FINAL) -->
+              ${isFinished ? `
+                <div style="margin-top: 12px; padding: 12px 16px; border-radius: 8px; background: #f0fdf4; border: 1px solid #86efac; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 15px;">
+                    <div>
+                      <span style="font-size: 0.75rem; color: #166534; font-weight: 700; display: block;">⏱️ TIEMPO QUE TARDAMOS EN CARGAR</span>
+                      <strong style="font-size: 1.1rem; color: #15803d;">${tiempoTexto}</strong>
+                    </div>
+                    ${item.foto_camion_url ? `
+                      <div style="display: flex; align-items: center; gap: 10px;">
+                        <img src="${item.foto_camion_url}" alt="Foto camión" onclick="showFullPhoto('${item.foto_camion_url}')"
+                             style="width: 64px; height: 48px; object-fit: cover; border-radius: 6px; border: 2px solid #16a34a; cursor: pointer;" />
+                        <button type="button" class="btn-secondary" onclick="showFullPhoto('${item.foto_camion_url}')" style="padding: 5px 10px; font-size: 0.78rem; font-weight: 700;">
+                          🔍 Ver Foto del Camión
+                        </button>
+                      </div>
+                    ` : `
+                      <button type="button" class="btn-primary" onclick="openEmbarqueFinishModal('${item.id}')" style="background: #0284c7; border-color: #0369a1; padding: 6px 12px; font-size: 0.8rem;">
+                        📷 Subir Foto del Camión
+                      </button>
+                    `}
+                  </div>
+                  <div style="font-size: 0.78rem; color: #15803d; font-weight: 700;">
+                    ✅ Guardada en <strong>CARGAS PASADAS</strong> (Factura #${item.numero_factura || '-'})
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        });
+
+        listEl.innerHTML = html;
+      }
+
+      function openEmbarqueFormModal(defaultDate = null, editId = null) {
+        const modal = document.getElementById('embarque-form-modal');
+        const title = document.getElementById('embarque-form-modal-title');
+        const idInput = document.getElementById('emb-form-id');
+        const fechaInput = document.getElementById('emb-form-fecha');
+        const horaInput = document.getElementById('emb-form-hora');
+        const marcaSel = document.getElementById('emb-form-marca-select');
+        const marcaOtro = document.getElementById('emb-form-marca-otro');
+        const facturaInput = document.getElementById('emb-form-factura');
+        const estadoSel = document.getElementById('emb-form-estado');
+        const notasInput = document.getElementById('emb-form-notas');
+
+        if (!modal) return;
+
+        if (editId) {
+          const item = embarquesState.items.find(x => String(x.id) === String(editId));
+          if (!item) return;
+          if (title) title.innerHTML = '✏️ Editar Carga Programada';
+          idInput.value = item.id;
+          fechaInput.value = item.fecha_programada || embarquesState.selectedDate || getTodayLocalIso();
+          horaInput.value = item.hora_programada || '09:00';
+          facturaInput.value = item.numero_factura || '';
+          estadoSel.value = item.estado || 'PROGRAMADA';
+          notasInput.value = item.notas || '';
+
+          const existingOpts = Array.from(marcaSel.options).map(o => o.value);
+          if (existingOpts.includes(item.marca)) {
+            marcaSel.value = item.marca;
+            marcaOtro.style.display = 'none';
+            marcaOtro.value = '';
+          } else if (item.marca) {
+            marcaSel.value = 'OTRO';
+            marcaOtro.style.display = 'block';
+            marcaOtro.value = item.marca;
+          } else {
+            marcaSel.value = '';
+            marcaOtro.style.display = 'none';
+            marcaOtro.value = '';
+          }
+        } else {
+          if (title) title.innerHTML = '🚚 Programar Nueva Carga de Embarque';
+          idInput.value = '';
+          fechaInput.value = defaultDate || embarquesState.selectedDate || getTodayLocalIso();
+          const now = new Date();
+          horaInput.value = now.toTimeString().split(' ')[0].substring(0, 5);
+          marcaSel.value = '';
+          marcaOtro.style.display = 'none';
+          marcaOtro.value = '';
+          facturaInput.value = '';
+          estadoSel.value = 'PROGRAMADA';
+          notasInput.value = '';
+        }
+
+        modal.style.display = 'flex';
+      }
+
+      function closeEmbarqueFormModal() {
+        const modal = document.getElementById('embarque-form-modal');
+        if (modal) modal.style.display = 'none';
+      }
+
+      function toggleEmbarqueMarcaOtro() {
+        const sel = document.getElementById('emb-form-marca-select');
+        const otro = document.getElementById('emb-form-marca-otro');
+        if (!sel || !otro) return;
+        if (sel.value === 'OTRO') {
+          otro.style.display = 'block';
+          otro.focus();
+        } else {
+          otro.style.display = 'none';
+        }
+      }
+
+      async function submitEmbarqueForm(event) {
+        event.preventDefault();
+        const idVal = document.getElementById('emb-form-id').value.trim();
+        const fecha = document.getElementById('emb-form-fecha').value;
+        const hora = document.getElementById('emb-form-hora').value;
+        const marcaSel = document.getElementById('emb-form-marca-select').value;
+        const marcaOtro = document.getElementById('emb-form-marca-otro').value.trim();
+        const factura = document.getElementById('emb-form-factura').value.trim();
+        const nuevoEstado = document.getElementById('emb-form-estado').value;
+        const notas = document.getElementById('emb-form-notas').value.trim();
+
+        const marcaFinal = (marcaSel === 'OTRO') ? marcaOtro : marcaSel;
+        if (!marcaFinal) {
+          showToast('Por favor selecciona o escribe la marca.', 'warning');
+          return;
+        }
+
+        const nowTime = getNowTimeHHMMSS();
+        let item = idVal ? embarquesState.items.find(x => String(x.id) === String(idVal)) : null;
+
+        if (item) {
+          item = { ...item };
+          const prevEstado = item.estado;
+          item.fecha_programada = fecha;
+          item.hora_programada = hora;
+          item.marca = marcaFinal;
+          item.numero_factura = factura;
+          item.notas = notas;
+          item.editado_por = state.usuarioActual || 'Personal';
+
+          if (nuevoEstado !== prevEstado) {
+            applyEmbarqueStateTransition(item, nuevoEstado, nowTime);
+          }
+        } else {
+          item = {
+            id: 'emb_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            fecha_programada: fecha,
+            hora_programada: hora,
+            marca: marcaFinal,
+            numero_factura: factura,
+            notas: notas,
+            estado: 'PROGRAMADA',
+            tiempos_estados: {},
+            historial_estados: [],
+            cargando_inicio_ts: null,
+            tiempo_carga_ms: 0,
+            tiempo_carga_texto: '',
+            foto_camion_url: '',
+            registrado_por: state.usuarioActual || 'Personal',
+            created_at: Date.now()
+          };
+          if (nuevoEstado && nuevoEstado !== 'PROGRAMADA') {
+            applyEmbarqueStateTransition(item, nuevoEstado, nowTime);
+          }
+        }
+
+        embarquesState.selectedDate = fecha;
+        const parts = String(fecha).split('-');
+        if (parts.length === 3) {
+          embarquesState.calYear = Number(parts[0]);
+          embarquesState.calMonth = Number(parts[1]) - 1;
+        }
+        const picker = document.getElementById('embarques-tracker-date-picker');
+        if (picker) picker.value = fecha;
+
+        closeEmbarqueFormModal();
+        await persistEmbarqueItem(item);
+        showToast('✅ Carga guardada en el calendario de embarques.', 'success');
+      }
+
+      function applyEmbarqueStateTransition(item, targetState, timeStr) {
+        if (!item.tiempos_estados) item.tiempos_estados = {};
+        if (!Array.isArray(item.historial_estados)) item.historial_estados = [];
+
+        const prevState = item.estado;
+
+        // Si estaba en CARGANDO y sale de CARGANDO, acumular el tiempo transcurrido
+        if (prevState === 'CARGANDO' && targetState !== 'CARGANDO' && item.cargando_inicio_ts) {
+          const delta = Math.max(0, Date.now() - Number(item.cargando_inicio_ts));
+          item.tiempo_carga_ms = Number(item.tiempo_carga_ms || 0) + delta;
+          item.cargando_inicio_ts = null;
+          item.tiempo_carga_texto = formatDurationHuman(item.tiempo_carga_ms);
+        }
+
+        // Si entra a CARGANDO, iniciar el cronómetro en vivo
+        if (targetState === 'CARGANDO' && prevState !== 'CARGANDO') {
+          item.cargando_inicio_ts = Date.now();
+          if (!item.cargando_hora_inicio) {
+            item.cargando_hora_inicio = timeStr;
+          }
+        }
+
+        if (targetState === 'EN RUTA A DESTINO FINAL') {
+          item.cargando_hora_fin = timeStr;
+          if (!item.tiempo_carga_texto && item.tiempo_carga_ms > 0) {
+            item.tiempo_carga_texto = formatDurationHuman(item.tiempo_carga_ms);
+          }
+        }
+
+        item.estado = targetState;
+        if (targetState !== 'PROGRAMADA') {
+          item.tiempos_estados[targetState] = timeStr;
+        }
+        item.historial_estados.push({
+          estado: targetState,
+          hora: timeStr,
+          fecha_iso: getTodayLocalIso(),
+          usuario: state.usuarioActual || 'Personal'
+        });
+      }
+
+      async function onEmbarqueStateStepClick(id, targetState) {
+        const item = embarquesState.items.find(x => String(x.id) === String(id));
+        if (!item) return;
+
+        // Si pasan a EN RUTA A DESTINO FINAL, abrir el modal para finalizar carga y subir la foto del camión
+        if (targetState === 'EN RUTA A DESTINO FINAL') {
+          openEmbarqueFinishModal(id);
+          return;
+        }
+
+        const copy = { ...item };
+        const nowTime = getNowTimeHHMMSS();
+        applyEmbarqueStateTransition(copy, targetState, nowTime);
+        await persistEmbarqueItem(copy);
+
+        if (targetState === 'CARGANDO') {
+          showToast('⏱️ Estado CARGANDO activado: Cronómetro de preparación de camión en marcha.', 'info');
+        } else {
+          showToast(`📍 Estado actualizado a: ${targetState} (${nowTime})`, 'success');
+        }
+      }
+
+      function openEmbarqueFinishModal(id) {
+        const item = embarquesState.items.find(x => String(x.id) === String(id));
+        if (!item) return;
+
+        const modal = document.getElementById('embarque-finish-modal');
+        const idInput = document.getElementById('emb-finish-id');
+        const summaryBox = document.getElementById('emb-finish-summary-box');
+        const tiempoInput = document.getElementById('emb-finish-tiempo-texto');
+        const previewWrap = document.getElementById('emb-finish-photo-preview-wrap');
+        const previewImg = document.getElementById('emb-finish-photo-preview');
+
+        idInput.value = item.id;
+        const elapsedMs = getEmbarqueElapsedCargandoMs(item);
+        const calcTexto = elapsedMs > 0 ? formatDurationHuman(elapsedMs) : (item.tiempo_carga_texto || '00m 00s');
+        tiempoInput.value = calcTexto;
+
+        embarquesState.finishTempPhotoBase64 = item.foto_camion_url || '';
+        if (embarquesState.finishTempPhotoBase64) {
+          previewImg.src = embarquesState.finishTempPhotoBase64;
+          previewWrap.style.display = 'block';
+        } else {
+          previewImg.src = '';
+          previewWrap.style.display = 'none';
+        }
+
+        summaryBox.innerHTML = `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div><span style="color:#64748b;">🧾 No. Factura:</span> <strong>${item.numero_factura || '-'}</strong></div>
+            <div><span style="color:#64748b;">🏷️ Marca:</span> <strong style="color:#0284c7;">${item.marca || '-'}</strong></div>
+            <div><span style="color:#64748b;">📅 Fecha Prog.:</span> <strong>${item.fecha_programada || '-'}</strong></div>
+            <div><span style="color:#64748b;">🕒 Hora Prog.:</span> <strong>${item.hora_programada || '-'}</strong></div>
+          </div>
+        `;
+
+        if (modal) modal.style.display = 'flex';
+      }
+
+      function closeEmbarqueFinishModal() {
+        const modal = document.getElementById('embarque-finish-modal');
+        if (modal) modal.style.display = 'none';
+      }
+
+      function handleEmbarqueFinishPhoto(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const maxDim = 900;
+            let w = img.width;
+            let h = img.height;
+            if (w > h && w > maxDim) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else if (h > maxDim) {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            const compressed = canvas.toDataURL('image/jpeg', 0.72);
+            embarquesState.finishTempPhotoBase64 = compressed;
+
+            const previewWrap = document.getElementById('emb-finish-photo-preview-wrap');
+            const previewImg = document.getElementById('emb-finish-photo-preview');
+            if (previewImg) previewImg.src = compressed;
+            if (previewWrap) previewWrap.style.display = 'block';
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      async function confirmEmbarqueFinish() {
+        const id = document.getElementById('emb-finish-id').value;
+        const item = embarquesState.items.find(x => String(x.id) === String(id));
+        if (!item) return;
+
+        if (!embarquesState.finishTempPhotoBase64) {
+          showToast('📸 Por favor sube o toma la fotografía de cómo se va el camión para finalizar la carga.', 'warning');
+          return;
+        }
+
+        const copy = { ...item };
+        const nowTime = getNowTimeHHMMSS();
+        const elapsedMs = getEmbarqueElapsedCargandoMs(copy);
+        if (elapsedMs > 0) {
+          copy.tiempo_carga_ms = elapsedMs;
+        }
+        applyEmbarqueStateTransition(copy, 'EN RUTA A DESTINO FINAL', nowTime);
+
+        const manualTexto = document.getElementById('emb-finish-tiempo-texto').value.trim();
+        if (manualTexto) {
+          copy.tiempo_carga_texto = manualTexto;
+        } else if (!copy.tiempo_carga_texto) {
+          copy.tiempo_carga_texto = formatDurationHuman(copy.tiempo_carga_ms || 0);
+        }
+
+        copy.foto_camion_url = embarquesState.finishTempPhotoBase64;
+        copy.fecha_finalizado = getTodayLocalIso() + ' ' + nowTime;
+
+        closeEmbarqueFinishModal();
+        await persistEmbarqueItem(copy);
+        showToast(`✅ Carga finalizada (Factura #${copy.numero_factura}) y archivada en CARGAS PASADAS.`, 'success');
+      }
+
+      function clearEmbarquesPasadasFilters() {
+        const sFac = document.getElementById('emb-pasadas-search-factura');
+        const sMar = document.getElementById('emb-pasadas-filter-marca');
+        const sFec = document.getElementById('emb-pasadas-filter-fecha');
+        const sInc = document.getElementById('emb-pasadas-incluir-en-curso');
+        if (sFac) sFac.value = '';
+        if (sMar) sMar.value = '';
+        if (sFec) sFec.value = '';
+        if (sInc) sInc.checked = false;
+        renderEmbarquesPasadas();
+      }
+
+      function renderEmbarquesPasadas() {
+        const listEl = document.getElementById('embarques-pasadas-list');
+        if (!listEl) return;
+
+        // Actualizar selector de marcas dinámicamente
+        const marcaSelect = document.getElementById('emb-pasadas-filter-marca');
+        if (marcaSelect) {
+          const currentMarca = marcaSelect.value;
+          const marcasSet = new Set();
+          embarquesState.items.forEach(it => {
+            if (it.marca) marcasSet.add(it.marca);
+          });
+          const sortedMarcas = Array.from(marcasSet).sort();
+          marcaSelect.innerHTML = '<option value="">Todas las Marcas</option>' +
+            sortedMarcas.map(m => `<option value="${m}">${m}</option>`).join('');
+          marcaSelect.value = currentMarca;
+        }
+
+        const qFactura = (document.getElementById('emb-pasadas-search-factura')?.value || '').trim().toLowerCase();
+        const fMarca = (document.getElementById('emb-pasadas-filter-marca')?.value || '').trim().toLowerCase();
+        const fFecha = (document.getElementById('emb-pasadas-filter-fecha')?.value || '').trim();
+        const includeInProgress = Boolean(document.getElementById('emb-pasadas-incluir-en-curso')?.checked);
+
+        // KPIs globales de cargas pasadas
+        const allFinished = embarquesState.items.filter(it => it.estado === 'EN RUTA A DESTINO FINAL');
+        const kpiTotal = document.getElementById('emb-kpi-total-pasadas');
+        const kpiProm = document.getElementById('emb-kpi-promedio-tiempo');
+        const kpiFoto = document.getElementById('emb-kpi-con-foto');
+
+        if (kpiTotal) kpiTotal.textContent = String(allFinished.length);
+        if (kpiFoto) kpiFoto.textContent = String(allFinished.filter(x => Boolean(x.foto_camion_url)).length);
+        if (kpiProm) {
+          const withDuration = allFinished.filter(x => Number(x.tiempo_carga_ms || 0) > 0);
+          if (withDuration.length > 0) {
+            const avgMs = withDuration.reduce((acc, x) => acc + Number(x.tiempo_carga_ms || 0), 0) / withDuration.length;
+            kpiProm.textContent = formatDurationHuman(avgMs);
+          } else {
+            kpiProm.textContent = '00m 00s';
+          }
+        }
+
+        const filtered = embarquesState.items.filter(item => {
+          const isPasada = item.estado === 'EN RUTA A DESTINO FINAL';
+          // Si el usuario escribe un número de factura, buscar también aunque siga en curso
+          if (!isPasada && !includeInProgress && !qFactura) return false;
+
+          if (qFactura) {
+            const fac = String(item.numero_factura || '').toLowerCase();
+            if (!fac.includes(qFactura)) return false;
+          }
+          if (fMarca) {
+            if (String(item.marca || '').toLowerCase() !== fMarca) return false;
+          }
+          if (fFecha) {
+            if (item.fecha_programada !== fFecha) return false;
+          }
+          return true;
+        }).sort((a, b) => {
+          const dA = (a.fecha_programada || '') + ' ' + (a.hora_programada || '');
+          const dB = (b.fecha_programada || '') + ' ' + (b.hora_programada || '');
+          return dB.localeCompare(dA);
+        });
+
+        if (filtered.length === 0) {
+          listEl.innerHTML = `
+            <div style="text-align: center; padding: 2.5rem 1rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; color: var(--text-muted);">
+              <div style="font-size: 2.2rem; margin-bottom: 8px;">📦</div>
+              <div style="font-weight: 700; font-size: 1rem; color: #334155; margin-bottom: 4px;">
+                No se encontraron cargas pasadas con esos criterios
+              </div>
+              <p style="font-size: 0.85rem;">
+                Cuando una carga finalice el estado <strong>CARGANDO</strong> y se suba la foto del camión, aparecerá aquí con su número de factura, tiempos por hora y fotografía.
+              </p>
+            </div>
+          `;
+          return;
+        }
+
+        let html = '';
+        filtered.forEach(item => {
+          const meta = getEmbarqueStateMeta(item.estado);
+          const tiempos = item.tiempos_estados || {};
+          const elapsedMs = getEmbarqueElapsedCargandoMs(item);
+          const tiempoCargaStr = item.tiempo_carga_texto || (elapsedMs > 0 ? formatDurationHuman(elapsedMs) : 'Sin registro');
+
+          let timelineBadges = '';
+          EMBARQUE_STATES.forEach(st => {
+            const tVal = tiempos[st.key] || '—';
+            const reached = Boolean(tiempos[st.key]);
+            timelineBadges += `
+              <div style="padding: 8px 10px; border-radius: 8px; background: ${reached ? st.bg : '#f8fafc'}; border: 1px solid ${reached ? st.border : '#e2e8f0'}; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 0.7rem; font-weight: 800; color: ${reached ? st.color : '#94a3b8'};">
+                  ${st.icon} ${st.shortLabel}
+                </span>
+                <strong style="font-size: 0.88rem; color: ${reached ? '#0f172a' : '#94a3b8'};">
+                  🕒 ${tVal}
+                </strong>
+              </div>
+            `;
+          });
+
+          html += `
+            <div class="card" style="padding: 1.25rem; border-left: 6px solid ${meta.color};">
+              <div style="display: grid; grid-template-columns: 1fr auto; gap: 1.25rem; align-items: start;">
+                <div>
+                  <!-- Cabecera con Factura, Marca, Fecha y Tiempo de Carga -->
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px;">
+                    <span style="background: #0f172a; color: #ffffff; font-weight: 900; font-size: 1rem; padding: 6px 14px; border-radius: 6px;">
+                      🧾 Factura #${item.numero_factura || 'S/F'}
+                    </span>
+                    <span style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 0.95rem; padding: 6px 12px; border-radius: 6px; border: 1px solid #bae6fd;">
+                      🏷️ ${item.marca || '-'}
+                    </span>
+                    <span style="background: #f1f5f9; color: #334155; font-weight: 700; font-size: 0.88rem; padding: 6px 12px; border-radius: 6px;">
+                      📅 ${item.fecha_programada || '-'} &bull; 🕒 Prog: ${item.hora_programada || '--:--'}
+                    </span>
+                    <span style="background: #ffedd5; color: #c2410c; font-weight: 800; font-size: 0.92rem; padding: 6px 12px; border-radius: 6px; border: 1px solid #fdba74;">
+                      ⏱️ Tiempo de Carga: <strong>${tiempoCargaStr}</strong>
+                    </span>
+                    <span style="background: ${meta.bg}; color: ${meta.color}; font-weight: 800; font-size: 0.78rem; padding: 4px 10px; border-radius: 999px;">
+                      ${meta.icon} ${meta.label}
+                    </span>
+                  </div>
+
+                  <!-- Avance por Horas de cada Estado -->
+                  <div style="font-size: 0.76rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">
+                    🕒 Registro de Avance por Horas:
+                  </div>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 8px; margin-bottom: 10px;">
+                    ${timelineBadges}
+                  </div>
+
+                  ${item.notas ? `<div style="font-size: 0.83rem; color: #475569; margin-top: 6px;">📝 <strong>Notas:</strong> ${item.notas}</div>` : ''}
+
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
+                    <button type="button" class="btn-secondary" onclick="viewEmbarqueDetailModal('${item.id}')" style="padding: 6px 12px; font-size: 0.8rem; font-weight: 700;">
+                      👁️ Ver Ficha Completa
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="openEmbarqueFormModal(null, '${item.id}')" style="padding: 6px 12px; font-size: 0.8rem; font-weight: 700;">
+                      ✏️ Editar Datos
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="openEmbarqueFinishModal('${item.id}')" style="padding: 6px 12px; font-size: 0.8rem; font-weight: 700; color: #0284c7;">
+                      📷 ${item.foto_camion_url ? 'Cambiar Foto / Tiempo' : 'Subir Foto del Camión'}
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Fotografía de referencia de cómo se fue el camión -->
+                <div style="min-width: 190px; max-width: 220px; text-align: center;">
+                  <div style="font-size: 0.72rem; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 4px;">
+                    📸 Foto de Salida del Camión
+                  </div>
+                  ${item.foto_camion_url ? `
+                    <div style="border: 2px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #f8fafc; cursor: pointer;" onclick="showFullPhoto('${item.foto_camion_url}')">
+                      <img src="${item.foto_camion_url}" alt="Camión Factura ${item.numero_factura}" style="width: 100%; height: 135px; object-fit: cover; display: block;" />
+                      <div style="padding: 5px; font-size: 0.75rem; font-weight: 700; color: #0284c7; background: #ffffff;">
+                        🔍 Clic para ampliar
+                      </div>
+                    </div>
+                  ` : `
+                    <div onclick="openEmbarqueFinishModal('${item.id}')" style="height: 135px; border: 2px dashed #cbd5e1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.78rem; padding: 10px; cursor: pointer; background: #f8fafc;">
+                      <span style="font-size: 1.6rem; margin-bottom: 4px;">📷</span>
+                      <span>Sin foto adjunta</span>
+                      <span style="color: #0284c7; font-weight: 700; margin-top: 4px;">+ Subir foto</span>
+                    </div>
+                  `}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        listEl.innerHTML = html;
+      }
+
+      function viewEmbarqueDetailModal(id) {
+        const item = embarquesState.items.find(x => String(x.id) === String(id));
+        if (!item) return;
+
+        const modal = document.getElementById('embarque-detail-modal');
+        const body = document.getElementById('embarque-detail-modal-body');
+        if (!modal || !body) return;
+
+        const meta = getEmbarqueStateMeta(item.estado);
+        const tiempos = item.tiempos_estados || {};
+        const elapsedMs = getEmbarqueElapsedCargandoMs(item);
+        const tiempoCargaStr = item.tiempo_carga_texto || (elapsedMs > 0 ? formatDurationHuman(elapsedMs) : 'Sin contabilizar');
+
+        let rowsHtml = '';
+        EMBARQUE_STATES.forEach((st, idx) => {
+          const hora = tiempos[st.key] || 'No registrado';
+          const reached = Boolean(tiempos[st.key]);
+          rowsHtml += `
+            <tr style="border-bottom: 1px solid #e2e8f0; background: ${reached ? '#ffffff' : '#f8fafc'};">
+              <td style="padding: 10px 12px; font-weight: 800; color: ${reached ? st.color : '#94a3b8'};">
+                ${idx + 1}. ${st.icon} ${st.label}
+              </td>
+              <td style="padding: 10px 12px; font-weight: 800; color: ${reached ? '#0f172a' : '#94a3b8'};">
+                ${reached ? `🕒 ${hora}` : '—'}
+              </td>
+            </tr>
+          `;
+        });
+
+        body.innerHTML = `
+          <div style="padding: 6px 0;">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 15px;">
+              <div>
+                <span style="font-size: 0.78rem; font-weight: 800; color: #ea580c; text-transform: uppercase;">Expediente de Embarque</span>
+                <h2 style="margin: 2px 0 0 0; font-size: 1.45rem; color: #0f172a;">
+                  🧾 Factura #${item.numero_factura || 'S/F'} — ${item.marca || '-'}
+                </h2>
+              </div>
+              <span style="background: ${meta.bg}; color: ${meta.color}; border: 1px solid ${meta.border}; font-weight: 800; font-size: 0.85rem; padding: 6px 14px; border-radius: 999px;">
+                ${meta.icon} ${meta.label}
+              </span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 16px;">
+              <div>
+                <span style="font-size: 0.75rem; color: #64748b; display: block;">🏷️ Marca</span>
+                <strong style="font-size: 1rem; color: #0284c7;">${item.marca || '-'}</strong>
+              </div>
+              <div>
+                <span style="font-size: 0.75rem; color: #64748b; display: block;">🧾 Número de Factura</span>
+                <strong style="font-size: 1rem;">${item.numero_factura || '-'}</strong>
+              </div>
+              <div>
+                <span style="font-size: 0.75rem; color: #64748b; display: block;">📅 Fecha y Hora Programada</span>
+                <strong style="font-size: 1rem;">${item.fecha_programada || '-'} a las ${item.hora_programada || '--:--'}</strong>
+              </div>
+              <div>
+                <span style="font-size: 0.75rem; color: #c2410c; font-weight: 700; display: block;">⏱️ Tiempo Total de Carga</span>
+                <strong style="font-size: 1.05rem; color: #c2410c;">${tiempoCargaStr}</strong>
+              </div>
+            </div>
+
+            ${item.notas ? `<div style="margin-bottom: 16px; padding: 10px 12px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; font-size: 0.88rem;">📝 <strong>Notas / Transporte:</strong> ${item.notas}</div>` : ''}
+
+            <h4 style="margin: 0 0 8px 0; font-size: 0.95rem; color: #0f172a;">🕒 Avance por Horas en cada Estado</h4>
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; margin-bottom: 18px; font-size: 0.9rem;">
+              <thead>
+                <tr style="background: #f1f5f9; text-align: left;">
+                  <th style="padding: 10px 12px; border-bottom: 1px solid #cbd5e1;">Estado del Embarque</th>
+                  <th style="padding: 10px 12px; border-bottom: 1px solid #cbd5e1;">Hora Registrada</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+
+            <h4 style="margin: 0 0 8px 0; font-size: 0.95rem; color: #0f172a;">📸 Fotografía de Referencia del Camión</h4>
+            ${item.foto_camion_url ? `
+              <div style="text-align: center; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                <img src="${item.foto_camion_url}" alt="Foto de referencia del camión" onclick="showFullPhoto('${item.foto_camion_url}')"
+                     style="max-width: 100%; max-height: 380px; border-radius: 8px; cursor: pointer; object-fit: contain;" />
+              </div>
+            ` : `
+              <div style="text-align: center; padding: 20px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; color: #64748b;">
+                Aún no se ha subido la fotografía de salida del camión.
+              </div>
+            `}
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+              <button type="button" class="btn-secondary" onclick="document.getElementById('embarque-detail-modal').style.display='none'; openEmbarqueFormModal(null, '${item.id}');">
+                ✏️ Editar Carga
+              </button>
+              <button type="button" class="btn-primary" onclick="document.getElementById('embarque-detail-modal').style.display='none'">
+                Cerrar
+              </button>
+            </div>
+          </div>
+        `;
+
+        modal.style.display = 'flex';
       }
     </script>
 </body>

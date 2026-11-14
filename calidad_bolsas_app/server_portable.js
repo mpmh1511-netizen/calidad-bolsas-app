@@ -39,12 +39,14 @@ async function supabaseRequest(endpoint, method = 'GET', body = null) {
 function readDb() {
   try {
     if (!fs.existsSync(DB_PATH)) {
-      return { bobinas: [], inspecciones: [], produccion_personal: [], tarimas: [] };
+      return { bobinas: [], inspecciones: [], produccion_personal: [], tarimas: [], embarques: [] };
     }
     const data = fs.readFileSync(DB_PATH, 'utf-8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (!Array.isArray(parsed.embarques)) parsed.embarques = [];
+    return parsed;
   } catch (e) {
-    return { bobinas: [], inspecciones: [], produccion_personal: [], tarimas: [] };
+    return { bobinas: [], inspecciones: [], produccion_personal: [], tarimas: [], embarques: [] };
   }
 }
 
@@ -593,7 +595,7 @@ const server = http.createServer(async (req, res) => {
           try { return JSON.parse(item.tipo_bolsa); } catch (_) {}
         }
         return item;
-      });
+      }).filter(item => item && item._record_type !== 'embarque' && item.maquina !== '__EMBARQUE__');
       if (role === 'cliente' || role === 'cliente_walmart') {
         // Para filtrar tarimas (que no tienen marca directamente), cruzamos con bobinas e inspecciones
         let bobinasList = await supabaseRequest('bobinas?select=*&order=id.desc&limit=1000');
@@ -695,6 +697,73 @@ const server = http.createServer(async (req, res) => {
         await supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'DELETE');
         const db = readDb();
         db.tarimas = db.tarimas.filter(t => String(t.id) !== String(id));
+        writeDb(db);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } else {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Falta ID' }));
+      }
+    }
+    return;
+  }
+
+  // --- API EMBARQUES ---
+  if (pathname === '/api/embarques') {
+    if (method === 'GET') {
+      let list = await supabaseRequest('bolsas?select=*&maquina=eq.__EMBARQUE__&order=id.desc&limit=800');
+      if (!list) {
+        const db = readDb();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(db.embarques || []));
+        return;
+      }
+      const mapped = list.map(item => {
+        if (item.datos) return item.datos;
+        if (item.tipo_bolsa && typeof item.tipo_bolsa === 'string' && item.tipo_bolsa.startsWith('{')) {
+          try { return JSON.parse(item.tipo_bolsa); } catch (_) {}
+        }
+        return item;
+      }).filter(Boolean);
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(mapped));
+    } else if (method === 'POST') {
+      getBody(req, async (newItem) => {
+        const id = String(newItem.id || ('emb_' + Date.now()));
+        const payload = { ...newItem, id, _record_type: 'embarque', maquina: '__EMBARQUE__' };
+        const itemToSave = {
+          id,
+          maquina: '__EMBARQUE__',
+          tipo_bolsa: JSON.stringify(payload),
+          cantidad: String(payload.numero_factura || '1'),
+          operador: payload.registrado_por || payload.usuario || '',
+          fecha: payload.fecha_programada || new Date().toISOString().split('T')[0]
+        };
+        const existing = await supabaseRequest(`bolsas?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
+        if (existing && existing.length > 0) {
+          const patchData = { ...itemToSave };
+          delete patchData.id;
+          await supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'PATCH', patchData);
+        } else {
+          await supabaseRequest('bolsas', 'POST', itemToSave);
+        }
+
+        const db = readDb();
+        const idx = db.embarques.findIndex(e => String(e.id) === id);
+        if (idx >= 0) db.embarques[idx] = payload;
+        else db.embarques.unshift(payload);
+        writeDb(db);
+
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(payload));
+      });
+    } else if (method === 'DELETE') {
+      const id = parsedUrl.searchParams.get('id');
+      if (id) {
+        await supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'DELETE');
+        const db = readDb();
+        db.embarques = (db.embarques || []).filter(e => String(e.id) !== String(id));
         writeDb(db);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
