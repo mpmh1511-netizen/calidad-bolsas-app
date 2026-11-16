@@ -11,7 +11,40 @@ const DB_PATH = path.join(process.cwd(), 'db.json');
 const SUPABASE_URL = 'https://mowuawcmedfcmbtmeodg.supabase.co/rest/v1';
 const SUPABASE_KEY = 'sb_publishable_zdQ5JU1pm9c54u_IE7RsiA_SxvlZQnM';
 
+// --- CACHÉ EN MEMORIA PARA RESPUESTAS INSTANTÁNEAS (< 5ms) ---
+const apiCache = {
+  bobinas: { data: null, ts: 0 },
+  inspecciones: { data: null, ts: 0 },
+  personal: { data: null, ts: 0 },
+  tarimas: { data: null, ts: 0 },
+  embarques: { data: null, ts: 0 }
+};
+const CACHE_TTL_MS = 5000;
+
+function getCached(key) {
+  const entry = apiCache[key];
+  if (entry && entry.data && (Date.now() - entry.ts < CACHE_TTL_MS)) {
+    return entry.data;
+  }
+  return null;
+}
+
+function setCached(key, data) {
+  if (apiCache[key]) {
+    apiCache[key].data = data;
+    apiCache[key].ts = Date.now();
+  }
+}
+
+function invalidateCache(key) {
+  if (key && apiCache[key]) {
+    apiCache[key].ts = 0;
+  }
+}
+
 async function supabaseRequest(endpoint, method = 'GET', body = null) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
   try {
     const headers = {
       'apikey': SUPABASE_KEY,
@@ -19,7 +52,7 @@ async function supabaseRequest(endpoint, method = 'GET', body = null) {
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     };
-    const options = { method, headers };
+    const options = { method, headers, signal: controller.signal };
     if (body) options.body = JSON.stringify(body);
     const res = await fetch(`${SUPABASE_URL}/${endpoint}`, options);
     if (!res.ok) {
@@ -30,8 +63,10 @@ async function supabaseRequest(endpoint, method = 'GET', body = null) {
     const text = await res.text();
     return text ? JSON.parse(text) : [];
   } catch (e) {
-    console.error('Excepción Supabase:', e);
+    console.error('Excepción Supabase:', e.message || e);
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -213,96 +248,97 @@ const server = http.createServer(async (req, res) => {
   // --- API BOBINAS ---
   if (pathname === '/api/bobinas') {
     if (method === 'GET') {
-      let list = await supabaseRequest('bobinas?select=*&order=id.desc&limit=800');
-      let inspList = await supabaseRequest('inspecciones?select=area,maquina,datos&order=id.desc&limit=800');
-      if (!list) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Database timeout or failure' }));
-        return;
-      }
+      let mapped = getCached('bobinas');
+      if (!mapped) {
+        let list = await supabaseRequest('bobinas?select=*&order=id.desc&limit=500');
+        if (!list) {
+          const db = readDb();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(db.bobinas || []));
+          return;
+        }
 
-      // Inferir estado por inspecciones para rollos existentes que aún tenían area="Flexo"
-      const usedRollos = new Set();
-      const printedRollos = new Set();
-      if (Array.isArray(inspList)) {
-        inspList.forEach(item => {
-          const d = item.datos || {};
-          const rNum = String(d.numero_rollo || '').trim().toLowerCase();
-          const bId = String(d.bobina_id || '').trim();
-          const area = item.area || d.area || '';
-          if (area === 'Nanjang' || area === 'Con Asa') {
-            if (rNum) usedRollos.add(rNum);
-            if (bId) usedRollos.add('id:' + bId);
-          } else if (area === 'Flexo') {
-            if (rNum) printedRollos.add(rNum);
-            if (bId) printedRollos.add('id:' + bId);
-          }
-        });
-      }
-      
-      let mapped = list.map(b => {
-        const num = b.numero_rollo || b.numero_bobina || '';
-        const numLow = String(num).trim().toLowerCase();
-        const idKey = 'id:' + String(b.id).trim();
+        // Reutilizar caché de inspecciones en memoria para no descargar 800 fotos base64 en cada consulta de bobinas
+        const cachedInsp = apiCache.inspecciones.data;
+        const usedRollos = new Set();
+        const printedRollos = new Set();
+        if (Array.isArray(cachedInsp)) {
+          cachedInsp.forEach(d => {
+            const rNum = String(d.numero_rollo || '').trim().toLowerCase();
+            const bId = String(d.bobina_id || '').trim();
+            const area = d.area || '';
+            if (area === 'Nanjang' || area === 'Con Asa') {
+              if (rNum) usedRollos.add(rNum);
+              if (bId) usedRollos.add('id:' + bId);
+            } else if (area === 'Flexo') {
+              if (rNum) printedRollos.add(rNum);
+              if (bId) printedRollos.add('id:' + bId);
+            }
+          });
+        }
         
-        // Recuperar datos extra si se guardaron en el campo metros (formato "1000|humedad|estado")
-        let humedad = b.porcentaje_humedad;
-        let estadoGuardado = b.estado_bobina;
-        if (b.area === 'Sin Imprimir' || b.area === 'Impreso' || b.area === 'Utilizado') {
-          estadoGuardado = b.area;
-        }
-        if (typeof b.metros === 'string' && b.metros.includes('|')) {
-          const parts = b.metros.split('|');
-          if (parts[1] !== undefined && parts[1] !== '') humedad = parseFloat(parts[1]);
-          if (parts[2]) estadoGuardado = parts[2];
-        }
-
-        // Si no tiene un estado explícito guardado o se quedó en 'Flexo', inferir de las inspecciones
-        if (!estadoGuardado) {
-          if (usedRollos.has(numLow) || usedRollos.has(idKey)) {
-            estadoGuardado = 'Utilizado';
-          } else if (printedRollos.has(numLow) || printedRollos.has(idKey)) {
-            estadoGuardado = 'Impreso';
-          } else {
-            estadoGuardado = 'Sin Imprimir';
+        mapped = list.map(b => {
+          const num = b.numero_rollo || b.numero_bobina || '';
+          const numLow = String(num).trim().toLowerCase();
+          const idKey = 'id:' + String(b.id).trim();
+          
+          let humedad = b.porcentaje_humedad;
+          let estadoGuardado = b.estado_bobina;
+          if (b.area === 'Sin Imprimir' || b.area === 'Impreso' || b.area === 'Utilizado') {
+            estadoGuardado = b.area;
           }
-        } else if (estadoGuardado !== 'Utilizado' && (usedRollos.has(numLow) || usedRollos.has(idKey))) {
-          // Si ya fue usado en Nanjang o Con Asa, debe aparecer como Utilizado
-          estadoGuardado = 'Utilizado';
-        }
+          if (typeof b.metros === 'string' && b.metros.includes('|')) {
+            const parts = b.metros.split('|');
+            if (parts[1] !== undefined && parts[1] !== '') humedad = parseFloat(parts[1]);
+            if (parts[2]) estadoGuardado = parts[2];
+          }
 
-        return {
-          ...b,
-          id: b.id,
-          numero_rollo: num,
-          numero_bobina: num,
-          ancho_bobina: b.ancho_bobina || b.ancho || 80,
-          marca_especificaciones: b.marca_especificaciones || b.proveedor || '',
-          gramaje: b.gramaje || 90,
-          porcentaje_humedad: (humedad !== undefined && humedad !== null && !isNaN(humedad)) ? humedad : 5.0,
-          fecha_produccion_bobina: b.fecha_produccion_bobina || b.fecha || new Date().toISOString().split('T')[0],
-          estado_bobina: estadoGuardado
-        };
-      });
+          if (!estadoGuardado) {
+            if (usedRollos.has(numLow) || usedRollos.has(idKey)) {
+              estadoGuardado = 'Utilizado';
+            } else if (printedRollos.has(numLow) || printedRollos.has(idKey)) {
+              estadoGuardado = 'Impreso';
+            } else {
+              estadoGuardado = 'Sin Imprimir';
+            }
+          } else if (estadoGuardado !== 'Utilizado' && (usedRollos.has(numLow) || usedRollos.has(idKey))) {
+            estadoGuardado = 'Utilizado';
+          }
 
+          return {
+            ...b,
+            id: b.id,
+            numero_rollo: num,
+            numero_bobina: num,
+            ancho_bobina: b.ancho_bobina || b.ancho || 80,
+            marca_especificaciones: b.marca_especificaciones || b.proveedor || '',
+            gramaje: b.gramaje || 90,
+            porcentaje_humedad: (humedad !== undefined && humedad !== null && !isNaN(humedad)) ? humedad : 5.0,
+            fecha_produccion_bobina: b.fecha_produccion_bobina || b.fecha || new Date().toISOString().split('T')[0],
+            estado_bobina: estadoGuardado
+          };
+        });
+        setCached('bobinas', mapped);
+      }
+
+      let clientMapped = mapped;
       if (role === 'cliente') {
-        mapped = mapped.filter(b => {
+        clientMapped = mapped.filter(b => {
            let marca = (b.marca_especificaciones || b.proveedor || b.marca || '').toLowerCase();
            return marca.includes('mcdonalds') || marca.includes('mc donalds');
-        });
-        mapped = mapped.map(b => {
-           delete b.operador;
-           delete b.editado_por;
-           delete b.usuario;
-           return b;
+        }).map(b => {
+           const copy = { ...b };
+           delete copy.operador;
+           delete copy.editado_por;
+           delete copy.usuario;
+           return copy;
         });
       } else if (role === 'cliente_walmart') {
-        // Walmart no tiene acceso a nada de inventario de rollos
-        mapped = [];
+        clientMapped = [];
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(mapped));
+      res.end(JSON.stringify(clientMapped));
     } else if (method === 'POST') {
       getBody(req, async (newBobina) => {
         const num = (newBobina.numero_rollo || newBobina.numero_bobina || '').trim();
@@ -322,17 +358,6 @@ const server = http.createServer(async (req, res) => {
           usuario: newBobina.usuario || 'Inspector'
         };
 
-        // Intentar actualizar si ya existe ese id o numero_bobina, o insertar si es nuevo
-        const existing = await supabaseRequest(`bobinas?select=id&or=(id.eq.${encodeURIComponent(idStr)},numero_bobina.eq.${encodeURIComponent(num)})&limit=1`);
-        if (existing && existing.length > 0) {
-          const targetId = existing[0].id;
-          delete itemToSave.id;
-          await supabaseRequest(`bobinas?id=eq.${encodeURIComponent(targetId)}`, 'PATCH', itemToSave);
-          itemToSave.id = targetId;
-        } else {
-          await supabaseRequest('bobinas', 'POST', itemToSave);
-        }
-
         const responseItem = {
           ...newBobina,
           id: itemToSave.id,
@@ -341,15 +366,32 @@ const server = http.createServer(async (req, res) => {
           estado_bobina: estado
         };
 
-        // Respaldo local
+        if (Array.isArray(apiCache.bobinas.data)) {
+          const cIdx = apiCache.bobinas.data.findIndex(x => String(x.id) === String(responseItem.id) || String(x.numero_rollo || '').toLowerCase() === num.toLowerCase());
+          if (cIdx >= 0) apiCache.bobinas.data[cIdx] = responseItem;
+          else apiCache.bobinas.data.unshift(responseItem);
+          apiCache.bobinas.ts = Date.now();
+        }
         const db = readDb();
-        const idx = db.bobinas.findIndex(x => String(x.id) === String(responseItem.id) || String(x.numero_rollo).toLowerCase() === num.toLowerCase());
+        const idx = db.bobinas.findIndex(x => String(x.id) === String(responseItem.id) || String(x.numero_rollo || '').toLowerCase() === num.toLowerCase());
         if (idx >= 0) db.bobinas[idx] = responseItem;
         else db.bobinas.unshift(responseItem);
         writeDb(db);
 
         res.writeHead(201, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(responseItem));
+
+        (async () => {
+          const existing = await supabaseRequest(`bobinas?select=id&or=(id.eq.${encodeURIComponent(idStr)},numero_bobina.eq.${encodeURIComponent(num)})&limit=1`);
+          if (existing && existing.length > 0) {
+            const targetId = existing[0].id;
+            const patchObj = { ...itemToSave };
+            delete patchObj.id;
+            await supabaseRequest(`bobinas?id=eq.${encodeURIComponent(targetId)}`, 'PATCH', patchObj);
+          } else {
+            await supabaseRequest('bobinas', 'POST', itemToSave);
+          }
+        })().catch(err => console.error('Error async bobinas Supabase:', err));
       });
     }
     return;
@@ -358,35 +400,39 @@ const server = http.createServer(async (req, res) => {
   // --- API INSPECCIONES ---
   if (pathname === '/api/inspecciones') {
     if (method === 'GET') {
-      let list = await supabaseRequest('inspecciones?select=*&order=id.desc&limit=800');
-      if (!list) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Database timeout or failure' }));
-        return;
-      }
-      
-      const mapped = list.map(item => {
-        const d = item.datos || {};
-        return {
-          ...d,
-          id: item.id || d.id,
-          bobina_id: d.bobina_id || item.bobina_id,
-          area: item.area || d.area,
-          maquina: item.maquina || d.maquina,
-          operador: d.operador || item.usuario,
-          resultado: d.resultado || item.tipo,
-          observaciones: d.observaciones || ''
-        };
-      });
-
-      // Deduplicar por id
-      const uniqueList = [];
-      const seenIds = new Set();
-      for (const item of mapped) {
-        if (item && item.id && !seenIds.has(String(item.id))) {
-          seenIds.add(String(item.id));
-          uniqueList.push(item);
+      let uniqueList = getCached('inspecciones');
+      if (!uniqueList) {
+        let list = await supabaseRequest('inspecciones?select=*&order=id.desc&limit=600');
+        if (!list) {
+          const db = readDb();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(db.inspecciones || []));
+          return;
         }
+        
+        const mapped = list.map(item => {
+          const d = item.datos || {};
+          return {
+            ...d,
+            id: item.id || d.id,
+            bobina_id: d.bobina_id || item.bobina_id,
+            area: item.area || d.area,
+            maquina: item.maquina || d.maquina,
+            operador: d.operador || item.usuario,
+            resultado: d.resultado || item.tipo,
+            observaciones: d.observaciones || ''
+          };
+        });
+
+        uniqueList = [];
+        const seenIds = new Set();
+        for (const item of mapped) {
+          if (item && item.id && !seenIds.has(String(item.id))) {
+            seenIds.add(String(item.id));
+            uniqueList.push(item);
+          }
+        }
+        setCached('inspecciones', uniqueList);
       }
 
       let clientList = uniqueList;
@@ -394,17 +440,17 @@ const server = http.createServer(async (req, res) => {
         clientList = clientList.filter(i => {
            const marca = (i.marca_especificaciones || i.marca_cliente || i.marca || '').toLowerCase();
            return marca.includes('mcdonalds') || marca.includes('mc donalds');
-        });
-        clientList = clientList.map(i => {
-           delete i.operador;
-           delete i.editado_por;
-           delete i.usuario;
-           delete i.carga_realizado_por;
-           delete i.realizado_por;
-           return i;
+        }).map(i => {
+           const copy = { ...i };
+           delete copy.operador;
+           delete copy.editado_por;
+           delete copy.usuario;
+           delete copy.carga_realizado_por;
+           delete copy.realizado_por;
+           return copy;
         });
       } else if (role === 'cliente_walmart') {
-        let bobinasList = await supabaseRequest('bobinas?select=*&order=id.desc&limit=1000');
+        let bobinasList = apiCache.bobinas.data || await supabaseRequest('bobinas?select=*&order=id.desc&limit=500');
         let bobinasMap = {};
         if (bobinasList) {
           bobinasList.forEach(item => {
@@ -423,16 +469,16 @@ const server = http.createServer(async (req, res) => {
              else if (i.numero_bobina && bobinasMap['rollo:' + String(i.numero_bobina).toLowerCase()]) marca = bobinasMap['rollo:' + String(i.numero_bobina).toLowerCase()];
            }
            return marca.includes('walmart') || marca.includes('wal-mart');
-        });
-        clientList = clientList.map(i => {
-           delete i.operador;
-           delete i.editado_por;
-           delete i.usuario;
-           delete i.carga_realizado_por;
-           delete i.realizado_por;
-           delete i.maquina;
-           delete i.banda;
-           return i;
+        }).map(i => {
+           const copy = { ...i };
+           delete copy.operador;
+           delete copy.editado_por;
+           delete copy.usuario;
+           delete copy.carga_realizado_por;
+           delete copy.realizado_por;
+           delete copy.maquina;
+           delete copy.banda;
+           return copy;
         });
       }
 
@@ -456,16 +502,22 @@ const server = http.createServer(async (req, res) => {
           usuario: payload.operador || 'Inspector'
         };
 
-        await supabaseRequest('inspecciones', 'POST', itemToSave);
-
         const responseItem = { ...payload, id };
 
+        if (Array.isArray(apiCache.inspecciones.data)) {
+          const cIdx = apiCache.inspecciones.data.findIndex(x => String(x.id) === id);
+          if (cIdx >= 0) apiCache.inspecciones.data[cIdx] = responseItem;
+          else apiCache.inspecciones.data.unshift(responseItem);
+          apiCache.inspecciones.ts = Date.now();
+        }
         const db = readDb();
         db.inspecciones.unshift(responseItem);
         writeDb(db);
 
         res.writeHead(201, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(responseItem));
+
+        supabaseRequest('inspecciones', 'POST', itemToSave).catch(err => console.error('Error async inspecciones Supabase:', err));
       });
     } else if (method === 'PUT' || method === 'PATCH') {
       const id = parsedUrl.searchParams.get('id');
@@ -486,8 +538,10 @@ const server = http.createServer(async (req, res) => {
           fecha: payload.fecha_registro || new Date().toISOString(),
           usuario: payload.operador || 'Inspector'
         };
-        await supabaseRequest(`inspecciones?id=eq.${id}`, 'PATCH', itemToSave);
-        
+        if (Array.isArray(apiCache.inspecciones.data)) {
+          const cIdx = apiCache.inspecciones.data.findIndex(i => String(i.id) === String(id));
+          if (cIdx >= 0) apiCache.inspecciones.data[cIdx] = { ...payload, id };
+        }
         const db = readDb();
         const idx = db.inspecciones.findIndex(i => String(i.id) === String(id));
         if (idx >= 0) {
@@ -496,16 +550,20 @@ const server = http.createServer(async (req, res) => {
         }
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
+        supabaseRequest(`inspecciones?id=eq.${id}`, 'PATCH', itemToSave).catch(() => {});
       });
     } else if (method === 'DELETE') {
       const id = parsedUrl.searchParams.get('id');
       if (id) {
-        await supabaseRequest(`inspecciones?id=eq.${id}`, 'DELETE');
+        if (Array.isArray(apiCache.inspecciones.data)) {
+          apiCache.inspecciones.data = apiCache.inspecciones.data.filter(ins => String(ins.id) !== String(id));
+        }
         const db = readDb();
         db.inspecciones = db.inspecciones.filter(ins => String(ins.id) !== String(id));
         writeDb(db);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
+        supabaseRequest(`inspecciones?id=eq.${id}`, 'DELETE').catch(() => {});
       } else {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Falta ID' }));
@@ -517,21 +575,28 @@ const server = http.createServer(async (req, res) => {
   // --- API PERSONAL ---
   if (pathname === '/api/produccion/personal') {
     if (method === 'GET') {
-      let list = await supabaseRequest('personal?select=*&order=id.desc&limit=800');
-      if (!list) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Database timeout or failure' }));
+      if (role === 'cliente' || role === 'cliente_walmart') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify([]));
         return;
       }
-      let mapped = list.map(item => {
-        if (item.datos) return item.datos;
-        if (item.puesto && typeof item.puesto === 'string' && item.puesto.startsWith('{')) {
-          try { return JSON.parse(item.puesto); } catch (_) {}
+      let mapped = getCached('personal');
+      if (!mapped) {
+        let list = await supabaseRequest('personal?select=*&order=id.desc&limit=500');
+        if (!list) {
+          const db = readDb();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(db.produccion_personal || []));
+          return;
         }
-        return item;
-      });
-      if (role === 'cliente' || role === 'cliente_walmart') {
-        mapped = [];
+        mapped = list.map(item => {
+          if (item.datos) return item.datos;
+          if (item.puesto && typeof item.puesto === 'string' && item.puesto.startsWith('{')) {
+            try { return JSON.parse(item.puesto); } catch (_) {}
+          }
+          return item;
+        });
+        setCached('personal', mapped);
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -539,7 +604,7 @@ const server = http.createServer(async (req, res) => {
     } else if (method === 'POST') {
       getBody(req, async (newItem) => {
         const id = String(newItem.id || Date.now());
-        // La tabla 'personal' en Supabase tiene columnas: id, nombre, puesto, turno, fecha
+        newItem.id = newItem.id || id;
         const itemToSave = {
           id,
           nombre: newItem.operador || newItem.nombre || '',
@@ -547,31 +612,43 @@ const server = http.createServer(async (req, res) => {
           turno: newItem.turno || 'Dia',
           fecha: newItem.fecha || new Date().toISOString().split('T')[0]
         };
-        const existing = await supabaseRequest(`personal?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
-        if (existing && existing.length > 0) {
-          const patchData = { ...itemToSave };
-          delete patchData.id;
-          await supabaseRequest(`personal?id=eq.${encodeURIComponent(id)}`, 'PATCH', patchData);
-        } else {
-          await supabaseRequest('personal', 'POST', itemToSave);
-        }
 
+        if (Array.isArray(apiCache.personal.data)) {
+          const cIdx = apiCache.personal.data.findIndex(p => String(p.id) === id);
+          if (cIdx >= 0) apiCache.personal.data[cIdx] = newItem;
+          else apiCache.personal.data.unshift(newItem);
+          apiCache.personal.ts = Date.now();
+        }
         const db = readDb();
         db.produccion_personal.unshift(newItem);
         writeDb(db);
 
         res.writeHead(201, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(newItem));
+
+        (async () => {
+          const existing = await supabaseRequest(`personal?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
+          if (existing && existing.length > 0) {
+            const patchData = { ...itemToSave };
+            delete patchData.id;
+            await supabaseRequest(`personal?id=eq.${encodeURIComponent(id)}`, 'PATCH', patchData);
+          } else {
+            await supabaseRequest('personal', 'POST', itemToSave);
+          }
+        })().catch(err => console.error('Error async personal Supabase:', err));
       });
     } else if (method === 'DELETE') {
       const id = parsedUrl.searchParams.get('id');
       if (id) {
-        await supabaseRequest(`personal?id=eq.${encodeURIComponent(id)}`, 'DELETE');
+        if (Array.isArray(apiCache.personal.data)) {
+          apiCache.personal.data = apiCache.personal.data.filter(p => String(p.id) !== String(id));
+        }
         const db = readDb();
         db.produccion_personal = db.produccion_personal.filter(p => String(p.id) !== String(id));
         writeDb(db);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
+        supabaseRequest(`personal?id=eq.${encodeURIComponent(id)}`, 'DELETE').catch(() => {});
       } else {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Falta ID' }));
@@ -583,23 +660,29 @@ const server = http.createServer(async (req, res) => {
   // --- API BOLSAS / TARIMAS ---
   if (pathname === '/api/tarimas' || pathname === '/api/produccion/bolsas') {
     if (method === 'GET') {
-      let list = await supabaseRequest('bolsas?select=*&order=id.desc&limit=800');
-      if (!list) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Database timeout or failure' }));
-        return;
-      }
-      let mapped = list.map(item => {
-        if (item.datos) return item.datos;
-        if (item.tipo_bolsa && typeof item.tipo_bolsa === 'string' && item.tipo_bolsa.startsWith('{')) {
-          try { return JSON.parse(item.tipo_bolsa); } catch (_) {}
+      let mapped = getCached('tarimas');
+      if (!mapped) {
+        let list = await supabaseRequest('bolsas?select=*&order=id.desc&limit=600');
+        if (!list) {
+          const db = readDb();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(db.tarimas || []));
+          return;
         }
-        return item;
-      }).filter(item => item && item._record_type !== 'embarque' && item.maquina !== '__EMBARQUE__');
+        mapped = list.map(item => {
+          if (item.datos) return item.datos;
+          if (item.tipo_bolsa && typeof item.tipo_bolsa === 'string' && item.tipo_bolsa.startsWith('{')) {
+            try { return JSON.parse(item.tipo_bolsa); } catch (_) {}
+          }
+          return item;
+        }).filter(item => item && item._record_type !== 'embarque' && item.maquina !== '__EMBARQUE__');
+        setCached('tarimas', mapped);
+      }
+
+      let clientMapped = mapped;
       if (role === 'cliente' || role === 'cliente_walmart') {
-        // Para filtrar tarimas (que no tienen marca directamente), cruzamos con bobinas e inspecciones
-        let bobinasList = await supabaseRequest('bobinas?select=*&order=id.desc&limit=1000');
-        let inspList = await supabaseRequest('inspecciones?select=datos&order=id.desc&limit=1000');
+        let bobinasList = apiCache.bobinas.data || await supabaseRequest('bobinas?select=*&order=id.desc&limit=500');
+        let inspList = apiCache.inspecciones.data || [];
         let bobinasMap = {};
         if (bobinasList) {
           bobinasList.forEach(item => {
@@ -613,8 +696,7 @@ const server = http.createServer(async (req, res) => {
           });
         }
         if (Array.isArray(inspList)) {
-          inspList.forEach(item => {
-            const d = item.datos || {};
+          inspList.forEach(d => {
             const m = String(d.marca_especificaciones || d.marca_cliente || d.marca || '').trim().toLowerCase();
             const rNum = String(d.numero_rollo || '').trim().toLowerCase();
             if (m && rNum && !bobinasMap['rollo:' + rNum]) {
@@ -623,12 +705,9 @@ const server = http.createServer(async (req, res) => {
           });
         }
         
-        mapped = mapped.filter(b => {
+        clientMapped = mapped.filter(b => {
            if (!b || (!b.codigo_liberacion && !b.codigo_tarima && !b.bolsas_producidas)) return false;
-           // Si es una bolsa/producción normal o tarima que ya tiene marca
            let marca = String(b.marca || b.marca_especificaciones || b.marca_cliente || b.proveedor || '').toLowerCase();
-           
-           // Si es una tarima sin marca directa, heredar la marca de su bobina o inspección vinculada
            if (!marca && (b.codigo_liberacion || b.codigo_tarima)) {
              const r1 = String(b.numero_rollo || '').trim().toLowerCase();
              const r2 = String(b.bobina || '').trim().toLowerCase();
@@ -640,13 +719,11 @@ const server = http.createServer(async (req, res) => {
                marca = bobinasMap['rollo:' + r2];
              }
            }
-           
            if (role === 'cliente_walmart') {
              return marca.includes('walmart') || marca.includes('wal-mart');
            }
            return marca.includes('mcdonalds') || marca.includes('mc donalds');
-        });
-        mapped = mapped.map(b => {
+        }).map(b => {
            const copy = { ...b };
            delete copy.operador;
            delete copy.editado_por;
@@ -662,11 +739,11 @@ const server = http.createServer(async (req, res) => {
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(mapped));
+      res.end(JSON.stringify(clientMapped));
     } else if (method === 'POST') {
       getBody(req, async (newItem) => {
         const id = String(newItem.id || Date.now());
-        // La tabla 'bolsas' en Supabase tiene columnas: id, maquina, tipo_bolsa, cantidad, operador, fecha
+        newItem.id = newItem.id || id;
         const itemToSave = {
           id,
           maquina: newItem.maquina || newItem.banda || '',
@@ -675,31 +752,43 @@ const server = http.createServer(async (req, res) => {
           operador: newItem.operador || '',
           fecha: newItem.fecha_registro || new Date().toISOString()
         };
-        const existing = await supabaseRequest(`bolsas?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
-        if (existing && existing.length > 0) {
-          const patchData = { ...itemToSave };
-          delete patchData.id;
-          await supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'PATCH', patchData);
-        } else {
-          await supabaseRequest('bolsas', 'POST', itemToSave);
-        }
 
+        if (Array.isArray(apiCache.tarimas.data)) {
+          const cIdx = apiCache.tarimas.data.findIndex(t => String(t.id) === id);
+          if (cIdx >= 0) apiCache.tarimas.data[cIdx] = newItem;
+          else apiCache.tarimas.data.unshift(newItem);
+          apiCache.tarimas.ts = Date.now();
+        }
         const db = readDb();
         db.tarimas.unshift(newItem);
         writeDb(db);
 
         res.writeHead(201, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(newItem));
+
+        (async () => {
+          const existing = await supabaseRequest(`bolsas?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
+          if (existing && existing.length > 0) {
+            const patchData = { ...itemToSave };
+            delete patchData.id;
+            await supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'PATCH', patchData);
+          } else {
+            await supabaseRequest('bolsas', 'POST', itemToSave);
+          }
+        })().catch(err => console.error('Error async tarimas Supabase:', err));
       });
     } else if (method === 'DELETE') {
       const id = parsedUrl.searchParams.get('id');
       if (id) {
-        await supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'DELETE');
+        if (Array.isArray(apiCache.tarimas.data)) {
+          apiCache.tarimas.data = apiCache.tarimas.data.filter(t => String(t.id) !== String(id));
+        }
         const db = readDb();
         db.tarimas = db.tarimas.filter(t => String(t.id) !== String(id));
         writeDb(db);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
+        supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'DELETE').catch(() => {});
       } else {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Falta ID' }));
@@ -711,20 +800,24 @@ const server = http.createServer(async (req, res) => {
   // --- API EMBARQUES ---
   if (pathname === '/api/embarques') {
     if (method === 'GET') {
-      let list = await supabaseRequest('bolsas?select=*&maquina=eq.__EMBARQUE__&order=id.desc&limit=800');
-      if (!list) {
-        const db = readDb();
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(db.embarques || []));
-        return;
-      }
-      const mapped = list.map(item => {
-        if (item.datos) return item.datos;
-        if (item.tipo_bolsa && typeof item.tipo_bolsa === 'string' && item.tipo_bolsa.startsWith('{')) {
-          try { return JSON.parse(item.tipo_bolsa); } catch (_) {}
+      let mapped = getCached('embarques');
+      if (!mapped) {
+        let list = await supabaseRequest('bolsas?select=*&maquina=eq.__EMBARQUE__&order=id.desc&limit=500');
+        if (!list) {
+          const db = readDb();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(db.embarques || []));
+          return;
         }
-        return item;
-      }).filter(Boolean);
+        mapped = list.map(item => {
+          if (item.datos) return item.datos;
+          if (item.tipo_bolsa && typeof item.tipo_bolsa === 'string' && item.tipo_bolsa.startsWith('{')) {
+            try { return JSON.parse(item.tipo_bolsa); } catch (_) {}
+          }
+          return item;
+        }).filter(Boolean);
+        setCached('embarques', mapped);
+      }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(mapped));
@@ -740,15 +833,13 @@ const server = http.createServer(async (req, res) => {
           operador: payload.registrado_por || payload.usuario || '',
           fecha: payload.fecha_programada || new Date().toISOString().split('T')[0]
         };
-        const existing = await supabaseRequest(`bolsas?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
-        if (existing && existing.length > 0) {
-          const patchData = { ...itemToSave };
-          delete patchData.id;
-          await supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'PATCH', patchData);
-        } else {
-          await supabaseRequest('bolsas', 'POST', itemToSave);
-        }
 
+        if (Array.isArray(apiCache.embarques.data)) {
+          const cIdx = apiCache.embarques.data.findIndex(e => String(e.id) === id);
+          if (cIdx >= 0) apiCache.embarques.data[cIdx] = payload;
+          else apiCache.embarques.data.unshift(payload);
+          apiCache.embarques.ts = Date.now();
+        }
         const db = readDb();
         const idx = db.embarques.findIndex(e => String(e.id) === id);
         if (idx >= 0) db.embarques[idx] = payload;
@@ -757,16 +848,30 @@ const server = http.createServer(async (req, res) => {
 
         res.writeHead(201, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(payload));
+
+        (async () => {
+          const existing = await supabaseRequest(`bolsas?select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
+          if (existing && existing.length > 0) {
+            const patchData = { ...itemToSave };
+            delete patchData.id;
+            await supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'PATCH', patchData);
+          } else {
+            await supabaseRequest('bolsas', 'POST', itemToSave);
+          }
+        })().catch(err => console.error('Error async embarques Supabase:', err));
       });
     } else if (method === 'DELETE') {
       const id = parsedUrl.searchParams.get('id');
       if (id) {
-        await supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'DELETE');
+        if (Array.isArray(apiCache.embarques.data)) {
+          apiCache.embarques.data = apiCache.embarques.data.filter(e => String(e.id) !== String(id));
+        }
         const db = readDb();
         db.embarques = (db.embarques || []).filter(e => String(e.id) !== String(id));
         writeDb(db);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
+        supabaseRequest(`bolsas?id=eq.${encodeURIComponent(id)}`, 'DELETE').catch(() => {});
       } else {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Falta ID' }));

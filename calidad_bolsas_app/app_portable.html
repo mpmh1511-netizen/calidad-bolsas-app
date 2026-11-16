@@ -3549,13 +3549,15 @@
         } catch (e) {}
       })();
 
-      // --- ESTADO INICIAL ---
+      // --- ESTADO INICIAL (CARGA INSTANTÁNEA DESDE MEMORIA LOCAL) ---
       let state = {
         section: null, // null, 'calidad' o 'produccion'
         role: null, // 'inspector' o 'estadisticas'
         selectedArea: null, // 'Flexo', 'Nanjang' o 'Con Asa'
-        bobinas: [],
-        inspecciones: [],
+        bobinas: (function(){ try { return JSON.parse(localStorage.getItem('calidad_bobinas')) || []; } catch(e){ return []; } })(),
+        inspecciones: (function(){ try { return JSON.parse(localStorage.getItem('calidad_inspecciones')) || []; } catch(e){ return []; } })(),
+        tarimas: (function(){ try { return JSON.parse(localStorage.getItem('calidad_tarimas')) || []; } catch(e){ return []; } })(),
+        personal: (function(){ try { return JSON.parse(localStorage.getItem('produccion_personal')) || []; } catch(e){ return []; } })(),
         activeDate: '',
         currentResult: 'Aprobado',
         uploadedPhotoBase64: '',
@@ -3572,6 +3574,8 @@
       const isOnline = true;
 
       let isSubmittingData = false;
+      let isSyncing = false;
+      let lastLocalSaveTs = 0;
 
       // WRAPPERS ANTI-DOBLE-CLICK
       async function submitInspection() {
@@ -3628,28 +3632,51 @@
         finally { isSubmittingData = false; if (btn) { btn.disabled = false; btn.innerHTML = '💾 Generar Etiqueta Frías'; } }
       }
 
-      
       async function apiFetch(endpoint, options = {}) {
+        const controller = new AbortController();
+        const timeoutMs = (options.method && options.method !== 'GET') ? 12000 : 9000;
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
         try {
-          
           const fullUrl = endpoint.startsWith('http') ? endpoint : (SERVER_URL + endpoint);
-          const res = await fetch(fullUrl, options);
-          if (!res.ok) throw new Error('API Error');
+          const res = await fetch(fullUrl, { ...options, signal: controller.signal });
+          if (!res.ok) throw new Error('API Error: ' + res.status);
           return await res.json();
         } catch (e) {
-          console.error('API Fetch failed:', e);
+          console.warn('API Fetch background notice (' + endpoint + '):', e.message || e);
           return null;
+        } finally {
+          clearTimeout(timer);
         }
       }
 
+      function getTarimasListSync() {
+        const tarimaMap = new Map();
+        try {
+          const localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+          localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
+        } catch (e) {}
+        if (Array.isArray(state.tarimas)) {
+          state.tarimas.forEach(t => {
+            if (t && t.id) {
+              const prev = tarimaMap.get(String(t.id));
+              tarimaMap.set(String(t.id), prev ? { ...prev, ...t } : t);
+            }
+          });
+        }
+        const merged = Array.from(tarimaMap.values()).filter(
+          item => item && item._record_type !== 'embarque' && item.maquina !== '__EMBARQUE__'
+        );
+        state.tarimas = merged;
+        return merged;
+      }
+
       async function saveDatabase() {
-        // CLEANUP PREVENTIVO DE MEMORIA: Reducir fotos excesivamente grandes (sin comprimir previas)
         if (state.inspecciones) {
            state.inspecciones.forEach(i => {
               if (i.foto_url && i.foto_url.length > 500000) i.foto_url = null;
            });
         }
-        let storedTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+        let storedTarimas = getTarimasListSync();
         storedTarimas.forEach(t => {
            if (t.foto_url && t.foto_url.length > 500000) t.foto_url = null;
         });
@@ -3657,102 +3684,69 @@
         const db = {
           bobinas: state.bobinas,
           inspecciones: state.inspecciones,
-          produccion_personal: JSON.parse(localStorage.getItem('produccion_personal')) || [],
+          produccion_personal: state.personal || [],
           tarimas: storedTarimas
         };
         
-        // Guardar localmente como respaldo
-        try {
-          try {
-          localStorage.setItem('calidad_bobinas', JSON.stringify(state.bobinas));
-        } catch (e) {
-          console.warn('Quota exceeded in saveBobina');
-        }
-          // Auto-cleanup huge photos before saving
-        state.inspecciones.forEach(i => {
-           if (i.foto_url && i.foto_url.length > 500000) i.foto_url = null;
-        });
-        try {
-          localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
-        } catch (e) {
-          showToast('La memoria del dispositivo está casi llena. Se borrarán fotos antiguas.', 'warning');
-          if (state.inspecciones.length > 0) state.inspecciones[state.inspecciones.length - 1].foto_url = null;
-          try { localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones)); } catch (err) {}
-        }
-          localStorage.setItem('produccion_personal', JSON.stringify(db.produccion_personal));
-          localStorage.setItem('calidad_tarimas', JSON.stringify(db.tarimas));
-        } catch (e) {
-          if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-             showToast('Error: La memoria de tu dispositivo está muy llena. Elimina registros antiguos o sincroniza.', 'danger');
-             alert('Error: La memoria del navegador está llena por el peso de las fotos. Se recomienda borrar el historial/datos del sitio o sincronizar.');
-             return;
-          }
-        }
+        safeLocalStorageSet('calidad_bobinas', JSON.stringify(state.bobinas));
+        safeLocalStorageSet('calidad_inspecciones', JSON.stringify(stripPhotosForLocalCache(state.inspecciones)));
+        safeLocalStorageSet('produccion_personal', JSON.stringify(db.produccion_personal));
+        safeLocalStorageSet('calidad_tarimas', JSON.stringify(stripPhotosForLocalCache(db.tarimas)));
 
         if (CLOUD_URL) {
-          const res = await apiFetch(CLOUD_URL, {
+          apiFetch(CLOUD_URL, {
             method: 'POST',
             body: JSON.stringify(db)
-          });
-          if (!res) {
-            console.warn('Sincronización con la nube fallida, guardado en cache local.');
-          }
+          }).catch(() => {});
         }
       }
 
       async function saveBobina(bobinaObj) {
-        const idx = state.bobinas.findIndex(b => b.id === bobinaObj.id || b.numero_rollo.toLowerCase() === bobinaObj.numero_rollo.toLowerCase());
+        lastLocalSaveTs = Date.now();
+        const rolloKey = String(bobinaObj?.numero_rollo || '').toLowerCase();
+        const idx = state.bobinas.findIndex(b => String(b.id) === String(bobinaObj.id) || (rolloKey && String(b?.numero_rollo || '').toLowerCase() === rolloKey));
         if (idx !== -1) {
           state.bobinas[idx] = { ...state.bobinas[idx], ...bobinaObj };
         } else {
           state.bobinas.unshift(bobinaObj);
         }
-        try {
-          localStorage.setItem('calidad_bobinas', JSON.stringify(state.bobinas));
-        } catch (e) {
-          console.warn('Quota exceeded in saveBobina');
-        }
+        safeLocalStorageSet('calidad_bobinas', JSON.stringify(state.bobinas));
 
         if (CLOUD_URL) {
-          await saveDatabase();
+          saveDatabase();
         } else if (isOnline) {
-          const res = await apiFetch('/api/bobinas', {
+          apiFetch('/api/bobinas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(bobinaObj)
-          });
-          if (res) {
-            const list = await apiFetch('/api/bobinas');
-            if (list) state.bobinas = list;
-          }
+          }).catch(err => console.warn('Sync bobina en segundo plano:', err));
         }
       }
 
       async function saveInspection(newInsp) {
-        const idx = state.inspecciones.findIndex(i => i.id === newInsp.id);
+        lastLocalSaveTs = Date.now();
+        const idx = state.inspecciones.findIndex(i => String(i.id) === String(newInsp.id));
         if (idx !== -1) {
           state.inspecciones[idx] = { ...state.inspecciones[idx], ...newInsp };
         } else {
           state.inspecciones.unshift(newInsp);
         }
-        // Auto-cleanup huge photos before saving
         state.inspecciones.forEach(i => {
            if (i.foto_url && i.foto_url.length > 500000) i.foto_url = null;
         });
-        try {
-          localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
-        } catch (e) {
-          showToast('La memoria del dispositivo está casi llena. Se borrarán fotos antiguas.', 'warning');
-          if (state.inspecciones.length > 0) state.inspecciones[state.inspecciones.length - 1].foto_url = null;
-          try { localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones)); } catch (err) {}
-        }
+        safeLocalStorageSet('calidad_inspecciones', JSON.stringify(stripPhotosForLocalCache(state.inspecciones)));
 
         // Renderizado inmediato local (0ms latencia)
-        if (state.role === 'calidad') {
+        if (state.role === 'calidad' || state.role === 'estadisticas') {
           if (typeof renderTimeline === 'function') renderTimeline();
           if (typeof renderDashboard === 'function') renderDashboard();
           if (typeof updateDashboardCounters === 'function') updateDashboardCounters();
-          if (typeof renderStatIndepView === 'function') renderStatIndepView();
+        }
+        if (state.role === 'estadisticas_globales' && typeof renderStatIndepView === 'function') {
+          renderStatIndepView();
+        }
+        if (state.role === 'observacion' && typeof renderPanelObservacion === 'function') {
+          renderPanelObservacion();
         }
 
         if (isOnline) {
@@ -3760,15 +3754,14 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newInsp)
-          }).then(res => {
-            if (res) syncDataWithServer();
-          }).catch(err => console.warn('Petición en segundo plano:', err));
+          }).catch(err => console.warn('Sync inspección en segundo plano:', err));
         }
       }
 
       async function saveTarima(newTarima) {
-        const tarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
-        const idx = tarimas.findIndex(t => t.id === newTarima.id);
+        lastLocalSaveTs = Date.now();
+        const tarimas = getTarimasListSync();
+        const idx = tarimas.findIndex(t => String(t.id) === String(newTarima.id));
         if (idx !== -1) {
           tarimas[idx] = { ...tarimas[idx], ...newTarima };
         } else {
@@ -3777,69 +3770,82 @@
         tarimas.forEach(t => {
            if (t.foto_url && t.foto_url.length > 500000) t.foto_url = null;
         });
-        try {
-          localStorage.setItem('calidad_tarimas', JSON.stringify(tarimas));
-        } catch (e) {
-          console.warn('Quota exceeded in saveTarima');
+        state.tarimas = tarimas;
+        safeLocalStorageSet('calidad_tarimas', JSON.stringify(stripPhotosForLocalCache(tarimas)));
+
+        if (state.role === 'observacion' && typeof renderPanelObservacion === 'function') {
+          renderPanelObservacion();
         }
 
         if (CLOUD_URL) {
-          await saveDatabase();
+          saveDatabase();
         } else if (isOnline) {
-          await apiFetch('/api/tarimas', {
+          apiFetch('/api/tarimas', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newTarima)
-          });
+          }).catch(err => console.warn('Sync tarima en segundo plano:', err));
         }
       }
 
       async function getPersonalList() {
-        if (CLOUD_URL) {
-          return JSON.parse(localStorage.getItem('produccion_personal')) || [];
-        } else if (isOnline) {
-          return await apiFetch('/api/produccion/personal') || [];
-        } else {
-          return JSON.parse(localStorage.getItem('produccion_personal')) || [];
+        if (Array.isArray(state.personal) && state.personal.length > 0) {
+          return state.personal;
+        }
+        try {
+          const cached = JSON.parse(localStorage.getItem('produccion_personal')) || [];
+          state.personal = cached;
+          return cached;
+        } catch (e) {
+          return [];
         }
       }
 
       async function savePersonalItem(item) {
-        let list = JSON.parse(localStorage.getItem('produccion_personal')) || [];
+        lastLocalSaveTs = Date.now();
+        let list = await getPersonalList();
         const idx = list.findIndex(row => 
-          row.fecha === item.fecha &&
-          row.turno === item.turno &&
-          row.tipo_maquina === item.tipo_maquina &&
-          row.maquina === item.maquina &&
-          row.hora_actualizacion === item.hora_actualizacion
+          (row.id && item.id && String(row.id) === String(item.id)) ||
+          (row.fecha === item.fecha &&
+           row.turno === item.turno &&
+           row.tipo_maquina === item.tipo_maquina &&
+           row.maquina === item.maquina &&
+           row.hora_actualizacion === item.hora_actualizacion)
         );
         if (idx !== -1) {
           list[idx] = { ...list[idx], ...item };
         } else {
           list.unshift(item);
         }
+        state.personal = list;
         safeLocalStorageSet('produccion_personal', JSON.stringify(list));
 
+        if (state.role === 'observacion' && typeof renderPanelObservacion === 'function') {
+          renderPanelObservacion();
+        }
+
         if (CLOUD_URL) {
-          await saveDatabase();
+          saveDatabase();
         } else if (isOnline) {
-          await apiFetch('/api/produccion/personal', {
+          apiFetch('/api/produccion/personal', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(item)
-          });
+          }).catch(err => console.warn('Sync personal en segundo plano:', err));
         }
       }
 
       async function deletePersonalItem(id) {
-        let list = JSON.parse(localStorage.getItem('produccion_personal')) || [];
-        list = list.filter(item => item.id !== id);
+        lastLocalSaveTs = Date.now();
+        let list = await getPersonalList();
+        list = list.filter(item => String(item.id) !== String(id));
+        state.personal = list;
         safeLocalStorageSet('produccion_personal', JSON.stringify(list));
 
         if (CLOUD_URL) {
-          await saveDatabase();
+          saveDatabase();
         } else if (isOnline) {
-          await apiFetch(`/api/produccion/personal?id=${id}`, { method: 'DELETE' });
+          apiFetch(`/api/produccion/personal?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
         }
       }
 
@@ -3973,8 +3979,43 @@
       }
 
       // --- SINCRONIZACIÓN AUTOMÁTICA EN TIEMPO REAL ENTRE DISPOSITIVOS ---
+      function mergeRecordsById(localArr, remoteArr) {
+        if (!Array.isArray(remoteArr)) return localArr || [];
+        if (!Array.isArray(localArr) || localArr.length === 0) return remoteArr;
+        const map = new Map();
+        // Primero insertar locales recientes
+        localArr.forEach(item => {
+          if (item && item.id !== undefined && item.id !== null) {
+            map.set(String(item.id), item);
+          }
+        });
+        // Luego actualizar con remotos (conservando fotos locales si el remoto no las trae)
+        remoteArr.forEach(rem => {
+          if (rem && rem.id !== undefined && rem.id !== null) {
+            const key = String(rem.id);
+            const loc = map.get(key);
+            if (loc) {
+              map.set(key, {
+                ...loc,
+                ...rem,
+                foto_url: rem.foto_url || loc.foto_url || undefined,
+                evidencia_acomodo_url: rem.evidencia_acomodo_url || loc.evidencia_acomodo_url || undefined
+              });
+            } else {
+              map.set(key, rem);
+            }
+          }
+        });
+        return Array.from(map.values());
+      }
+
       async function syncDataWithServer() {
-        if (!isOnline) return;
+        if (!isOnline || isSyncing || isSubmittingData) return;
+        if (typeof document !== 'undefined' && document.hidden) return;
+        // Evitar sobrescribir durante los primeros 3 segundos tras un guardado local
+        if (Date.now() - lastLocalSaveTs < 3000) return;
+
+        isSyncing = true;
         try {
           const [b, i, p, t, emb] = await Promise.all([
             apiFetch('/api/bobinas'),
@@ -3984,6 +4025,9 @@
             apiFetch('/api/embarques')
           ]);
 
+          // Si el usuario guardó algo mientras descargábamos, abortar sobreescritura
+          if (isSubmittingData || (Date.now() - lastLocalSaveTs < 3000)) return;
+
           let needsReRender = false;
 
           if (!b && state.bobinas.length === 0) {
@@ -3991,9 +4035,10 @@
             needsReRender = true;
           }
           if (b && Array.isArray(b)) {
-            const strB = JSON.stringify(b);
+            const mergedB = mergeRecordsById(state.bobinas, b);
+            const strB = JSON.stringify(mergedB);
             if (JSON.stringify(state.bobinas) !== strB) {
-              state.bobinas = b;
+              state.bobinas = mergedB;
               safeLocalStorageSet('calidad_bobinas', strB);
               needsReRender = true;
             }
@@ -4003,9 +4048,10 @@
             needsReRender = true;
           }
           if (i && Array.isArray(i)) {
-            let strI = JSON.stringify(i);
+            const mergedI = mergeRecordsById(state.inspecciones, i);
+            let strI = JSON.stringify(mergedI);
             if (JSON.stringify(state.inspecciones) !== strI) {
-              state.inspecciones = i;
+              state.inspecciones = mergedI;
               if (typeof fixOldFlexoRecords === 'function') {
                   fixOldFlexoRecords();
               }
@@ -4014,20 +4060,23 @@
             }
           }
           if (p && Array.isArray(p)) {
-            const strP = JSON.stringify(p);
-            if (localStorage.getItem('produccion_personal') !== strP) {
+            const mergedP = mergeRecordsById(state.personal, p);
+            const strP = JSON.stringify(mergedP);
+            if (JSON.stringify(state.personal) !== strP) {
+              state.personal = mergedP;
               safeLocalStorageSet('produccion_personal', strP);
               needsReRender = true;
             }
           }
           if (t && Array.isArray(t)) {
             const onlyTarimas = t.filter(item => item && item._record_type !== 'embarque' && item.maquina !== '__EMBARQUE__');
-            const strT = JSON.stringify(stripPhotosForLocalCache(onlyTarimas));
+            const mergedT = mergeRecordsById(state.tarimas, onlyTarimas);
+            state.tarimas = mergedT;
+            const strT = JSON.stringify(stripPhotosForLocalCache(mergedT));
             if (localStorage.getItem('calidad_tarimas') !== strT) {
               safeLocalStorageSet('calidad_tarimas', strT);
               needsReRender = true;
             }
-            // Si /api/embarques aún no está activo en el servidor remoto, rescatar embarques guardados en bolsas/tarimas
             if (!emb) {
               const embFromTarimas = t.filter(item => item && (item._record_type === 'embarque' || item.maquina === '__EMBARQUE__'));
               if (embFromTarimas.length > 0 && typeof mergeRemoteEmbarques === 'function') {
@@ -4044,23 +4093,40 @@
           }
         } catch (err) {
           console.error('Error en sincronización continua:', err);
+        } finally {
+          isSyncing = false;
         }
+      }
+
+      function isViewVisible(id) {
+        const el = document.getElementById(id);
+        return Boolean(el && el.style.display !== 'none');
       }
 
       function renderActiveViews() {
         try {
-          if (typeof renderTimeline === 'function') renderTimeline();
-          if (typeof renderDashboard === 'function') renderDashboard();
-          if (typeof renderProduccionPersonalTable === 'function') renderProduccionPersonalTable();
-          if (typeof renderBolsasProduccion === 'function') renderBolsasProduccion();
-          if (typeof renderTarimasLiberadasTable === 'function') renderTarimasLiberadasTable();
-          if (typeof renderFriasInspeccionesConsulta === 'function') renderFriasInspeccionesConsulta();
-          if (typeof renderFriasCargasConsulta === 'function') renderFriasCargasConsulta();
-          if (typeof renderFriasTarimasConsulta === 'function') renderFriasTarimasConsulta();
-          if (typeof updateDashboardCounters === 'function') updateDashboardCounters();
-          if (typeof renderStatIndepView === 'function') renderStatIndepView();
-          if (typeof renderEmbarquesAll === 'function' && state.role === 'embarques') renderEmbarquesAll();
-          if (typeof renderPanelObservacion === 'function' && state.role === 'observacion') renderPanelObservacion();
+          if (isViewVisible('view-estadisticas')) {
+            if (typeof renderTimeline === 'function') renderTimeline();
+            if (typeof renderDashboard === 'function') renderDashboard();
+          }
+          if (isViewVisible('view-produccion-personal') && typeof renderPersonalOnlyTable === 'function') {
+            renderPersonalOnlyTable();
+          }
+          if (isViewVisible('view-produccion-bolsas') && typeof renderBolsasOnlyTable === 'function') {
+            renderBolsasOnlyTable();
+          }
+          if (isViewVisible('view-frias-tarimas') && typeof renderFriasTarimasConsulta === 'function') {
+            renderFriasTarimasConsulta();
+          }
+          if (isViewVisible('view-estadisticas-independiente') && typeof renderStatIndepView === 'function') {
+            renderStatIndepView();
+          }
+          if (typeof renderEmbarquesAll === 'function' && (state.role === 'embarques' || isViewVisible('view-embarques'))) {
+            renderEmbarquesAll();
+          }
+          if (typeof renderPanelObservacion === 'function' && (state.role === 'observacion' || isViewVisible('view-panel-observacion'))) {
+            renderPanelObservacion();
+          }
         } catch (e) {
           console.error('Error rendering active views:', e);
         }
@@ -4223,10 +4289,9 @@
             state.inspecciones = JSON.parse(localStorage.getItem('calidad_inspecciones')) || [];
           }
         } else if (isOnline) {
-          await syncDataWithServer();
-          setInterval(syncDataWithServer, 4000);
-          // Keep-Alive Ping cada 2 minutos para mantener Render despierto en la planta
-          setInterval(() => { apiFetch('/api/bobinas').catch(() => {}); }, 120000);
+          // Sincronizar en segundo plano sin bloquear el arranque ni saturar la red
+          syncDataWithServer();
+          setInterval(syncDataWithServer, 25000);
         } else {
           if (!localStorage.getItem('calidad_bobinas')) {
             safeLocalStorageSet('calidad_bobinas', JSON.stringify([]));
@@ -4863,17 +4928,8 @@
 
         updateFriasStatsView(periodFriasInspections);
 
-        // CALCULAR TARIMAS LIBERADAS POR MÁQUINA (Separando General y Frías)
-        let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
-        let serverTarimas = [];
-        if (isOnline) {
-          serverTarimas = await apiFetch('/api/tarimas') || [];
-        }
-        const tarimaMap = new Map();
-        localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
-        serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
-        let globalTarimas = Array.from(tarimaMap.values());
-        state.tarimas = globalTarimas;
+        // CALCULAR TARIMAS LIBERADAS POR MÁQUINA (Separando General y Frías) - Instantáneo desde memoria
+        let globalTarimas = getTarimasListSync();
 
         let baseValidTarimas = globalTarimas.filter(t => t && (t.codigo_liberacion || t.codigo_tarima));
 
@@ -5971,16 +6027,8 @@
           }
         }
 
-        // Cargar tarimas liberadas combinando localStorage y servidor
-        let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
-        let serverTarimas = [];
-        if (isOnline) {
-          serverTarimas = await apiFetch('/api/tarimas') || [];
-        }
-        const tarimaMap = new Map();
-        localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
-        serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
-        let tarimas = Array.from(tarimaMap.values());
+        // Cargar tarimas liberadas instantáneamente desde memoria local
+        let tarimas = getTarimasListSync();
 
         // Calcular número de tarima del día
         const now = new Date();
@@ -6013,9 +6061,9 @@
           fecha_registro: now.toISOString().replace('T', ' ').substring(0, 19)
         };
 
-        if (bobinaId) {
-          const bObj = state.bobinas.find(b => b.id === bobinaId);
-          if (bObj) {
+        if (bobinaId && b) {
+          const bObj = state.bobinas.find(x => x.id === bobinaId);
+          if (bObj && bObj.estado_bobina !== 'Utilizado') {
             bObj.estado_bobina = 'Utilizado';
             await saveBobina(bObj);
           }
@@ -6077,15 +6125,7 @@
         resultsList.style.display = 'none';
         resultCard.style.display = 'none';
 
-        let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
-        let serverTarimas = [];
-        if (isOnline) {
-          serverTarimas = await apiFetch('/api/tarimas') || [];
-        }
-        const tarimaMap = new Map();
-        localTarimas.forEach(t => { if (t && t.id && t.codigo_liberacion) tarimaMap.set(String(t.id), t); });
-        serverTarimas.forEach(t => { if (t && t.id && t.codigo_liberacion) tarimaMap.set(String(t.id), t); });
-        let tarimas = Array.from(tarimaMap.values()).sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+        let tarimas = getTarimasListSync().filter(t => t && t.codigo_liberacion).sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
 
         // Filtrar tarimas que coincidan con el código y/o la fecha
         const filtered = tarimas.filter(t => {
@@ -7939,23 +7979,8 @@
           return true;
         });
 
-        // 4. Filtrar Tarimas Liberadas (General y Frías)
-        let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
-        let serverTarimas = [];
-        if (isOnline) {
-          try {
-            serverTarimas = await apiFetch('/api/tarimas') || [];
-          } catch (e) {
-            serverTarimas = [];
-          }
-        }
-        const tarimaMap = new Map();
-        if (Array.isArray(state?.tarimas)) {
-          state.tarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
-        }
-        localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
-        serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
-        let allTarimas = Array.from(tarimaMap.values()).filter(t => t && (t.codigo_liberacion || t.codigo_tarima));
+        // 4. Filtrar Tarimas Liberadas (General y Frías) - Instantáneo desde memoria
+        let allTarimas = getTarimasListSync().filter(t => t && (t.codigo_liberacion || t.codigo_tarima));
 
         if (marcaExportFilter) {
           allTarimas = allTarimas.filter(t => {
@@ -9727,12 +9752,11 @@
         }
 
         if (bobinaObj) {
-          if (area === 'Flexo') {
-            bobinaObj.estado_bobina = 'Impreso';
-          } else if (area === 'Nanjang' || area === 'Con Asa') {
-            bobinaObj.estado_bobina = 'Utilizado';
+          const targetEstado = area === 'Flexo' ? 'Impreso' : ((area === 'Nanjang' || area === 'Con Asa') ? 'Utilizado' : bobinaObj.estado_bobina);
+          if (bobinaObj.estado_bobina !== targetEstado) {
+            bobinaObj.estado_bobina = targetEstado;
+            await saveBobina(bobinaObj);
           }
-          await saveBobina(bobinaObj);
         }
 
         await saveInspection(newInsp);
@@ -10010,27 +10034,17 @@
 
       async function deleteInspection(id) {
         if (confirm('¿Seguro que deseas eliminar esta inspección?')) {
-          if (isOnline) {
-            await apiFetch(`/api/inspecciones?id=${id}`, { method: 'DELETE' });
-            const list = await apiFetch('/api/inspecciones');
-            if (list) state.inspecciones = list;
-          } else {
-            state.inspecciones = state.inspecciones.filter(i => i.id !== id);
-            // Auto-cleanup huge photos before saving
-        state.inspecciones.forEach(i => {
-           if (i.foto_url && i.foto_url.length > 500000) i.foto_url = null;
-        });
-        try {
-          localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones));
-        } catch (e) {
-          showToast('La memoria del dispositivo está casi llena. Se borrarán fotos antiguas.', 'warning');
-          if (state.inspecciones.length > 0) state.inspecciones[state.inspecciones.length - 1].foto_url = null;
-          try { localStorage.setItem('calidad_inspecciones', JSON.stringify(state.inspecciones)); } catch (err) {}
-        }
-          }
+          lastLocalSaveTs = Date.now();
+          state.inspecciones = state.inspecciones.filter(i => String(i.id) !== String(id));
+          safeLocalStorageSet('calidad_inspecciones', JSON.stringify(stripPhotosForLocalCache(state.inspecciones)));
           renderTimeline();
           renderDashboard();
+          if (state.role === 'estadisticas_globales' && typeof renderStatIndepView === 'function') renderStatIndepView();
+          if (state.role === 'observacion' && typeof renderPanelObservacion === 'function') renderPanelObservacion();
           showToast('Registro eliminado');
+          if (isOnline) {
+            apiFetch(`/api/inspecciones?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
+          }
         }
       }
 
@@ -10904,17 +10918,7 @@
         const container = document.getElementById('frias-tarimas-consulta-container');
         if (!container) return;
 
-        let localTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
-        let serverTarimas = [];
-        try {
-          serverTarimas = await apiFetch('/api/tarimas') || [];
-        } catch (e) {
-          serverTarimas = [];
-        }
-        const tarimaMap = new Map();
-        localTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
-        serverTarimas.forEach(t => { if (t && t.id) tarimaMap.set(String(t.id), t); });
-        let tarimas = Array.from(tarimaMap.values());
+        let tarimas = getTarimasListSync();
 
         let friasTarimas = tarimas.filter(t => t.area === 'Frías' || (t.codigo_tarima && t.codigo_tarima.endsWith('_Frías')));
 
@@ -11730,6 +11734,7 @@
       }
 
       async function persistEmbarqueItem(item) {
+        lastLocalSaveTs = Date.now();
         item.updated_at = Date.now();
         item._record_type = 'embarque';
         item.maquina = '__EMBARQUE__';
@@ -11742,36 +11747,44 @@
         }
         saveEmbarquesToLocalCache();
         renderEmbarquesAll();
+        if (state.role === 'observacion' && typeof renderPanelObservacion === 'function') {
+          renderPanelObservacion();
+        }
 
         if (isOnline) {
-          const res = await apiFetch('/api/embarques', {
+          apiFetch('/api/embarques', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(item)
-          });
-          // Fallback automático a /api/tarimas si /api/embarques aún no está desplegado en Render
-          if (!res) {
-            await apiFetch('/api/tarimas', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(item)
-            });
-          }
+          }).then(res => {
+            if (!res) {
+              return apiFetch('/api/tarimas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+              });
+            }
+          }).catch(() => {});
         }
       }
 
       async function deleteEmbarqueItem(id) {
         if (!confirm('¿Estás seguro de que deseas eliminar esta carga programada?')) return;
+        lastLocalSaveTs = Date.now();
         embarquesState.items = embarquesState.items.filter(x => String(x.id) !== String(id));
         saveEmbarquesToLocalCache();
         renderEmbarquesAll();
+        if (state.role === 'observacion' && typeof renderPanelObservacion === 'function') {
+          renderPanelObservacion();
+        }
         showToast('Carga eliminada correctamente.', 'info');
 
         if (isOnline) {
-          const res = await apiFetch(`/api/embarques?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-          if (!res) {
-            await apiFetch(`/api/tarimas?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-          }
+          apiFetch(`/api/embarques?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).then(res => {
+            if (!res) {
+              return apiFetch(`/api/tarimas?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+            }
+          }).catch(() => {});
         }
       }
 
