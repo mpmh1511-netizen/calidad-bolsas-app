@@ -11,6 +11,37 @@ const DB_PATH = path.join(process.cwd(), 'db.json');
 const SUPABASE_URL = 'https://mowuawcmedfcmbtmeodg.supabase.co/rest/v1';
 const SUPABASE_KEY = 'sb_publishable_zdQ5JU1pm9c54u_IE7RsiA_SxvlZQnM';
 
+// --- OCULTAR TEMPORALMENTE TODO LO RELACIONADO CON KROGER (Cambiar a false para restaurar) ---
+const HIDE_KROGER_TEMPORARILY = true;
+
+function isKrogerServerRecord(item, bobinasMap = null) {
+  if (!HIDE_KROGER_TEMPORARILY || !item) return false;
+  const fields = [
+    item.marca,
+    item.marca_especificaciones,
+    item.marca_cliente,
+    item.proveedor,
+    item.marca_trabajada,
+    item.cliente,
+    item.notas,
+    item.observaciones,
+    item.descripcion_defecto
+  ];
+  for (const f of fields) {
+    if (f && String(f).toLowerCase().includes('kroger')) return true;
+  }
+  if (bobinasMap) {
+    const bId = item.bobina_id ? String(item.bobina_id) : '';
+    const r1 = String(item.numero_rollo || '').trim().toLowerCase();
+    const r2 = String(item.numero_bobina || item.bobina || '').trim().toLowerCase();
+    const mFromId = bId && bobinasMap[bId] ? String(bobinasMap[bId]).toLowerCase() : '';
+    const mFromR1 = r1 && bobinasMap['rollo:' + r1] ? String(bobinasMap['rollo:' + r1]).toLowerCase() : '';
+    const mFromR2 = r2 && bobinasMap['rollo:' + r2] ? String(bobinasMap['rollo:' + r2]).toLowerCase() : '';
+    if (mFromId.includes('kroger') || mFromR1.includes('kroger') || mFromR2.includes('kroger')) return true;
+  }
+  return false;
+}
+
 // --- CACHÉ EN MEMORIA PARA RESPUESTAS INSTANTÁNEAS (< 5ms) ---
 const apiCache = {
   bobinas: { data: null, ts: 0 },
@@ -321,7 +352,7 @@ const server = http.createServer(async (req, res) => {
         setCached('bobinas', mapped);
       }
 
-      let clientMapped = mapped;
+      let clientMapped = mapped.filter(b => !isKrogerServerRecord(b));
       if (role === 'cliente') {
         clientMapped = mapped.filter(b => {
            let marca = (b.marca_especificaciones || b.proveedor || b.marca || '').toLowerCase();
@@ -435,7 +466,17 @@ const server = http.createServer(async (req, res) => {
         setCached('inspecciones', uniqueList);
       }
 
-      let clientList = uniqueList;
+      let bobinasLookup = {};
+      if (Array.isArray(apiCache.bobinas.data)) {
+        apiCache.bobinas.data.forEach(item => {
+          const bd = item.datos || item || {};
+          const m = (bd.marca_especificaciones || bd.proveedor || '').toLowerCase();
+          bobinasLookup[bd.id || item.id] = m;
+          const rNum = (bd.numero_rollo || bd.numero_bobina || '').toLowerCase();
+          if (rNum) bobinasLookup['rollo:' + rNum] = m;
+        });
+      }
+      let clientList = uniqueList.filter(i => !isKrogerServerRecord(i, bobinasLookup));
       if (role === 'cliente') {
         clientList = clientList.filter(i => {
            const marca = (i.marca_especificaciones || i.marca_cliente || i.marca || '').toLowerCase();
@@ -600,7 +641,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(mapped));
+      res.end(JSON.stringify(mapped.filter(p => !isKrogerServerRecord(p))));
     } else if (method === 'POST') {
       getBody(req, async (newItem) => {
         const id = String(newItem.id || Date.now());
@@ -728,7 +769,7 @@ const server = http.createServer(async (req, res) => {
         return b;
       });
 
-      let clientMapped = mapped;
+      let clientMapped = mapped.filter(b => !isKrogerServerRecord(b, bobinasMap));
       if (role === 'cliente' || role === 'cliente_walmart') {
         clientMapped = mapped.filter(b => {
            if (!b || (!b.codigo_liberacion && !b.codigo_tarima && !b.bolsas_producidas)) return false;
@@ -835,7 +876,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(mapped));
+      res.end(JSON.stringify(mapped.filter(e => !isKrogerServerRecord(e))));
     } else if (method === 'POST') {
       getBody(req, async (newItem) => {
         const id = String(newItem.id || ('emb_' + Date.now()));

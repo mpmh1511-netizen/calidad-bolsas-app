@@ -600,7 +600,6 @@
                   <option value="">Todas las Marcas</option>
                   <option value="KOHLS">KOHLS</option>
                   <option value="MENARDS">MENARDS</option>
-                  <option value="KROGER">KROGER</option>
                   <option value="SUBWAY">SUBWAY</option>
                   <option value="TARGET">TARGET</option>
                   <option value="WALMART">WALMART</option>
@@ -1096,7 +1095,6 @@
                     <option value="">-- Selecciona Marca --</option>
                     <option value="KOHLS">KOHLS</option>
                     <option value="MENARDS">MENARDS</option>
-                    <option value="KROGER">KROGER</option>
                     <option value="SUBWAY">SUBWAY</option>
                     <option value="TARGET">TARGET</option>
                     <option value="WALMART">WALMART</option>
@@ -1301,7 +1299,7 @@
           </div>
 
           <!-- FILA 2: AVANCE EN PRODUCCIÓN POR MÁQUINA (IZQUIERDA) + PORCENTAJES DE INSPECCIÓN DE CALIDAD Y TARIMAS LIBERADAS (DERECHA) -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem; align-items: start;">
             <!-- Bloque A: Avance en Producción por Máquina -->
             <div class="card" style="padding: 1.35rem; border-top: 4px solid #4f46e5;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0;">
@@ -1317,7 +1315,7 @@
                   0 Bolsas
                 </span>
               </div>
-              <div id="obs-produccion-maquinas-container" style="display: flex; flex-direction: column; gap: 10px; max-height: 540px; overflow-y: auto; padding-right: 4px;"></div>
+              <div id="obs-produccion-maquinas-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
             </div>
 
             <!-- Columna Derecha: Porcentajes de Inspección de Calidad + Resumen de Tarimas Liberadas -->
@@ -2007,7 +2005,6 @@
                       <option value="">Selecciona una marca</option>
                       <option value="KOHLS">KOHLS</option>
                       <option value="MENARDS">MENARDS</option>
-                      <option value="KROGER">KROGER</option>
                       <option value="SUBWAY">SUBWAY</option>
                       <option value="TARGET">TARGET</option>
                       <option value="WALMART">WALMART</option>
@@ -2069,7 +2066,6 @@
                         <option value="">Selecciona una marca</option>
                         <option value="KOHLS">KOHLS</option>
                         <option value="MENARDS">MENARDS</option>
-                        <option value="KROGER">KROGER</option>
                         <option value="SUBWAY">SUBWAY</option>
                         <option value="TARGET">TARGET</option>
                         <option value="WALMART">WALMART</option>
@@ -2536,7 +2532,6 @@
                     <option value="">Selecciona la marca...</option>
                     <option value="KOHLS">KOHLS</option>
                     <option value="MENARDS">MENARDS</option>
-                    <option value="KROGER">KROGER</option>
                     <option value="SUBWAY">SUBWAY</option>
                     <option value="TARGET">TARGET</option>
                     <option value="WALMART">WALMART</option>
@@ -2580,7 +2575,6 @@
                       <option value="">Selecciona la marca...</option>
                       <option value="KOHLS">KOHLS</option>
                       <option value="MENARDS">MENARDS</option>
-                      <option value="KROGER">KROGER</option>
                       <option value="SUBWAY">SUBWAY</option>
                       <option value="TARGET">TARGET</option>
                       <option value="WALMART">WALMART</option>
@@ -3550,15 +3544,72 @@
         } catch (e) {}
       })();
 
+      // --- OCULTAR TEMPORALMENTE TODO LO RELACIONADO CON KROGER (Cambiar a false para restaurar) ---
+      const HIDE_KROGER_TEMPORARILY = true;
+      const _krogerBobinaIds = new Set();
+      const _krogerRolloNums = new Set();
+
+      function _hasKrogerText(obj) {
+        if (!obj || typeof obj !== 'object') return false;
+        const fields = [
+          obj.marca,
+          obj.marca_especificaciones,
+          obj.marca_cliente,
+          obj.proveedor,
+          obj.marca_trabajada,
+          obj.cliente,
+          obj.notas,
+          obj.observaciones,
+          obj.descripcion_defecto
+        ];
+        for (const f of fields) {
+          if (f && String(f).toLowerCase().includes('kroger')) return true;
+        }
+        return false;
+      }
+
+      function isKrogerRecord(item) {
+        if (!HIDE_KROGER_TEMPORARILY || !item) return false;
+        if (_hasKrogerText(item)) {
+          if (item.id && (item.numero_rollo || item.numero_bobina) && !item.area && !item.codigo_liberacion && !item.codigo_tarima) {
+            _krogerBobinaIds.add(String(item.id));
+          }
+          if (item.bobina_id) _krogerBobinaIds.add(String(item.bobina_id));
+          const r = String(item.numero_rollo || item.numero_bobina || item.bobina || '').trim().toLowerCase();
+          if (r) _krogerRolloNums.add(r);
+          return true;
+        }
+        if (item.bobina_id && _krogerBobinaIds.has(String(item.bobina_id))) return true;
+        const r = String(item.numero_rollo || item.numero_bobina || item.bobina || '').trim().toLowerCase();
+        if (r && _krogerRolloNums.has(r)) return true;
+        return false;
+      }
+
+      function filterOutKroger(arr) {
+        if (!Array.isArray(arr)) return [];
+        if (!HIDE_KROGER_TEMPORARILY) return arr;
+        arr.forEach(it => {
+          if (it && _hasKrogerText(it)) {
+            if (it.bobina_id) _krogerBobinaIds.add(String(it.bobina_id));
+            if (it.id && (it.numero_rollo || it.numero_bobina) && !it.area && !it.codigo_liberacion && !it.codigo_tarima) {
+              _krogerBobinaIds.add(String(it.id));
+            }
+            const r = String(it.numero_rollo || it.numero_bobina || it.bobina || '').trim().toLowerCase();
+            if (r) _krogerRolloNums.add(r);
+          }
+        });
+        return arr.filter(it => !isKrogerRecord(it));
+      }
+
       // --- ESTADO INICIAL (CARGA INSTANTÁNEA DESDE MEMORIA LOCAL) ---
       let state = {
         section: null, // null, 'calidad' o 'produccion'
         role: null, // 'inspector' o 'estadisticas'
         selectedArea: null, // 'Flexo', 'Nanjang' o 'Con Asa'
-        bobinas: (function(){ try { return JSON.parse(localStorage.getItem('calidad_bobinas')) || []; } catch(e){ return []; } })(),
-        inspecciones: (function(){ try { return JSON.parse(localStorage.getItem('calidad_inspecciones')) || []; } catch(e){ return []; } })(),
-        tarimas: (function(){ try { return JSON.parse(localStorage.getItem('calidad_tarimas')) || []; } catch(e){ return []; } })(),
-        personal: (function(){ try { return JSON.parse(localStorage.getItem('produccion_personal')) || []; } catch(e){ return []; } })(),
+        bobinas: (function(){ try { return filterOutKroger(JSON.parse(localStorage.getItem('calidad_bobinas')) || []); } catch(e){ return []; } })(),
+        inspecciones: (function(){ try { return filterOutKroger(JSON.parse(localStorage.getItem('calidad_inspecciones')) || []); } catch(e){ return []; } })(),
+        tarimas: (function(){ try { return filterOutKroger(JSON.parse(localStorage.getItem('calidad_tarimas')) || []); } catch(e){ return []; } })(),
+        personal: (function(){ try { return filterOutKroger(JSON.parse(localStorage.getItem('produccion_personal')) || []); } catch(e){ return []; } })(),
         activeDate: '',
         currentResult: 'Aprobado',
         uploadedPhotoBase64: '',
@@ -3566,6 +3617,13 @@
         usuarioActual: localStorage.getItem('usuario_actual') || '',
         filtroPersona: ''
       };
+      (function purgeKrogerFromLocalCacheOnLoad() {
+        if (!HIDE_KROGER_TEMPORARILY) return;
+        safeLocalStorageSet('calidad_bobinas', JSON.stringify(state.bobinas));
+        safeLocalStorageSet('calidad_inspecciones', JSON.stringify(stripPhotosForLocalCache(state.inspecciones)));
+        safeLocalStorageSet('calidad_tarimas', JSON.stringify(stripPhotosForLocalCache(state.tarimas)));
+        safeLocalStorageSet('produccion_personal', JSON.stringify(state.personal));
+      })();
 
       // --- SERVIDOR Y BASE DE DATOS EN LA NUBE ---
       const CLOUD_URL = '';
@@ -3664,9 +3722,9 @@
             }
           });
         }
-        const merged = Array.from(tarimaMap.values()).filter(
+        const merged = filterOutKroger(Array.from(tarimaMap.values()).filter(
           item => item && item._record_type !== 'embarque' && item.maquina !== '__EMBARQUE__'
-        );
+        ));
         state.tarimas = merged;
         return merged;
       }
@@ -3791,10 +3849,11 @@
 
       async function getPersonalList() {
         if (Array.isArray(state.personal) && state.personal.length > 0) {
+          state.personal = filterOutKroger(state.personal);
           return state.personal;
         }
         try {
-          const cached = JSON.parse(localStorage.getItem('produccion_personal')) || [];
+          const cached = filterOutKroger(JSON.parse(localStorage.getItem('produccion_personal')) || []);
           state.personal = cached;
           return cached;
         } catch (e) {
@@ -3981,8 +4040,8 @@
 
       // --- SINCRONIZACIÓN AUTOMÁTICA EN TIEMPO REAL ENTRE DISPOSITIVOS ---
       function mergeRecordsById(localArr, remoteArr) {
-        if (!Array.isArray(remoteArr)) return localArr || [];
-        if (!Array.isArray(localArr) || localArr.length === 0) return remoteArr;
+        if (!Array.isArray(remoteArr)) return filterOutKroger(localArr || []);
+        if (!Array.isArray(localArr) || localArr.length === 0) return filterOutKroger(remoteArr);
         const map = new Map();
         // Primero insertar locales recientes
         localArr.forEach(item => {
@@ -4007,7 +4066,7 @@
             }
           }
         });
-        return Array.from(map.values());
+        return filterOutKroger(Array.from(map.values()));
       }
 
       async function syncDataWithServer() {
@@ -4549,7 +4608,7 @@
             let allGlobalMarcas = new Set();
             allInsps.forEach(i => {
                const m = (i.marca_especificaciones || i.marca_cliente || i.marca || '').trim().toUpperCase();
-               if (m) allGlobalMarcas.add(m);
+               if (m && (!HIDE_KROGER_TEMPORARILY || !m.includes('KROGER'))) allGlobalMarcas.add(m);
             });
             const existingOptions = Array.from(marcaSel.options).map(o => o.value);
             allGlobalMarcas.forEach(v => {
@@ -11198,7 +11257,6 @@
       const PREDEFINED_BRANDS = {
         "KOHLS": { alto: 47.6, ancho: 45.0, fuelle: 17.8 },
         "MENARDS": { alto: 43.0, ancho: 30.5, fuelle: 17.2 },
-        "KROGER": { alto: 26.7, ancho: 32.0, fuelle: 18.0 },
         "SUBWAY": { alto: 36.0, ancho: 32.0, fuelle: 22.0 },
         "TARGET": { alto: 26.7, ancho: 32.0, fuelle: 18.0 },
         "WALMART": { alto: 26.0, ancho: 32.0, fuelle: 16.0 },
@@ -11648,7 +11706,7 @@
           if (raw) {
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed)) {
-              embarquesState.items = parsed;
+              embarquesState.items = filterOutKroger(parsed);
             }
           }
         } catch (e) {
@@ -11709,7 +11767,7 @@
         });
 
         if (changed || embarquesState.items.length !== Object.keys(mergedMap).length) {
-          embarquesState.items = Object.values(mergedMap).sort((a, b) => {
+          embarquesState.items = filterOutKroger(Object.values(mergedMap)).sort((a, b) => {
             const dA = (a.fecha_programada || '') + ' ' + (a.hora_programada || '');
             const dB = (b.fecha_programada || '') + ' ' + (b.hora_programada || '');
             return dA.localeCompare(dB);
@@ -12567,10 +12625,10 @@
         const marcaSelect = document.getElementById('emb-pasadas-filter-marca');
         if (marcaSelect) {
           const currentMarca = marcaSelect.value;
-          const marcasOficiales = ['KOHLS', 'MENARDS', 'KROGER', 'SUBWAY', 'TARGET', 'WALMART', 'BSK', 'MCDONALDS SMALL', 'MCDONALDS LARGE'];
+          const marcasOficiales = ['KOHLS', 'MENARDS', 'SUBWAY', 'TARGET', 'WALMART', 'BSK', 'MCDONALDS SMALL', 'MCDONALDS LARGE'];
           const marcasSet = new Set(marcasOficiales);
           embarquesState.items.forEach(it => {
-            if (it.marca) marcasSet.add(it.marca);
+            if (it.marca && (!HIDE_KROGER_TEMPORARILY || !String(it.marca).toLowerCase().includes('kroger'))) marcasSet.add(it.marca);
           });
           const sortedMarcas = Array.from(marcasSet);
           marcaSelect.innerHTML = '<option value="">Todas las Marcas</option>' +
