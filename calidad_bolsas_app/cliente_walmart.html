@@ -759,13 +759,31 @@
       const isOnline = true;
       let statIndepPeriodo = 'dia';
       let currentRawExcelData = '';
+      let isSyncing = false;
+
+      function isFriasTarimaRecord(t) {
+        if (!t) return false;
+        const areaStr = String(t.area || '').toLowerCase();
+        if (areaStr === 'frías' || areaStr === 'frias') return true;
+        const maqStr = String(t.banda || t.maquina || '').trim().toLowerCase();
+        if (maqStr.startsWith('banda')) return true;
+        const codStr = String(t.codigo_tarima || t.codigo_liberacion || '').toLowerCase();
+        if (codStr.includes('frías') || codStr.includes('frias') || codStr.includes('banda')) return true;
+        return false;
+      }
 
       function isWalmartRecord(item, bobinasMap = {}) {
-        let m = String(item.marca_especificaciones || item.marca_cliente || item.marca || '').toLowerCase();
+        if (!item) return false;
+        if (item._record_type === 'embarque' || item.maquina === '__EMBARQUE__') return false;
+        let m = String(item.marca_especificaciones || item.marca_cliente || item.marca || item.proveedor || '').toLowerCase();
         if (!m) {
+          const r1 = String(item.numero_rollo || '').trim().toLowerCase();
+          const r2 = String(item.bobina || '').trim().toLowerCase();
+          const r3 = String(item.numero_bobina || '').trim().toLowerCase();
           if (item.bobina_id && bobinasMap[item.bobina_id]) m = bobinasMap[item.bobina_id];
-          else if (item.numero_rollo && bobinasMap['rollo:' + String(item.numero_rollo).toLowerCase()]) m = bobinasMap['rollo:' + String(item.numero_rollo).toLowerCase()];
-          else if (item.bobina && bobinasMap['rollo:' + String(item.bobina).toLowerCase()]) m = bobinasMap['rollo:' + String(item.bobina).toLowerCase()];
+          else if (r1 && bobinasMap['rollo:' + r1]) m = bobinasMap['rollo:' + r1];
+          else if (r2 && bobinasMap['rollo:' + r2]) m = bobinasMap['rollo:' + r2];
+          else if (r3 && bobinasMap['rollo:' + r3]) m = bobinasMap['rollo:' + r3];
         }
         return m.includes('walmart') || m.includes('wal-mart');
       }
@@ -783,14 +801,18 @@
       }
 
       async function apiFetch(endpoint, options = {}) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 9000);
         try {
           const fullUrl = endpoint.startsWith('http') ? endpoint : (SERVER_URL + endpoint);
-          const res = await fetch(fullUrl, options);
+          const res = await fetch(fullUrl, { ...options, signal: controller.signal });
           if (!res.ok) throw new Error('API Error');
           return await res.json();
         } catch (e) {
-          console.error('API Fetch failed:', e);
+          console.warn('API Fetch failed:', e.message || e);
           return null;
+        } finally {
+          clearTimeout(timer);
         }
       }
 
@@ -815,8 +837,12 @@
       }
 
       async function syncDataWithServer() {
+        if (isSyncing) return;
+        if (typeof document !== 'undefined' && document.hidden) return;
+        isSyncing = true;
         try {
-          const [i, t] = await Promise.all([
+          const [b, i, t] = await Promise.all([
+            apiFetch('/api/bobinas'),
             apiFetch('/api/inspecciones'),
             apiFetch('/api/tarimas')
           ]);
@@ -825,49 +851,67 @@
           if (i && Array.isArray(i)) {
             rawInsps = i;
           } else {
-            rawInsps = JSON.parse(localStorage.getItem('calidad_inspecciones')) || [];
+            try { rawInsps = JSON.parse(localStorage.getItem('calidad_inspecciones')) || []; } catch (e) { rawInsps = []; }
           }
 
           let rawTarimas = [];
           if (t && Array.isArray(t)) {
             rawTarimas = t;
           } else {
-            rawTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || [];
+            try { rawTarimas = JSON.parse(localStorage.getItem('calidad_tarimas')) || []; } catch (e) { rawTarimas = []; }
           }
 
-          // Construir mapa de bobinas e inspecciones para asociar rollos de Walmart en modo local
-          const localBobinas = JSON.parse(localStorage.getItem('calidad_bobinas')) || [];
+          let localBobinas = [];
+          try { localBobinas = JSON.parse(localStorage.getItem('calidad_bobinas')) || []; } catch (e) { localBobinas = []; }
+          const allBobinas = [...(Array.isArray(b) ? b : []), ...localBobinas];
+
           const bobinasMap = {};
-          localBobinas.forEach(b => {
-            const m = String(b.marca_especificaciones || b.proveedor || '').toLowerCase();
-            if (b.id) bobinasMap[b.id] = m;
-            if (b.numero_rollo) bobinasMap['rollo:' + String(b.numero_rollo).toLowerCase()] = m;
+          allBobinas.forEach(bob => {
+            if (!bob) return;
+            const m = String(bob.marca_especificaciones || bob.proveedor || bob.marca || '').toLowerCase();
+            if (!m) return;
+            if (bob.id) bobinasMap[bob.id] = m;
+            const rNum = String(bob.numero_rollo || bob.numero_bobina || '').trim().toLowerCase();
+            if (rNum) bobinasMap['rollo:' + rNum] = m;
           });
           rawInsps.forEach(insp => {
+            if (!insp) return;
             const m = String(insp.marca_especificaciones || insp.marca_cliente || insp.marca || '').toLowerCase();
-            if (m && insp.numero_rollo && !bobinasMap['rollo:' + String(insp.numero_rollo).toLowerCase()]) {
-              bobinasMap['rollo:' + String(insp.numero_rollo).toLowerCase()] = m;
+            const rNum = String(insp.numero_rollo || insp.numero_bobina || '').trim().toLowerCase();
+            if (m && rNum && !bobinasMap['rollo:' + rNum]) {
+              bobinasMap['rollo:' + rNum] = m;
+            }
+            if (m && insp.bobina_id && !bobinasMap[insp.bobina_id]) {
+              bobinasMap[insp.bobina_id] = m;
             }
           });
 
+          state.bobinas = allBobinas;
+
           state.inspecciones = rawInsps
-            .filter(item => isWalmartRecord(item, bobinasMap))
+            .filter(item => !isFriasTarimaRecord(item) && isWalmartRecord(item, bobinasMap))
             .map(stripSensitiveFields);
 
           state.tarimas = rawTarimas
-            .filter(item => isWalmartRecord(item, bobinasMap))
+            .filter(item => (item.codigo_liberacion || item.codigo_tarima) && !isFriasTarimaRecord(item) && isWalmartRecord(item, bobinasMap))
             .map(stripSensitiveFields);
 
           fixOldFlexoRecords();
           renderStatIndepView();
+          const viewTarimas = document.getElementById('view-tarimas');
+          if (viewTarimas && viewTarimas.style.display !== 'none') {
+            searchTarima(null, true);
+          }
         } catch (err) {
           console.error('Error en sincronización continua:', err);
+        } finally {
+          isSyncing = false;
         }
       }
 
       window.onload = async function() {
         await syncDataWithServer();
-        setInterval(syncDataWithServer, 5000);
+        setInterval(syncDataWithServer, 20000);
 
         const now = new Date();
         let defaultDate = now.toISOString().split('T')[0];
@@ -1492,6 +1536,10 @@
         return `<span class="badge badge-danger">❌ ${est}</span>`;
       }
 
+      function openPhotoLightbox(src) {
+        showFullPhoto(src);
+      }
+
       function renderTarimasStatsAndTable(filteredTarimas) {
         const statsBody = document.getElementById('table-tarimas-stats-body');
         const periodoBody = document.getElementById('table-tarimas-periodo-body');
@@ -1499,14 +1547,17 @@
 
         const total = filteredTarimas.length;
         if (total === 0) {
-          statsBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 1.5rem; font-style: italic;">No hay tarimas liberadas de Walmart en este periodo.</td></tr>`;
+          statsBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem; font-style: italic;">No hay tarimas liberadas de Walmart en este periodo.</td></tr>`;
           periodoBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 1.5rem; font-style: italic;">Sin registros de tarimas en el periodo seleccionado.</td></tr>`;
           return;
         }
 
-        const lib = filteredTarimas.filter(t => t.estado_liberacion === 'Liberado' || t.estado_liberacion === 'Liberada').length;
-        const cond = filteredTarimas.filter(t => t.estado_liberacion === 'Condicionado' || t.estado_liberacion === 'Condicionada').length;
-        const rech = filteredTarimas.filter(t => t.estado_liberacion === 'Rechazado' || t.estado_liberacion === 'Rechazada').length;
+        const lib = filteredTarimas.filter(t => {
+          const e = String(t.estado_liberacion || '').toLowerCase();
+          return !e.includes('condicion') && !e.includes('rechaz');
+        }).length;
+        const cond = filteredTarimas.filter(t => String(t.estado_liberacion || '').toLowerCase().includes('condicion')).length;
+        const rech = filteredTarimas.filter(t => String(t.estado_liberacion || '').toLowerCase().includes('rechaz')).length;
 
         const pctLib = Math.round((lib / total) * 100);
         const pctCond = Math.round((cond / total) * 100);
@@ -1514,10 +1565,11 @@
 
         statsBody.innerHTML = `
           <tr>
-            <td style="text-align: center; font-weight: 800; color: #16a34a; font-size: 1.05rem;">${pctLib}%</td>
-            <td style="text-align: center; font-weight: 800; color: #ca8a04; font-size: 1.05rem;">${pctCond}%</td>
-            <td style="text-align: center; font-weight: 800; color: #dc2626; font-size: 1.05rem;">${pctRech}%</td>
-            <td style="text-align: center; font-weight: 800; color: #1e293b;">${total}</td>
+            <td style="padding: 12px 10px; font-weight: 800; color: var(--color-primary);">WALMART</td>
+            <td style="padding: 12px 10px; font-weight: 800; color: #16a34a; font-size: 1rem;">${lib} <span style="font-size: 0.85rem; color: #15803d;">(${pctLib}%)</span></td>
+            <td style="padding: 12px 10px; font-weight: 800; color: #ca8a04; font-size: 1rem;">${cond} <span style="font-size: 0.85rem; color: #b45309;">(${pctCond}%)</span></td>
+            <td style="padding: 12px 10px; font-weight: 800; color: #dc2626; font-size: 1rem;">${rech} <span style="font-size: 0.85rem; color: #b91c1c;">(${pctRech}%)</span></td>
+            <td style="padding: 12px 10px; font-weight: 800; color: #1e293b; font-size: 1.05rem;">${total}</td>
           </tr>
         `;
 
@@ -1526,6 +1578,7 @@
           const rollo = t.numero_rollo || t.bobina || '-';
           const fecha = t.fecha_registro || t.fecha_iso || '-';
           const fotoUrl = t.evidencia_acomodo_url || t.foto_url || '';
+          const idOrCode = String(t.id || codigo).replace(/'/g, "\\'");
 
           const chkTarima = (t.tarima_correcta !== undefined) ? getTarimaCheckBadge(t.tarima_correcta) : '<span style="color:#64748b;">N/A</span>';
           const chkEtiq = getTarimaCheckBadge(t.etiquetado_correcto);
@@ -1533,7 +1586,7 @@
           const chkCinta = getTarimaCheckBadge(t.cinta_correcta !== undefined ? t.cinta_correcta : t.cinta_correctamente_pegada);
 
           return `
-            <tr style="border-bottom: 1px solid #e2e8f0;">
+            <tr onclick="if(!event.target.closest('button') && !event.target.closest('img')) viewTarimaFullDetail('${idOrCode}')" style="border-bottom: 1px solid #e2e8f0; cursor: pointer;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'" title="Toca para abrir la ficha completa de la tarima">
               <td style="font-weight: 800; color: var(--color-primary);">${codigo}</td>
               <td style="font-size: 0.85rem; color: #475569;">${fecha}</td>
               <td style="font-weight: 600;">${rollo}</td>
@@ -1543,14 +1596,98 @@
               </td>
               <td>${getTarimaEstadoBadge(t.estado_liberacion)}</td>
               <td style="text-align: center;">
-                ${fotoUrl ? `<img src="${fotoUrl}" onclick="openPhotoLightbox('${fotoUrl}')" style="height: 42px; width: 42px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #cbd5e1;" title="Click para ampliar evidencia">` : '<span style="color:#94a3b8; font-size:0.75rem;">Sin foto</span>'}
+                ${fotoUrl ? `<img src="${fotoUrl}" onclick="event.stopPropagation(); showFullPhoto('${fotoUrl}')" style="height: 44px; width: 44px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #cbd5e1;" title="Toca para ampliar fotografía">` : '<span style="color:#94a3b8; font-size:0.75rem;">Sin foto</span>'}
               </td>
               <td style="text-align: center;">
-                <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.75rem; width: auto;" onclick="openTarimasConsultaView(); showTarimaDetailsById('${t.id || codigo}')">👁️ Ver Ficha</button>
+                <button type="button" class="btn-secondary" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700;" onclick="event.stopPropagation(); viewTarimaFullDetail('${idOrCode}')">👁️ Ver Ficha</button>
               </td>
             </tr>
           `;
         }).join('');
+      }
+
+      function viewTarimaFullDetail(idOrCode) {
+        const list = state.tarimas || [];
+        const t = list.find(x => String(x.id) === String(idOrCode) || String(x.codigo_liberacion || x.codigo_tarima) === String(idOrCode));
+        if (!t) return;
+
+        const body = document.getElementById('full-inspection-detail-body');
+        if (!body) return;
+
+        const codigo = t.codigo_liberacion || t.codigo_tarima || '-';
+        const fecha = t.fecha_registro || t.fecha_iso || '-';
+        const rollo = t.numero_rollo || t.bobina || '-';
+        const foto = t.evidencia_acomodo_url || t.foto_url || '';
+        const estRaw = t.estado_liberacion || 'Liberado';
+        const estLower = String(estRaw).toLowerCase();
+        const estColor = estLower.includes('rechaz') ? '#dc2626' : estLower.includes('condicion') ? '#d97706' : '#15803d';
+
+        const chkLabel = (v) => (v === 1 || v === true || v === '1' || v === 'Sí' || v === 'Si') ? 'Sí / Correcto ✅' : 'No / Incorrecto ❌';
+
+        let html = `
+          <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:15px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+              <div>
+                <span style="font-size:0.75rem; color:#64748b; text-transform:uppercase; font-weight:700;">Código de Liberación de Tarima</span>
+                <div style="font-size:1.3rem; font-weight:800; color:var(--color-primary); font-family:monospace;">🏷️ ${codigo}</div>
+              </div>
+              <span style="background:#fff; border:2px solid ${estColor}; color:${estColor}; padding:5px 12px; border-radius:8px; font-weight:800; font-size:0.9rem;">
+                ${estRaw}
+              </span>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div><span style="color:#64748b; font-size:0.85rem;">Fecha / Hora:</span> <strong style="display:block;">${fecha}</strong></div>
+              <div><span style="color:#64748b; font-size:0.85rem;">Marca:</span> <strong style="display:block; color:#15803d;">WALMART</strong></div>
+              <div><span style="color:#64748b; font-size:0.85rem;">Nº Rollo / Bobina:</span> <strong style="display:block;">${rollo}</strong></div>
+              <div><span style="color:#64748b; font-size:0.85rem;">Dictamen:</span> <strong style="display:block; color:${estColor};">${estRaw}</strong></div>
+            </div>
+          </div>
+
+          <h3 style="font-size:1rem; color:#0f172a; margin-top:10px; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">Checklist de Liberación de Tarima</h3>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px; padding: 10px 0;">
+            ${t.tarima_correcta !== undefined ? `
+              <div style="background:#fff; border:1px solid #e2e8f0; padding:10px 12px; border-radius:6px;">
+                <span style="color:#64748b; font-size:0.75rem; display:block;">Tarima en buen estado</span>
+                <strong style="font-size:0.9rem;">${chkLabel(t.tarima_correcta)}</strong>
+              </div>
+            ` : ''}
+            <div style="background:#fff; border:1px solid #e2e8f0; padding:10px 12px; border-radius:6px;">
+              <span style="color:#64748b; font-size:0.75rem; display:block;">Etiquetado correcto</span>
+              <strong style="font-size:0.9rem;">${chkLabel(t.etiquetado_correcto)}</strong>
+            </div>
+            <div style="background:#fff; border:1px solid #e2e8f0; padding:10px 12px; border-radius:6px;">
+              <span style="color:#64748b; font-size:0.75rem; display:block;">Bolsas cumplen condiciones</span>
+              <strong style="font-size:0.9rem;">${chkLabel(t.bolsas_cumplen !== undefined ? t.bolsas_cumplen : t.bolsas_cumplen_condiciones)}</strong>
+            </div>
+            <div style="background:#fff; border:1px solid #e2e8f0; padding:10px 12px; border-radius:6px;">
+              <span style="color:#64748b; font-size:0.75rem; display:block;">Cinta bien pegada</span>
+              <strong style="font-size:0.9rem;">${chkLabel(t.cinta_correcta !== undefined ? t.cinta_correcta : t.cinta_correctamente_pegada)}</strong>
+            </div>
+          </div>
+        `;
+
+        if (t.motivo_condicionado || t.motivo) {
+          html += `
+            <div style="background:#fff5f5; border:1px solid #fecaca; padding:10px 12px; border-radius:6px; margin-top:8px; color:#dc2626;">
+              <strong>Motivo (${estRaw}):</strong> ${t.motivo_condicionado || t.motivo}
+            </div>
+          `;
+        }
+
+        if (foto) {
+          html += `
+            <div style="margin-top:15px; text-align:center;">
+              <h3 style="font-size:1rem; color:#0f172a; margin-bottom:10px;">Evidencia Fotográfica del Acomodo</h3>
+              <img src="${foto}" style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onclick="showFullPhoto('${foto}')" title="Toca para ampliar"/>
+            </div>
+          `;
+        } else {
+          html += `<div style="margin-top:10px; text-align:center; color:#94a3b8; font-style:italic;">Sin fotografía de evidencia adjunta.</div>`;
+        }
+
+        body.innerHTML = html;
+        const modal = document.getElementById('full-inspection-detail-modal');
+        if (modal) modal.style.display = 'flex';
       }
 
       function clearTarimaSearch() {
@@ -1593,7 +1730,7 @@
         if (listContainer && tbody) {
           listContainer.style.display = 'block';
           if (results.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem; font-style: italic;">No se encontraron tarimas liberadas de Walmart con esos filtros.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 1.5rem; font-style: italic;">No se encontraron tarimas liberadas de Walmart con esos filtros.</td></tr>`;
             if (detailContainer) detailContainer.style.display = 'none';
             return;
           }
@@ -1602,20 +1739,24 @@
             const codigo = t.codigo_liberacion || t.codigo_tarima || '-';
             const rollo = t.numero_rollo || t.bobina || '-';
             const fecha = t.fecha_registro || t.fecha_iso || '-';
+            const fotoUrl = t.evidencia_acomodo_url || t.foto_url || '';
             return `
-              <tr style="border-bottom: 1px solid #e2e8f0;">
+              <tr onclick="if(!event.target.closest('button') && !event.target.closest('img')) showTarimaDetailsByIndex(${idx})" style="border-bottom: 1px solid #e2e8f0; cursor: pointer;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
                 <td style="font-weight: 800; color: var(--color-primary);">${codigo}</td>
-                <td style="font-size: 0.85rem;">${fecha}</td>
                 <td style="font-weight: 600;">${rollo}</td>
+                <td style="font-size: 0.85rem;">${fecha}</td>
                 <td>${getTarimaEstadoBadge(t.estado_liberacion)}</td>
                 <td>
-                  <button class="btn btn-primary" style="padding: 5px 12px; font-size: 0.78rem; width: auto;" onclick="showTarimaDetailsByIndex(${idx})">👁️ Ver Detalle</button>
+                  ${fotoUrl ? `<img src="${fotoUrl}" onclick="event.stopPropagation(); showFullPhoto('${fotoUrl}')" style="height: 40px; width: 40px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #cbd5e1;" title="Toca para ampliar fotografía">` : '<span style="color:#94a3b8; font-size:0.75rem;">Sin foto</span>'}
+                </td>
+                <td>
+                  <button type="button" class="btn-primary" style="padding: 5px 12px; font-size: 0.78rem; width: auto;" onclick="event.stopPropagation(); showTarimaDetailsByIndex(${idx})">👁️ Ver Detalle</button>
                 </td>
               </tr>
             `;
           }).join('');
 
-          if (results.length === 1 && !showAllIfEmpty) {
+          if (results.length === 1) {
             showTarimaDetails(results[0]);
           }
         }
@@ -1634,6 +1775,7 @@
 
       function showTarimaDetails(t) {
         const resContainer = document.getElementById('tarima-search-result');
+        const resBody = document.getElementById('res-tarima-body');
         if (!resContainer || !t) return;
 
         const codigo = t.codigo_liberacion || t.codigo_tarima || '-';
@@ -1641,43 +1783,80 @@
         const fecha = t.fecha_registro || t.fecha_iso || '-';
         const fotoUrl = t.evidencia_acomodo_url || t.foto_url || '';
 
-        document.getElementById('res-tarima-code').textContent = codigo;
-        document.getElementById('res-tarima-rollo').textContent = rollo;
-        document.getElementById('res-tarima-fecha').textContent = fecha;
+        const codeEl = document.getElementById('res-tarima-code');
+        const dateEl = document.getElementById('res-tarima-date');
+        if (codeEl) codeEl.textContent = `Código: ${codigo}`;
+        if (dateEl) dateEl.textContent = `F. Registro: ${fecha}`;
 
-        const badgeEl = document.getElementById('res-tarima-status-badge');
-        if (badgeEl) {
-          badgeEl.outerHTML = `<span id="res-tarima-status-badge">${getTarimaEstadoBadge(t.estado_liberacion)}</span>`;
-        }
+        const chkTarima = (t.tarima_correcta !== undefined) ? getTarimaCheckBadge(t.tarima_correcta) : '<span style="color:#64748b;">N/A</span>';
+        const chkEtiq = getTarimaCheckBadge(t.etiquetado_correcto);
+        const chkBolsas = getTarimaCheckBadge(t.bolsas_cumplen !== undefined ? t.bolsas_cumplen : t.bolsas_cumplen_condiciones);
+        const chkCinta = getTarimaCheckBadge(t.cinta_correcta !== undefined ? t.cinta_correcta : t.cinta_correctamente_pegada);
 
-        const motivoWrap = document.getElementById('res-tarima-motivo-container');
-        const motivoText = document.getElementById('res-tarima-motivo');
-        if (t.motivo_condicionado && motivoWrap && motivoText) {
-          motivoText.textContent = t.motivo_condicionado;
-          motivoWrap.style.display = 'block';
-        } else if (motivoWrap) {
-          motivoWrap.style.display = 'none';
-        }
+        const imgHtml = fotoUrl
+          ? `<div style="text-align: center;">
+               <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 8px; font-weight: 700;">Evidencia Fotográfica del Acomodo</span>
+               <img src="${fotoUrl}" onclick="showFullPhoto('${fotoUrl}')" style="width: 100%; max-height: 280px; object-fit: contain; border-radius: 8px; border: 1px solid var(--border-color); background: #fafafa; cursor: zoom-in;" title="Toca para ampliar fotografía" />
+             </div>`
+          : `<div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
+               <span style="font-size: 0.85rem; color: var(--text-muted); font-style: italic;">Sin foto adjuntada</span>
+             </div>`;
 
-        const c1 = document.getElementById('res-tarima-c1');
-        const c2 = document.getElementById('res-tarima-c2');
-        const c3 = document.getElementById('res-tarima-c3');
-        const c4 = document.getElementById('res-tarima-c4');
-        if (c1) c1.innerHTML = (t.tarima_correcta !== undefined) ? getTarimaCheckBadge(t.tarima_correcta) : '<span style="color:#64748b;">N/A</span>';
-        if (c2) c2.innerHTML = getTarimaCheckBadge(t.etiquetado_correcto);
-        if (c3) c3.innerHTML = getTarimaCheckBadge(t.bolsas_cumplen !== undefined ? t.bolsas_cumplen : t.bolsas_cumplen_condiciones);
-        if (c4) c4.innerHTML = getTarimaCheckBadge(t.cinta_correcta !== undefined ? t.cinta_correcta : t.cinta_correctamente_pegada);
+        if (resBody) {
+          resBody.innerHTML = `
+            <div style="display: grid; grid-template-columns: ${fotoUrl ? '1.4fr 1fr' : '1fr'}; gap: 1.5rem; align-items: start;">
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                  <div>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Marca</span>
+                    <strong style="font-size: 1rem; color: var(--color-primary);">WALMART</strong>
+                  </div>
+                  <div>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Número de Rollo (Bobina)</span>
+                    <strong style="font-size: 1rem;">${rollo}</strong>
+                  </div>
+                  <div>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Fecha y Hora de Liberación</span>
+                    <strong style="font-size: 0.92rem;">${fecha}</strong>
+                  </div>
+                  <div>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Dictamen de la Tarima</span>
+                    <div style="margin-top: 2px;">${getTarimaEstadoBadge(t.estado_liberacion)}</div>
+                  </div>
+                </div>
 
-        const imgEl = document.getElementById('res-tarima-img');
-        const noImgEl = document.getElementById('res-tarima-no-img');
-        if (fotoUrl && imgEl) {
-          imgEl.src = fotoUrl;
-          imgEl.style.display = 'inline-block';
-          imgEl.onclick = () => openPhotoLightbox(fotoUrl);
-          if (noImgEl) noImgEl.style.display = 'none';
-        } else {
-          if (imgEl) imgEl.style.display = 'none';
-          if (noImgEl) noImgEl.style.display = 'block';
+                ${(t.motivo_condicionado || t.motivo) ? `
+                  <div style="background: #fff5f5; padding: 10px 12px; border-radius: 8px; border-left: 4px solid #dc2626; color: #dc2626;">
+                    <span style="font-size: 0.75rem; font-weight: 700; display: block;">Motivo de la Condición / Rechazo:</span>
+                    <p style="font-size: 0.9rem; margin: 4px 0 0 0;">${t.motivo_condicionado || t.motivo}</p>
+                  </div>
+                ` : ''}
+
+                <div>
+                  <span style="font-size: 0.85rem; font-weight: 700; color: var(--color-primary); display: block; margin-bottom: 8px;">Checklist Verificado:</span>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.88rem;">
+                    <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                      <span>¿Tarima Correcta?</span>
+                      <span>${chkTarima}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                      <span>¿Etiquetado Correcto?</span>
+                      <span>${chkEtiq}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                      <span>¿Bolsas Cumplen?</span>
+                      <span>${chkBolsas}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                      <span>¿Cinta Correcta?</span>
+                      <span>${chkCinta}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              ${imgHtml}
+            </div>
+          `;
         }
 
         resContainer.style.display = 'block';

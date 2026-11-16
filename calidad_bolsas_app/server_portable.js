@@ -679,52 +679,67 @@ const server = http.createServer(async (req, res) => {
         setCached('tarimas', mapped);
       }
 
+      // Enriquecer tarimas que no tengan marca directa con la marca de su bobina o inspección asociada
+      let bobinasList = apiCache.bobinas.data || await supabaseRequest('bobinas?select=*&order=id.desc&limit=500');
+      let inspList = apiCache.inspecciones.data || await supabaseRequest('inspecciones?select=datos&order=id.desc&limit=600');
+      let bobinasMap = {};
+      if (Array.isArray(bobinasList)) {
+        bobinasList.forEach(item => {
+           const bd = item.datos || item || {};
+           const m = String(bd.marca_especificaciones || bd.proveedor || bd.marca || '').trim();
+           if (m) {
+             bobinasMap[String(bd.id || item.id)] = m;
+             const rNum = String(bd.numero_rollo || bd.numero_bobina || '').trim().toLowerCase();
+             if (rNum) bobinasMap['rollo:' + rNum] = m;
+           }
+        });
+      }
+      if (Array.isArray(inspList)) {
+        inspList.forEach(rawItem => {
+          const d = rawItem.datos || rawItem || {};
+          const m = String(d.marca_especificaciones || d.marca_cliente || d.marca || '').trim();
+          const rNum = String(d.numero_rollo || d.numero_bobina || '').trim().toLowerCase();
+          if (m && rNum && !bobinasMap['rollo:' + rNum]) {
+            bobinasMap['rollo:' + rNum] = m;
+          }
+          if (m && d.bobina_id && !bobinasMap[String(d.bobina_id)]) {
+            bobinasMap[String(d.bobina_id)] = m;
+          }
+        });
+      }
+
+      mapped = mapped.map(b => {
+        if (!b) return b;
+        let marca = String(b.marca || b.marca_especificaciones || b.marca_cliente || b.proveedor || '').trim();
+        if (!marca) {
+          const r1 = String(b.numero_rollo || '').trim().toLowerCase();
+          const r2 = String(b.bobina || '').trim().toLowerCase();
+          if (b.bobina_id && bobinasMap[String(b.bobina_id)]) {
+            marca = bobinasMap[String(b.bobina_id)];
+          } else if (r1 && bobinasMap['rollo:' + r1]) {
+            marca = bobinasMap['rollo:' + r1];
+          } else if (r2 && bobinasMap['rollo:' + r2]) {
+            marca = bobinasMap['rollo:' + r2];
+          }
+          if (marca) {
+            return { ...b, marca };
+          }
+        }
+        return b;
+      });
+
       let clientMapped = mapped;
       if (role === 'cliente' || role === 'cliente_walmart') {
-        let bobinasList = apiCache.bobinas.data || await supabaseRequest('bobinas?select=*&order=id.desc&limit=500');
-        let inspList = apiCache.inspecciones.data || [];
-        let bobinasMap = {};
-        if (bobinasList) {
-          bobinasList.forEach(item => {
-             const bd = item.datos || item || {};
-             const m = (bd.marca_especificaciones || bd.proveedor || bd.marca || '').toLowerCase();
-             if (m) {
-               bobinasMap[bd.id || item.id] = m;
-               const rNum = String(bd.numero_rollo || bd.numero_bobina || '').trim().toLowerCase();
-               if (rNum) bobinasMap['rollo:' + rNum] = m;
-             }
-          });
-        }
-        if (Array.isArray(inspList)) {
-          inspList.forEach(d => {
-            const m = String(d.marca_especificaciones || d.marca_cliente || d.marca || '').trim().toLowerCase();
-            const rNum = String(d.numero_rollo || '').trim().toLowerCase();
-            if (m && rNum && !bobinasMap['rollo:' + rNum]) {
-              bobinasMap['rollo:' + rNum] = m;
-            }
-          });
-        }
-        
         clientMapped = mapped.filter(b => {
            if (!b || (!b.codigo_liberacion && !b.codigo_tarima && !b.bolsas_producidas)) return false;
            let marca = String(b.marca || b.marca_especificaciones || b.marca_cliente || b.proveedor || '').toLowerCase();
-           if (!marca && (b.codigo_liberacion || b.codigo_tarima)) {
-             const r1 = String(b.numero_rollo || '').trim().toLowerCase();
-             const r2 = String(b.bobina || '').trim().toLowerCase();
-             if (b.bobina_id && bobinasMap[b.bobina_id]) {
-               marca = bobinasMap[b.bobina_id];
-             } else if (r1 && bobinasMap['rollo:' + r1]) {
-               marca = bobinasMap['rollo:' + r1];
-             } else if (r2 && bobinasMap['rollo:' + r2]) {
-               marca = bobinasMap['rollo:' + r2];
-             }
-           }
            if (role === 'cliente_walmart') {
              return marca.includes('walmart') || marca.includes('wal-mart');
            }
            return marca.includes('mcdonalds') || marca.includes('mc donalds');
         }).map(b => {
            const copy = { ...b };
+           if (role === 'cliente_walmart' && !copy.marca) copy.marca = 'WALMART';
            delete copy.operador;
            delete copy.editado_por;
            delete copy.usuario;
