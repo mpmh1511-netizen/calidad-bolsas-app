@@ -598,8 +598,6 @@
                 <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Filtrar por Marca:</label>
                 <select id="stat-indep-marca-select" class="form-control" onchange="onStatIndepFilterChange()" style="width: 100%; padding: 8px; font-weight: 600;">
                   <option value="">Todas las Marcas</option>
-                  <option value="KOHLS">KOHLS</option>
-                  <option value="MENARDS">MENARDS</option>
                   <option value="SUBWAY">SUBWAY</option>
                   <option value="TARGET">TARGET</option>
                   <option value="WALMART">WALMART</option>
@@ -1093,8 +1091,6 @@
                   <label style="font-weight: 700; font-size: 0.85rem;">🏷️ Marca *</label>
                   <select id="emb-form-marca-select" class="form-control" onchange="toggleEmbarqueMarcaOtro()" required>
                     <option value="">-- Selecciona Marca --</option>
-                    <option value="KOHLS">KOHLS</option>
-                    <option value="MENARDS">MENARDS</option>
                     <option value="SUBWAY">SUBWAY</option>
                     <option value="TARGET">TARGET</option>
                     <option value="WALMART">WALMART</option>
@@ -2003,8 +1999,6 @@
                     <label>Especificaciones / Marca</label>
                     <select id="flexo-bobina-marca" class="form-control" onchange="toggleMarcaOtro('flexo-bobina-marca')">
                       <option value="">Selecciona una marca</option>
-                      <option value="KOHLS">KOHLS</option>
-                      <option value="MENARDS">MENARDS</option>
                       <option value="SUBWAY">SUBWAY</option>
                       <option value="TARGET">TARGET</option>
                       <option value="WALMART">WALMART</option>
@@ -2064,8 +2058,6 @@
                       <label>Especificaciones / Marca</label>
                       <select id="bolsas-manual-marca" class="form-control" onchange="toggleMarcaOtro('bolsas-manual-marca'); autoValidateBolsasMeasurements()">
                         <option value="">Selecciona una marca</option>
-                        <option value="KOHLS">KOHLS</option>
-                        <option value="MENARDS">MENARDS</option>
                         <option value="SUBWAY">SUBWAY</option>
                         <option value="TARGET">TARGET</option>
                         <option value="WALMART">WALMART</option>
@@ -2530,8 +2522,6 @@
                   <label>Marca de la Tarima *</label>
                   <select id="tarima-marca-principal" class="form-control" onchange="toggleMarcaOtro('tarima-marca-principal')" required>
                     <option value="">Selecciona la marca...</option>
-                    <option value="KOHLS">KOHLS</option>
-                    <option value="MENARDS">MENARDS</option>
                     <option value="SUBWAY">SUBWAY</option>
                     <option value="TARGET">TARGET</option>
                     <option value="WALMART">WALMART</option>
@@ -2573,8 +2563,6 @@
                     <label>Marca / Especificaciones *</label>
                     <select id="tarima-manual-marca-select" class="form-control" onchange="toggleTarimaManualMarcaOtro()">
                       <option value="">Selecciona la marca...</option>
-                      <option value="KOHLS">KOHLS</option>
-                      <option value="MENARDS">MENARDS</option>
                       <option value="SUBWAY">SUBWAY</option>
                       <option value="TARGET">TARGET</option>
                       <option value="WALMART">WALMART</option>
@@ -3544,8 +3532,9 @@
         } catch (e) {}
       })();
 
-      // --- OCULTAR TEMPORALMENTE TODO LO RELACIONADO CON KROGER (Cambiar a false para restaurar) ---
+      // --- OCULTAR TEMPORALMENTE MARCAS RESTRINGIDAS (KROGER, KOHLS, MENARDS) ---
       const HIDE_KROGER_TEMPORARILY = true;
+      const HIDDEN_BRANDS_LIST = ['kroger', 'kohls', "kohl's", 'menards', 'menard'];
       const _krogerBobinaIds = new Set();
       const _krogerRolloNums = new Set();
 
@@ -3563,7 +3552,10 @@
           obj.descripcion_defecto
         ];
         for (const f of fields) {
-          if (f && String(f).toLowerCase().includes('kroger')) return true;
+          if (f) {
+            const lower = String(f).toLowerCase();
+            if (HIDDEN_BRANDS_LIST.some(b => lower.includes(b))) return true;
+          }
         }
         return false;
       }
@@ -4608,7 +4600,7 @@
             let allGlobalMarcas = new Set();
             allInsps.forEach(i => {
                const m = (i.marca_especificaciones || i.marca_cliente || i.marca || '').trim().toUpperCase();
-               if (m && (!HIDE_KROGER_TEMPORARILY || !m.includes('KROGER'))) allGlobalMarcas.add(m);
+               if (m && (!HIDE_KROGER_TEMPORARILY || (!m.includes('KROGER') && !m.includes('KOHLS') && !m.includes('MENARDS')))) allGlobalMarcas.add(m);
             });
             const existingOptions = Array.from(marcaSel.options).map(o => o.value);
             allGlobalMarcas.forEach(v => {
@@ -11255,8 +11247,6 @@
       // MARCAS Y VALIDACIÓN DE MEDIDAS
       // ===========================
       const PREDEFINED_BRANDS = {
-        "KOHLS": { alto: 47.6, ancho: 45.0, fuelle: 17.8 },
-        "MENARDS": { alto: 43.0, ancho: 30.5, fuelle: 17.2 },
         "SUBWAY": { alto: 36.0, ancho: 32.0, fuelle: 22.0 },
         "TARGET": { alto: 26.7, ancho: 32.0, fuelle: 18.0 },
         "WALMART": { alto: 26.0, ancho: 32.0, fuelle: 16.0 },
@@ -12625,10 +12615,10 @@
         const marcaSelect = document.getElementById('emb-pasadas-filter-marca');
         if (marcaSelect) {
           const currentMarca = marcaSelect.value;
-          const marcasOficiales = ['KOHLS', 'MENARDS', 'SUBWAY', 'TARGET', 'WALMART', 'BSK', 'MCDONALDS SMALL', 'MCDONALDS LARGE'];
+          const marcasOficiales = ['SUBWAY', 'TARGET', 'WALMART', 'BSK', 'MCDONALDS SMALL', 'MCDONALDS LARGE'];
           const marcasSet = new Set(marcasOficiales);
           embarquesState.items.forEach(it => {
-            if (it.marca && (!HIDE_KROGER_TEMPORARILY || !String(it.marca).toLowerCase().includes('kroger'))) marcasSet.add(it.marca);
+            if (it.marca && (!HIDE_KROGER_TEMPORARILY || (!String(it.marca).toLowerCase().includes('kroger') && !String(it.marca).toLowerCase().includes('kohls') && !String(it.marca).toLowerCase().includes('menard')))) marcasSet.add(it.marca);
           });
           const sortedMarcas = Array.from(marcasSet);
           marcaSelect.innerHTML = '<option value="">Todas las Marcas</option>' +

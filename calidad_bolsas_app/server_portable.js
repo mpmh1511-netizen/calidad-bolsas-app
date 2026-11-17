@@ -11,11 +11,12 @@ const DB_PATH = path.join(process.cwd(), 'db.json');
 const SUPABASE_URL = 'https://mowuawcmedfcmbtmeodg.supabase.co/rest/v1';
 const SUPABASE_KEY = 'sb_publishable_zdQ5JU1pm9c54u_IE7RsiA_SxvlZQnM';
 
-// --- OCULTAR TEMPORALMENTE TODO LO RELACIONADO CON KROGER (Cambiar a false para restaurar) ---
-const HIDE_KROGER_TEMPORARILY = true;
+// --- OCULTAR TEMPORALMENTE MARCAS RESTRINGIDAS (KROGER, KOHLS, MENARDS) ---
+const HIDE_BRANDS_TEMPORARILY = true;
+const HIDDEN_BRANDS_LIST = ['kroger', 'kohls', "kohl's", 'menards', 'menard'];
 
 function isKrogerServerRecord(item, bobinasMap = null) {
-  if (!HIDE_KROGER_TEMPORARILY || !item) return false;
+  if (!HIDE_BRANDS_TEMPORARILY || !item) return false;
   const fields = [
     item.marca,
     item.marca_especificaciones,
@@ -28,7 +29,10 @@ function isKrogerServerRecord(item, bobinasMap = null) {
     item.descripcion_defecto
   ];
   for (const f of fields) {
-    if (f && String(f).toLowerCase().includes('kroger')) return true;
+    if (f) {
+      const lower = String(f).toLowerCase();
+      if (HIDDEN_BRANDS_LIST.some(b => lower.includes(b))) return true;
+    }
   }
   if (bobinasMap) {
     const bId = item.bobina_id ? String(item.bobina_id) : '';
@@ -37,7 +41,11 @@ function isKrogerServerRecord(item, bobinasMap = null) {
     const mFromId = bId && bobinasMap[bId] ? String(bobinasMap[bId]).toLowerCase() : '';
     const mFromR1 = r1 && bobinasMap['rollo:' + r1] ? String(bobinasMap['rollo:' + r1]).toLowerCase() : '';
     const mFromR2 = r2 && bobinasMap['rollo:' + r2] ? String(bobinasMap['rollo:' + r2]).toLowerCase() : '';
-    if (mFromId.includes('kroger') || mFromR1.includes('kroger') || mFromR2.includes('kroger')) return true;
+    if (
+      HIDDEN_BRANDS_LIST.some(b => mFromId.includes(b)) ||
+      HIDDEN_BRANDS_LIST.some(b => mFromR1.includes(b)) ||
+      HIDDEN_BRANDS_LIST.some(b => mFromR2.includes(b))
+    ) return true;
   }
   return false;
 }
