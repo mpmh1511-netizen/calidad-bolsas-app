@@ -12,7 +12,7 @@ const SUPABASE_URL = 'https://mowuawcmedfcmbtmeodg.supabase.co/rest/v1';
 const SUPABASE_KEY = 'sb_publishable_zdQ5JU1pm9c54u_IE7RsiA_SxvlZQnM';
 
 // --- OCULTAR TEMPORALMENTE MARCAS RESTRINGIDAS (KROGER, KOHLS, MENARDS) ---
-const HIDE_BRANDS_TEMPORARILY = true;
+const HIDE_BRANDS_TEMPORARILY = false;
 const HIDDEN_BRANDS_LIST = ['kroger', 'kohls', "kohl's", 'menards', 'menard'];
 
 function isKrogerServerRecord(item, bobinasMap = null) {
@@ -58,7 +58,7 @@ const apiCache = {
   tarimas: { data: null, ts: 0 },
   embarques: { data: null, ts: 0 }
 };
-const CACHE_TTL_MS = 5000;
+const CACHE_TTL_MS = 300000; // 5 minutos (300,000 ms) para evitar saturación de red y descargas pesadas
 
 function getCached(key) {
   const entry = apiCache[key];

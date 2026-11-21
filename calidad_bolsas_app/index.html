@@ -604,6 +604,9 @@
                   <option value="BSK">BSK</option>
                   <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
                   <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                  <option value="KROGER">KROGER</option>
+                  <option value="KOHLS">KOHLS</option>
+                  <option value="MENARDS">MENARDS</option>
                 </select>
               </div>
 
@@ -1097,6 +1100,9 @@
                     <option value="BSK">BSK</option>
                     <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
                     <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                    <option value="KROGER">KROGER</option>
+                    <option value="KOHLS">KOHLS</option>
+                    <option value="MENARDS">MENARDS</option>
                     <option value="OTRO">OTRO (Escribir manual)</option>
                   </select>
                   <input type="text" id="emb-form-marca-otro" class="form-control" placeholder="Escribe el nombre de la marca..." style="display: none; margin-top: 6px;" />
@@ -2003,8 +2009,11 @@
                       <option value="TARGET">TARGET</option>
                       <option value="WALMART">WALMART</option>
                       <option value="BSK">BSK</option>
-                  <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
-                  <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                      <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
+                      <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                      <option value="KROGER">KROGER</option>
+                      <option value="KOHLS">KOHLS</option>
+                      <option value="MENARDS">MENARDS</option>
                       <option value="OTRO">OTRO (Escribir manual)</option>
                     </select>
                     <input type="text" id="flexo-bobina-marca-otro" class="form-control" placeholder="Escribe la marca..." style="display: none; margin-top: 5px;" />
@@ -2062,8 +2071,11 @@
                         <option value="TARGET">TARGET</option>
                         <option value="WALMART">WALMART</option>
                         <option value="BSK">BSK</option>
-                  <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
-                  <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                        <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
+                        <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                        <option value="KROGER">KROGER</option>
+                        <option value="KOHLS">KOHLS</option>
+                        <option value="MENARDS">MENARDS</option>
                         <option value="OTRO">OTRO (Escribir manual)</option>
                       </select>
                       <input type="text" id="bolsas-manual-marca-otro" class="form-control" placeholder="Escribe la marca..." style="display: none; margin-top: 5px;" oninput="autoValidateBolsasMeasurements()" />
@@ -2528,6 +2540,9 @@
                     <option value="BSK">BSK</option>
                     <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
                     <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                    <option value="KROGER">KROGER</option>
+                    <option value="KOHLS">KOHLS</option>
+                    <option value="MENARDS">MENARDS</option>
                     <option value="OTRO">OTRO (Escribir marca)</option>
                   </select>
                   <input type="text" id="tarima-marca-principal-otro" class="form-control" placeholder="Escribe la marca..." style="display: none; margin-top: 6px;" />
@@ -2569,6 +2584,9 @@
                       <option value="BSK">BSK</option>
                       <option value="MCDONALDS SMALL">MCDONALDS SMALL</option>
                       <option value="MCDONALDS LARGE">MCDONALDS LARGE</option>
+                      <option value="KROGER">KROGER</option>
+                      <option value="KOHLS">KOHLS</option>
+                      <option value="MENARDS">MENARDS</option>
                       <option value="OTRO">OTRO (Escribir manual)</option>
                     </select>
                     <input type="text" id="tarima-manual-marca-otro" class="form-control" placeholder="Escribe la marca..." style="display: none; margin-top: 5px;" />
@@ -3533,7 +3551,7 @@
       })();
 
       // --- OCULTAR TEMPORALMENTE MARCAS RESTRINGIDAS (KROGER, KOHLS, MENARDS) ---
-      const HIDE_KROGER_TEMPORARILY = true;
+      const HIDE_KROGER_TEMPORARILY = false;
       const HIDDEN_BRANDS_LIST = ['kroger', 'kohls', "kohl's", 'menards', 'menard'];
       const _krogerBobinaIds = new Set();
       const _krogerRolloNums = new Set();
@@ -11243,6 +11261,9 @@
       // MARCAS Y VALIDACIÓN DE MEDIDAS
       // ===========================
       const PREDEFINED_BRANDS = {
+        "KOHLS": { alto: 47.6, ancho: 45.0, fuelle: 17.8 },
+        "MENARDS": { alto: 43.0, ancho: 30.5, fuelle: 17.2 },
+        "KROGER": { alto: 26.7, ancho: 32.0, fuelle: 18.0 },
         "SUBWAY": { alto: 36.0, ancho: 32.0, fuelle: 22.0 },
         "TARGET": { alto: 26.7, ancho: 32.0, fuelle: 18.0 },
         "WALMART": { alto: 26.0, ancho: 32.0, fuelle: 16.0 },
@@ -12610,7 +12631,7 @@
         const marcaSelect = document.getElementById('emb-pasadas-filter-marca');
         if (marcaSelect) {
           const currentMarca = marcaSelect.value;
-          const marcasOficiales = ['SUBWAY', 'TARGET', 'WALMART', 'BSK', 'MCDONALDS SMALL', 'MCDONALDS LARGE'];
+          const marcasOficiales = ['SUBWAY', 'TARGET', 'WALMART', 'BSK', 'MCDONALDS SMALL', 'MCDONALDS LARGE', 'KROGER', 'KOHLS', 'MENARDS'];
           const marcasSet = new Set(marcasOficiales);
           embarquesState.items.forEach(it => {
             if (it.marca && (!HIDE_KROGER_TEMPORARILY || (!String(it.marca).toLowerCase().includes('kroger') && !String(it.marca).toLowerCase().includes('kohls') && !String(it.marca).toLowerCase().includes('menard')))) marcasSet.add(it.marca);
